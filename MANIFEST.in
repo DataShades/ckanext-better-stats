@@ -1,0 +1,6 @@
+include README.rst
+include LICENSE
+include requirements.txt
+recursive-include ckanext/better_stats *.html *.json *.js *.less *.css *.mo *.yml
+recursive-include ckanext/better_stats/migration *.ini *.py *.mako
+recursive-include ckanext/better_stats/public *.*

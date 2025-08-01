@@ -1,0 +1,53 @@
+<div class="metric-container" data-metric="{{ metric.name }}" data-order="{{ metric.order }}"
+    data-grid-size="{{ metric.grid_size }}">
+
+    <div class="metric-card">
+        <div class="metric-header">
+            <h3 class="me-3">{{ metric.title }}</h3>
+            <div class="metric-actions">
+                <div class="btn-group">
+                    <button class="btn btn-sm btn-light active viz-toggle" data-type="chart" data-metric="{{ metric.name }}"
+                        title="{{ _('Chart') }}">
+                        <i class="fa fa-line-chart"></i>
+                    </button>
+                    <button class="btn btn-sm btn-light viz-toggle" data-type="table" data-metric="{{ metric.name }}"
+                        title="{{ _('Table') }}">
+                        <i class="fa fa-table"></i>
+                    </button>
+                    <button class="btn btn-sm btn-light viz-toggle" data-type="card" data-metric="{{ metric.name }}"
+                        title="{{ _('Card') }}">
+                        <i class="fa fa-calculator"></i>
+                    </button>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-sm btn-light dropdown-toggle" data-bs-toggle="dropdown"
+                        title="{{ _('Export') }}">
+                        <i class="fa fa-download"></i>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a href="#" class="dropdown-item export-btn" data-metric="{{ metric.name }}"
+                                data-format="csv">{{ _("CSV") }}</a></li>
+                        <li><a href="#" class="dropdown-item export-btn" data-metric="{{ metric.name }}"
+                                data-format="json">{{ _("JSON") }}</a></li>
+                    </ul>
+                </div>
+
+                <button class="btn btn-sm btn-light refresh-metric" data-metric="{{ metric.name }}"
+                    title="{{ _('Refresh') }}">
+                    <i class="fa fa-refresh"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="metric-description">
+            <p>{{ metric.description }}</p>
+        </div>
+
+        <div class="metric-content" id="metric-{{ metric.name }}">
+            <div class="loading-indicator">
+                <i class="fa fa-spinner fa-spin"></i> {{ _('Loading...') }}
+            </div>
+        </div>
+    </div>
+</div>

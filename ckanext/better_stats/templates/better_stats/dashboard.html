@@ -1,0 +1,28 @@
+{% extends "page.html" %}
+
+{% import 'macros/form.html' as form %}
+
+{% block title %}
+    {{ _("Better Stats - Dashboard") }}
+{% endblock %}
+
+{% block breadcrumb_content %}
+    {{ super() }}
+    <li class="active"><a href="{{ h.url_for('better_stats.dashboard') }}">{{ _("Dashboard") }}</a></li>
+{% endblock %}
+
+{% block secondary %}{% endblock %}
+
+{% block primary %}
+    <div class="primary col" role="main" data-module="bstats-stats-manager">
+        {% block primary_content %}
+            {% snippet 'better_stats/dashboard_content.html', metrics=accessible_metrics %}
+        {% endblock %}
+    </div>
+{% endblock %}
+
+{%- block scripts %}
+    {% asset 'better_stats/better_stats-js' %}
+
+    {{ super() }}
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends "page.html" %}
+
+{% import 'macros/form.html' as form %}
+
+{% block title %}
+    {{ _("Better Stats - Settings") }}
+{% endblock %}
+
+{% block breadcrumb_content %}
+    {{ super() }}
+    <li class="active"><a href="{{ h.url_for('better_stats.settings') }}">{{ _("Settings") }}</a></li>
+{% endblock %}
+
+{% block secondary_content %}
+    <div class="module module-narrow module-shallow">
+        <h2 class="module-heading">
+            <i class="fa fa-info-circle"></i>
+            {{_("Better Stats - Settings") }}
+        </h2>
+        <div class="module-content">
+            <p>
+                {{ _("Configure Better Stats.") }}
+            </p>
+
+            <code>
+                {{ _("This is a work in progress.") }}
+            </code>
+        </div>
+    </div>
+{% endblock %}
+
+{% block primary_content %}
+
+{% endblock %}
+
+{%- block scripts %}
+    {% asset 'better_stats/better_stats-js' %}
+
+    {{ super() }}
+{% endblock %}

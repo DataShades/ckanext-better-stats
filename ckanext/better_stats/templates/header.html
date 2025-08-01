@@ -1,0 +1,25 @@
+{% ckan_extends %}
+
+{% block header_account_logged %}
+    <li class="dropdown bstats-dropdown">
+        <a href="#" class="dropdown-toggle" data-bs-toggle="dropdown" title="{{ _('Better Stats') }}">
+            <i class="fa fa-chart-bar" aria-hidden="true"></i>
+        </a>
+        <ul class="dropdown-menu">
+            <li>
+                <a class="dropdown-item" href="{{ h.url_for('better_stats.dashboard') }}">
+                    <i class="fa fa-chart-pie" aria-hidden="true"></i>
+                    {{ _("Stats") }}
+                </a>
+            </li>
+            <li>
+                <a class="dropdown-item" href="{{ h.url_for('better_stats.settings') }}">
+                    <i class="fa fa-cog" aria-hidden="true"></i>
+                    {{ _("Settings") }}
+                </a>
+            </li>
+        </ul>
+    </li>
+
+    {{ super() }}
+{% endblock %}

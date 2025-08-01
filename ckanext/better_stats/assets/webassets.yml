@@ -1,0 +1,16 @@
+better_stats-js:
+  filter: rjsmin
+  output: ckanext-better_stats/%(version)s-better_stats.js
+  contents:
+    - js/vendor/chart.min.js
+
+    - js/bstats-stats-manager.js
+  extra:
+    preload:
+      - base/main
+
+better_stats-css:
+  filter: cssrewrite
+  output: ckanext-better_stats/%(version)s-better_stats.css
+  contents:
+    - css/style.css
