@@ -5,13 +5,8 @@ metrics - A list of metrics to render on the dashboard.
 #}
 
 <div class="module">
-    <div class="module-content">
+    <div class="p-4">
         <div class="mb-4">
-            {#
-            <p>{{ _('This dashboard provides comprehensive statistics about your CKAN instance.') }}</p>
-            <p>{{ _('Click on different visualization types to switch between charts, tables, and cards.') }}</p>
-            <p>{{ _('Use the export buttons to download data in various formats.') }}</p>
-            #}
             <div class="btn-group pull-right">
                 <button class="btn btn-default" id="refresh-all" title="{{ _('Refresh All') }}">
                     <i class="fa fa-refresh"></i> {{ _('Refresh All') }}
@@ -21,7 +16,7 @@ metrics - A list of metrics to render on the dashboard.
 
         <div class="stats-grid" id="stats-grid">
             {% for metric in metrics %}
-                {% snippet 'better_stats/metric_card.html', metric=metric() %}
+                {% snippet 'better_stats/metric_card.html', metric=metric %}
             {% endfor %}
         </div>
     </div>

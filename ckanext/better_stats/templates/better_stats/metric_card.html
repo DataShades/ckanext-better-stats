@@ -1,23 +1,22 @@
-<div class="metric-container" data-metric="{{ metric.name }}" data-order="{{ metric.order }}"
-    data-grid-size="{{ metric.grid_size }}">
+<div class="metric-container"
+     data-metric="{{ metric.name }}"
+     data-order="{{ metric.order }}"
+     data-grid-size="{{ metric.grid_size }}"
+     data-default-viz="{{ metric.default_visualization.value }}">
 
     <div class="metric-card">
         <div class="metric-header">
             <h3 class="me-3">{{ metric.title }}</h3>
             <div class="metric-actions">
                 <div class="btn-group">
-                    <button class="btn btn-sm btn-light active viz-toggle" data-type="chart" data-metric="{{ metric.name }}"
-                        title="{{ _('Chart') }}">
-                        <i class="fa fa-line-chart"></i>
-                    </button>
-                    <button class="btn btn-sm btn-light viz-toggle" data-type="table" data-metric="{{ metric.name }}"
-                        title="{{ _('Table') }}">
-                        <i class="fa fa-table"></i>
-                    </button>
-                    <button class="btn btn-sm btn-light viz-toggle" data-type="card" data-metric="{{ metric.name }}"
-                        title="{{ _('Card') }}">
-                        <i class="fa fa-calculator"></i>
-                    </button>
+                    {% for viz in metric.supported_visualizations %}
+                        <button class="btn btn-sm btn-light viz-toggle{% if viz.value == metric.default_visualization.value %} active{% endif %}"
+                                data-type="{{ viz.value }}"
+                                data-metric="{{ metric.name }}"
+                                title="{{ h.bs_get_viz_label(viz.value) }}">
+                            <i class="{{ h.bs_get_viz_icon(viz.value) }}"></i>
+                        </button>
+                    {% endfor %}
                 </div>
 
                 <div class="btn-group">

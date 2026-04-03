@@ -8,6 +8,7 @@ from flask.views import MethodView
 
 import ckan.plugins.toolkit as tk
 
+from ckanext.better_stats import const
 from ckanext.better_stats.metrics.base import MetricRegistry
 
 
@@ -40,31 +41,32 @@ class BetterStatsSettingsView(MethodView):
 
 
 @bp.route("/metric/<metric_name>")
-def get_metric_data(metric_name) -> Response:
-    """Get data for specific metric"""
-    registry = MetricRegistry()
-    metric = registry.get_metric(metric_name)
+def get_metric_data(metric_name: str) -> Response:
+    """Return visualization data for a single metric."""
+    metric = MetricRegistry.get_metric(metric_name)
 
     if not metric or not tk.h.check_user_can_access_metric(metric):
         return make_response(
             jsonify({"error": "Metric not found or not accessible"}), 404
         )
 
-    viz_type = tk.request.args.get("type", "chart")
-    refresh = tk.request.args.get("refresh", False)
+    requested = tk.request.args.get("type", metric.default_visualization.value)
+    refresh = tk.asbool(tk.request.args.get("refresh", False))
+
+    try:
+        viz_type = const.VisualizationType(requested)
+    except ValueError:
+        viz_type = metric.default_visualization
+
+    # Fall back to the metric's default when the requested type is unsupported.
+    if not metric.supports_visualization(viz_type):
+        viz_type = metric.default_visualization
 
     if refresh:
         metric.refresh_cache()
 
     try:
-        if viz_type == "chart":
-            data = metric.get_chart_data()
-        elif viz_type == "table":
-            data = metric.get_table_data()
-        elif viz_type == "card":
-            data = metric.get_card_data()
-        else:
-            data = metric.get_data()
+        data = metric.get_viz_data(viz_type)
     except Exception as e:
         return make_response(jsonify({"error": str(e)}), 500)
 
@@ -74,7 +76,11 @@ def get_metric_data(metric_name) -> Response:
             "title": metric.title,
             "description": metric.description,
             "data": data,
-            "type": viz_type,
+            "type": viz_type.value,
+            "supported_visualizations": [
+                v.value for v in metric.supported_visualizations
+            ],
+            "default_visualization": metric.default_visualization.value,
         }
     )
 

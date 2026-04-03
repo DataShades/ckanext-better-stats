@@ -17,7 +17,7 @@ classifiers = [
 
 keywords = ["CKAN"]
 dependencies = [
-    "psutil>=7.0.0,<8.0.0",
+    "psutil>=7.0.0",
 ]
 
 [project.urls]

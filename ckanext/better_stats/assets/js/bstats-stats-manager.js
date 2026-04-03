@@ -70,7 +70,8 @@ class BetterStatsManager {
 
         for (const container of containers) {
             const metricName = container.dataset.metric;
-            await this.loadMetric(metricName, 'chart');
+            const defaultViz = container.dataset.defaultViz || 'chart';
+            await this.loadMetric(metricName, defaultViz);
         }
     }
 
@@ -90,11 +91,13 @@ class BetterStatsManager {
                 throw new Error(data.error);
             }
 
-            this.renderMetric(container, data, vizType);
-            this.currentVizTypes[metricName] = vizType;
+            // Use the type the server actually served (may differ from requested
+            // if the metric fell back to its default visualization).
+            const servedType = data.type || vizType;
 
-            // Update active button
-            this.updateActiveButton(metricName, vizType);
+            this.renderMetric(container, data, servedType);
+            this.currentVizTypes[metricName] = servedType;
+            this.updateActiveButton(metricName, servedType);
 
         } catch (error) {
             container.innerHTML = `<div class="alert alert-danger">Error loading metric: ${error.message}</div>`;
@@ -118,16 +121,48 @@ class BetterStatsManager {
     }
 
     renderChart(container, data) {
+        const chartData = data.data;
+
+        // Destroy any previously created charts for this metric.
+        const existing = this.charts[data.name];
+        if (existing) {
+            if (Array.isArray(existing)) {
+                existing.forEach(c => c.destroy());
+            } else {
+                existing.destroy();
+            }
+            delete this.charts[data.name];
+        }
+
+        if (chartData.type === 'multi') {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'metric-chart-multi';
+            container.appendChild(wrapper);
+
+            this.charts[data.name] = chartData.charts.map((subChart, i) => {
+                const item = document.createElement('div');
+                item.className = 'metric-chart-item';
+                wrapper.appendChild(item);
+                return this._createSingleChart(item, subChart, `${data.name}-${i}`, subChart.title);
+            });
+        } else {
+            this.charts[data.name] = this._createSingleChart(container, chartData, data.name);
+        }
+    }
+
+    _createSingleChart(container, chartData, key, title = null) {
+        if (title) {
+            const label = document.createElement('p');
+            label.className = 'metric-chart-label';
+            label.textContent = title;
+            container.appendChild(label);
+        }
+
         const canvas = document.createElement('canvas');
         canvas.className = 'metric-chart';
         container.appendChild(canvas);
 
-        const ctx = canvas.getContext('2d');
-        const chartData = data.data;
-
-        console.log('creating chart');
-
-        let chartConfig = {
+        return new Chart(canvas.getContext('2d'), {
             type: chartData.type || 'bar',
             data: {
                 labels: chartData.labels || [],
@@ -135,26 +170,21 @@ class BetterStatsManager {
                     data: chartData.data || [],
                     backgroundColor: this.getChartColors(chartData.data?.length || 0),
                     borderColor: '#337ab7',
-                    borderWidth: 1
-                }]
+                    borderWidth: 1,
+                }],
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: false,
+                maintainAspectRatio: true,
+                aspectRatio: 2,
                 plugins: {
                     legend: {
-                        display: chartData.type === 'pie'
-                    }
-                }
-            }
-        };
-
-        // Destroy existing chart if exists
-        if (this.charts[data.name]) {
-            this.charts[data.name].destroy();
-        }
-
-        this.charts[data.name] = new Chart(ctx, chartConfig);
+                        display: chartData.type === 'pie' || chartData.type === 'doughnut',
+                    },
+                },
+                ...chartData.options,
+            },
+        });
     }
 
     renderTable(container, data) {

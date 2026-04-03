@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
+from typing import Any, Callable, ClassVar
 
 import ckan.plugins.toolkit as tk
 
@@ -6,70 +9,130 @@ from ckanext.better_stats import const
 
 
 class MetricBase(ABC):
-    """Base class for all metrics"""
+    """Base class for all metrics.
+
+    Subclasses must implement :meth:`get_data` and should declare
+    :attr:`supported_visualizations` and :attr:`default_visualization` as
+    class attributes alongside any visualization methods they support.
+
+    Visualization methods (:meth:`get_chart_data`, :meth:`get_table_data`,
+    :meth:`get_card_data`) return ``None`` by default, signalling that the
+    metric does not support that particular view.  Override only the ones
+    listed in :attr:`supported_visualizations`.
+    """
+
+    supported_visualizations: ClassVar[list[const.VisualizationType]] = [
+        const.VisualizationType.CHART
+    ]
+    default_visualization: ClassVar[const.VisualizationType] = (
+        const.VisualizationType.CHART
+    )
+    icon: ClassVar[str] = "bi-bar-chart"
+    color: ClassVar[str] = "#0d6efd"
+    supported_export_formats: ClassVar[list[str]] = ["csv", "json"]
 
     def __init__(
         self,
         name: str,
-        title="",
+        title: str = "",
         description: str = "",
         grid_size: str = "half",
         order: int = 100,
-    ):
+        cache_timeout: int = 3600,
+    ) -> None:
         self.name = name
         self.title = title
         self.description = description
         self.grid_size = grid_size
         self.order = order
-        self.cache_key = f"better_stats:metric:{name}"
-        self.cache_timeout = 3600
+        self.cache_timeout = cache_timeout
+
+    @property
+    def cache_key(self) -> str:
+        return f"better_stats:metric:{self.name}"
 
     @abstractmethod
-    def get_data(self) -> dict | list | int | float:
-        """Get raw data for the metric"""
-        pass
+    def get_data(self) -> dict[str, Any] | list[Any] | int | float:
+        """Fetch raw data for the metric.
 
-    @abstractmethod
-    def get_chart_data(self):
-        """Transform raw data for chart visualization"""
-        pass
+        This is the only method subclasses are required to implement.
+        All visualization methods call this (directly or indirectly).
+        """
 
-    @abstractmethod
-    def get_table_data(self):
-        """Transform raw data for table visualization"""
-        pass
-
-    def get_card_data(self):
-        """Transform raw data for card visualization (simple number display)"""
-        data = self.get_data()
-
-        if isinstance(data, (int, float)):
-            return {"value": data, "label": self.title}
-
+    def get_chart_data(self) -> dict[str, Any] | None:
+        """Return a Chart.js-compatible config dict, or ``None`` if unsupported."""
         return None
 
-    def get_cached_data(self) -> dict | list | int | float:
-        """Get cached data or fetch new data"""
-        # Implementation would use CKAN's cache system
+    def get_table_data(self) -> dict[str, Any] | None:
+        """Return ``{"headers": [...], "rows": [[...], ...]}`` or ``None`` if unsupported."""
+        return None
+
+    def get_card_data(self) -> dict[str, Any] | None:
+        """Return ``{"value": ..., "label": ...}`` or ``None`` if unsupported.
+
+        The default implementation works for any metric whose :meth:`get_data`
+        returns a plain ``int`` or ``float``.
+        """
+        data = self.get_data()
+        if isinstance(data, (int, float)):
+            return {"value": data, "label": self.title}
+        return None
+
+    def get_viz_data(self, viz_type: const.VisualizationType) -> dict[str, Any] | None:
+        """Dispatch to the appropriate visualization method.
+
+        Returns ``None`` for unknown or unsupported visualization types.
+        """
+        dispatch: dict[const.VisualizationType, Callable[[], dict[str, Any] | None]] = {
+            const.VisualizationType.CHART: self.get_chart_data,
+            const.VisualizationType.TABLE: self.get_table_data,
+            const.VisualizationType.CARD: self.get_card_data,
+        }
+        handler = dispatch.get(viz_type)
+        return handler() if handler else None
+
+    def supports_visualization(self, viz_type: const.VisualizationType) -> bool:
+        """Return ``True`` if this metric supports *viz_type*."""
+        return viz_type in self.supported_visualizations
+
+    def get_cached_data(self) -> dict[str, Any] | list[Any] | int | float:
+        """Return cached data, or fetch fresh data when the cache is empty."""
         return self.get_data()
 
     def refresh_cache(self) -> None:
-        """Refresh cached data"""
-        pass
+        """Invalidate and re-populate the cache for this metric."""
 
     @classmethod
-    def can_export(cls):
-        """Check if metric data can be exported"""
+    def can_export(cls) -> bool:
+        """Return ``True`` if metric data may be exported."""
         return True
 
-    def get_export_data(self):
-        """Get data in export format"""
-        return self.get_table_data()
+    def get_export_data(self) -> dict[str, Any]:
+        """Return data in export format (defaults to table data)."""
+        return self.get_table_data() or {}
 
     @classmethod
-    def get_access_level(cls):
-        """Get required access level for this metric"""
+    def get_access_level(cls) -> str:
+        """Return the required access level value for this metric."""
         return const.AccessLevel.PUBLIC.value
+
+    def to_dict(self) -> dict[str, Any]:
+        """Return a JSON-serialisable dict of metric metadata."""
+        return {
+            "name": self.name,
+            "title": self.title,
+            "description": self.description,
+            "icon": self.icon,
+            "color": self.color,
+            "grid_size": self.grid_size,
+            "order": self.order,
+            "supported_visualizations": [
+                v.value for v in self.supported_visualizations
+            ],
+            "default_visualization": self.default_visualization.value,
+            "supported_export_formats": list(self.supported_export_formats),
+            "access_level": self.get_access_level(),
+        }
 
 
 register_metrics_signal = tk.signals.ckanext.signal(
@@ -79,42 +142,66 @@ register_metrics_signal = tk.signals.ckanext.signal(
 
 
 class MetricRegistry:
-    """Registry for all available metrics"""
+    """Registry for all available metrics.
 
-    METRICS: dict[str, type[MetricBase]] = {}
+    Metric factories (zero-argument callables returning a :class:`MetricBase`)
+    are registered via :meth:`register`.  Passing a class directly is the
+    normal usage — each concrete metric class takes no constructor arguments.
+    All read methods return freshly instantiated :class:`MetricBase` objects
+    sorted by :attr:`~MetricBase.order`.
+    """
+
+    METRICS: ClassVar[dict[str, Callable[[], MetricBase]]] = {}
+    _loaded: ClassVar[bool] = False
 
     @classmethod
-    def register(cls, name: str, metric_class: type[MetricBase]) -> None:
-        """Register a metric class"""
-        cls.METRICS[name] = metric_class
-
-    @classmethod
-    def get_metric(cls, name) -> MetricBase | None:
-        """Get specific metric by name"""
-        if not cls.METRICS:
+    def _ensure_loaded(cls) -> None:
+        """Fire the registration signal exactly once per process lifetime."""
+        if not cls._loaded:
+            cls._loaded = True
             register_metrics_signal.send()
 
-        metric = cls.METRICS.get(name)
+    @classmethod
+    def register(cls, name: str, metric_factory: Callable[[], MetricBase]) -> None:
+        """Register *metric_factory* under *name*.
 
-        return metric() if metric else None
+        *metric_factory* must be a zero-argument callable that returns a
+        :class:`MetricBase` instance.  Passing the metric class itself is the
+        typical usage (e.g. ``MetricRegistry.register("foo", FooMetric)``).
+        """
+        cls.METRICS[name] = metric_factory
 
     @classmethod
-    def get_all_metrics(cls):
-        """Get all registered metrics"""
-        # TODO: order?
-        return cls.METRICS.values()
+    def get_metric(cls, name: str) -> MetricBase | None:
+        """Return a fresh instance of the named metric, or ``None`` if not found."""
+        cls._ensure_loaded()
+        factory = cls.METRICS.get(name)
+        return factory() if factory else None
 
     @classmethod
-    def get_enabled_metrics(cls):
-        """Get only enabled metrics"""
-        if not cls.METRICS:
-            register_metrics_signal.send()
+    def get_all_metrics(cls) -> list[MetricBase]:
+        """Return fresh instances of all registered metrics, sorted by order."""
+        cls._ensure_loaded()
+        return sorted(
+            (factory() for factory in cls.METRICS.values()),
+            key=lambda m: m.order,
+        )
 
+    @classmethod
+    def get_enabled_metrics(cls) -> list[MetricBase]:
+        """Return enabled metrics sorted by order.
+
+        Filtering against :class:`~ckanext.better_stats.model.MetricConfig`
+        will be wired in Phase 1.4; for now this delegates to
+        :meth:`get_all_metrics`.
+        """
         return cls.get_all_metrics()
-        return [
-            metric
-            for metric in cls.get_all_metrics()
-            if tk.asbool(
-                tk.config.get(f"ckanext.better_stats.{metric.name}.enabled", True)
-            )
-        ]
+
+    @classmethod
+    def reset(cls) -> None:
+        """Clear all registered metrics and reset the loaded flag.
+
+        Intended for use in tests only.
+        """
+        cls.METRICS.clear()
+        cls._loaded = False

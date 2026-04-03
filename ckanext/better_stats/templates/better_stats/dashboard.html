@@ -14,7 +14,7 @@
 {% block secondary %}{% endblock %}
 
 {% block primary %}
-    <div class="primary col" role="main" data-module="bstats-stats-manager">
+    <div class="primary col p-0" role="main" data-module="bstats-stats-manager">
         {% block primary_content %}
             {% snippet 'better_stats/dashboard_content.html', metrics=accessible_metrics %}
         {% endblock %}
