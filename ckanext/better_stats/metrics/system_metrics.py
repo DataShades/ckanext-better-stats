@@ -27,7 +27,6 @@ class MemoryMetric(MetricBase):
             title="System Memory Usage",
             description="Memory usage of the system",
             order=1,
-            cache_timeout=60,
         )
 
     def get_data(self) -> dict[str, Any]:
@@ -86,7 +85,7 @@ class CPUMetric(MetricBase):
             title="CPU Usage",
             description="Current CPU usage percentage",
             order=2,
-            cache_timeout=60,
+            cache_timeout=15,
         )
 
     def get_data(self) -> dict[str, Any]:

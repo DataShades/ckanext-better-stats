@@ -5,7 +5,7 @@ from typing import Any, Callable, ClassVar
 
 import ckan.plugins.toolkit as tk
 
-from ckanext.better_stats import const
+from ckanext.better_stats import const, cache
 
 
 class MetricBase(ABC):
@@ -38,7 +38,7 @@ class MetricBase(ABC):
         description: str = "",
         grid_size: str = "half",
         order: int = 100,
-        cache_timeout: int = 3600,
+        cache_timeout: int = 60,
     ) -> None:
         self.name = name
         self.title = title
@@ -78,8 +78,10 @@ class MetricBase(ABC):
             return {"value": data, "label": self.title}
         return None
 
-    def get_viz_data(self, viz_type: const.VisualizationType) -> dict[str, Any] | None:
-        """Dispatch to the appropriate visualization method.
+    def _compute_viz_data(
+        self, viz_type: const.VisualizationType
+    ) -> dict[str, Any] | None:
+        """Dispatch to the appropriate visualization method without caching.
 
         Returns ``None`` for unknown or unsupported visualization types.
         """
@@ -91,16 +93,50 @@ class MetricBase(ABC):
         handler = dispatch.get(viz_type)
         return handler() if handler else None
 
+    def get_viz_data(self, viz_type: const.VisualizationType) -> dict[str, Any] | None:
+        """Return visualization data for *viz_type*, reading from cache when available.
+
+        On a cache miss the result of :meth:`_compute_viz_data` is stored
+        before being returned.  Returns ``None`` for unsupported types.
+        """
+
+        key = f"{self.cache_key}:{viz_type.value}"
+
+        if cached := cache.cache_get(key):
+            return cached
+
+        if data := self._compute_viz_data(viz_type):
+            cache.cache_set(key, data, self.cache_timeout)
+
+        return data
+
     def supports_visualization(self, viz_type: const.VisualizationType) -> bool:
         """Return ``True`` if this metric supports *viz_type*."""
         return viz_type in self.supported_visualizations
 
-    def get_cached_data(self) -> dict[str, Any] | list[Any] | int | float:
-        """Return cached data, or fetch fresh data when the cache is empty."""
-        return self.get_data()
+    def get_cached_data(
+        self, viz_type: const.VisualizationType, refresh: bool = False
+    ) -> dict[str, Any] | None:
+        """Return visualization data for *viz_type*, with optional forced refresh.
+
+        When *refresh* is ``True`` the cached entry for *viz_type* is deleted
+        before fetching, guaranteeing fresh data is returned and re-cached.
+        For invalidating all visualization types at once use
+        :meth:`refresh_cache`.
+        """
+        if refresh:
+            cache.cache_delete(f"{self.cache_key}:{viz_type.value}")
+
+        return self.get_viz_data(viz_type)
 
     def refresh_cache(self) -> None:
-        """Invalidate and re-populate the cache for this metric."""
+        """Invalidate all cached visualization entries for this metric.
+
+        The next call to :meth:`get_viz_data` for any visualization type will
+        recompute and re-cache the data.
+        """
+        for viz in const.VisualizationType:
+            cache.cache_delete(f"{self.cache_key}:{viz.value}")
 
     @classmethod
     def can_export(cls) -> bool:
