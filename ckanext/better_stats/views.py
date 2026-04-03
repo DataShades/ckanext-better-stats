@@ -9,7 +9,7 @@ from flask.views import MethodView
 import ckan.plugins.toolkit as tk
 
 from ckanext.better_stats import const
-from ckanext.better_stats.metrics.base import MetricRegistry
+from ckanext.better_stats.metrics.base import MetricRegistry, before_metric_render_signal
 
 
 log = logging.getLogger(__name__)
@@ -69,6 +69,11 @@ def get_metric_data(metric_name: str) -> Response:
         data = metric.get_viz_data(viz_type)
     except Exception as e:
         return make_response(jsonify({"error": str(e)}), 500)
+
+    for _, result in before_metric_render_signal.send(None, context={"metric": metric, "viz_type": viz_type.value, "data": data}):
+        if result is not None:
+            data = result
+            break
 
     return jsonify(
         {

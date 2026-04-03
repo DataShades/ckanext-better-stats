@@ -176,6 +176,15 @@ register_metrics_signal = tk.signals.ckanext.signal(
     "Register metrics for the better_stats extension",
 )
 
+before_metric_render_signal = tk.signals.ckanext.signal(
+    "better_stats:before_metric_render",
+    "Fired after metric visualization data is fetched, before it is returned"
+    " to the client. Receivers accept (sender, context) where context is a"
+    " dict with keys 'metric', 'viz_type' (str), and 'data' (dict|None)."
+    " Return a replacement data dict to override the value, or None to leave"
+    " it unchanged. The first non-None return wins.",
+)
+
 
 class MetricRegistry:
     """Registry for all available metrics.
