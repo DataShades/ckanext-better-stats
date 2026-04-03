@@ -29,3 +29,21 @@ def bs_get_viz_label(viz_type: str) -> str:
     return {"chart": tk._("Chart"), "table": tk._("Table"), "card": tk._("Card")}.get(
         viz_type, viz_type
     )
+
+
+def bs_get_embed_url(metric_name: str) -> str:
+    """Return the absolute URL for the embed page for *metric_name*."""
+    return tk.url_for(
+        "better_stats.embed_metric", metric_name=metric_name, _external=True
+    )
+
+
+def bs_get_embed_code(metric_name: str, width: str = "600", height: str = "400") -> str:
+    """Return a ready-to-paste <iframe> embed snippet."""
+    return (
+        f'<iframe src="{bs_get_embed_url(metric_name)}" '
+        f'width="{width}" height="{height}" '
+        f'frameborder="0" '
+        f'style="border:1px solid #e2e8f0;border-radius:8px">'
+        f"</iframe>"
+    )

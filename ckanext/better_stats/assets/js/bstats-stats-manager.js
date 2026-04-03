@@ -5,7 +5,7 @@ ckan.module("bstats-stats-manager", function ($) {
 
             // Initialize when DOM is ready
             $(document).ready(() => {
-                new BetterStatsManager();
+                new BetterStatsManager(this.el[0]);
             });
         },
     };
@@ -13,15 +13,14 @@ ckan.module("bstats-stats-manager", function ($) {
 
 
 class BetterStatsManager {
-    constructor() {
+    constructor(container) {
+        this.container = container;
         this.charts = {};
         this.currentVizTypes = {};
         this.init();
     }
 
     init() {
-        console.log('Initializing Better Stats Manager');
-
         this.bindEvents();
         this.loadAllMetrics();
     }
@@ -37,8 +36,6 @@ class BetterStatsManager {
                 const metric = e.currentTarget.dataset.metric;
                 const type = e.currentTarget.dataset.type;
 
-                console.log(`Switching visualization for metric: ${metric} to type: ${type}`);
-
                 this.switchVisualization(metric, type, e.currentTarget);
             });
         });
@@ -50,7 +47,8 @@ class BetterStatsManager {
             });
         });
 
-        document.getElementById('refresh-all').addEventListener('click', () => {
+        // Refresh all button (doesn't exist on embed)
+        document.getElementById('refresh-all')?.addEventListener('click', () => {
             this.refreshAllMetrics();
         });
 
@@ -63,10 +61,24 @@ class BetterStatsManager {
                 this.exportMetric(metric, format);
             });
         });
+
+        // Embed buttons — update modal content before it opens
+        document.querySelectorAll('.bstats-embed-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const metric = e.currentTarget.dataset.metric;
+                this.openEmbedModal(metric);
+            });
+        });
+
+        // Copy-to-clipboard inside embed modals
+        document.querySelectorAll('.bstats-copy-embed').forEach(btn => {
+            btn.addEventListener('click', this.copyEmbedCode);
+        });
     }
 
     async loadAllMetrics() {
-        const containers = document.querySelectorAll('.metric-container');
+        const containers = this.container.querySelectorAll('.metric-container');
 
         for (const container of containers) {
             const metricName = container.dataset.metric;
@@ -278,6 +290,36 @@ class BetterStatsManager {
     exportMetric(metricName, format) {
         const url = `/better_stats/export/${metricName}?format=${format}`;
         window.open(url, '_blank');
+    }
+
+    openEmbedModal(metricName) {
+        const vizType = this.currentVizTypes[metricName] || 'chart';
+        const embedUrl = `${window.location.origin}/better_stats/embed/${metricName}?viz=${encodeURIComponent(vizType)}`;
+        const code = `<iframe src="${embedUrl}" width="600" height="400" frameborder="0" style="border:1px solid #e2e8f0;border-radius:8px"></iframe>`;
+
+        // Update the textarea and live preview iframe
+        const textarea = document.getElementById(`embedCode-${metricName}`);
+        if (textarea) textarea.value = code;
+
+        const preview = document.getElementById(`embedPreview-${metricName}`);
+        if (preview) preview.src = embedUrl;
+    }
+
+    copyEmbedCode(e) {
+        const targetId = e.currentTarget.dataset.target;
+        const textarea = document.getElementById(targetId);
+        if (!textarea) return;
+        textarea.select();
+        navigator.clipboard.writeText(textarea.value).then(() => {
+            const icon = e.currentTarget.querySelector('i');
+            if (icon) {
+                icon.className = 'fa fa-check text-success';
+                setTimeout(() => { icon.className = 'fa fa-clipboard'; }, 2000);
+            }
+        }).catch(() => {
+            // Fallback for older browsers
+            document.execCommand('copy');
+        });
     }
 
     updateActiveButton(metricName, vizType) {

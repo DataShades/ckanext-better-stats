@@ -22,7 +22,7 @@ class DatasetCountMetric(MetricBase):
         const.VisualizationType.TABLE,
     ]
     default_visualization: ClassVar[const.VisualizationType] = (
-        const.VisualizationType.CARD
+        const.VisualizationType.TABLE
     )
     icon: ClassVar[str] = "bi-database"
     color: ClassVar[str] = "#0d6efd"

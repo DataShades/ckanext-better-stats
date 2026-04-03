@@ -1,0 +1,42 @@
+{% macro embed_modal(metric) %}
+    <div class="modal fade" id="embedModal-{{ metric.name }}" tabindex="-1"
+        aria-labelledby="embedModalLabel-{{ metric.name }}" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="embedModalLabel-{{ metric.name }}">
+                        <i class="fa fa-code me-2"></i>{{ _('Embed') }} — {{ metric.title }}
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ _('Close') }}"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted small mb-2">
+                        {{ _('Copy the code below and paste it into your website or CMS.') }}
+                    </p>
+
+                    {# Preview iframe — src intentionally omitted; set lazily by openEmbedModal() #}
+                    <div class="ratio mb-3" style="--bs-aspect-ratio: 50%;">
+                        <iframe id="embedPreview-{{ metric.name }}"
+                            data-src="{{ h.bs_get_embed_url(metric.name) }}"
+                            frameborder="0"
+                            style="border:1px solid #e2e8f0;border-radius:6px;width:100%;height:100%"></iframe>
+                    </div>
+
+                    {# Code textarea #}
+                    <div class="input-group">
+                        <textarea id="embedCode-{{ metric.name }}" class="form-control font-monospace" rows="3" readonly
+                            aria-label="{{ _('Embed code') }}">{{ h.bs_get_embed_code(metric.name) }}</textarea>
+                        <button class="btn btn-light bstats-copy-embed" type="button"
+                            data-target="embedCode-{{ metric.name }}" title="{{ _('Copy to clipboard') }}">
+                            <i class="fa fa-clipboard"></i>
+                        </button>
+                    </div>
+
+                    <p class="form-text text-muted mt-1">
+                        {{ _('Visualization type follows the currently selected view on the dashboard.') }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endmacro %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{%- block styles %}
+    {{ super() }}
+    {% asset 'better_stats/better_stats-css' %}
+{% endblock %}
+
+{%- block scripts %}
+    {{ super() }}
+    {% asset 'better_stats/better_stats-js' %}
+{% endblock %}
+
+{%- block page %}
+    <div class="bstats-embed-page" data-module="bstats-stats-manager">
+        {#
+        Render the card snippet in embed mode:
+        - hides the Embed dropdown item (no recursive embedding)
+        - hides the modal (not needed here)
+        The snippet still produces a .metric-container[data-metric] div which is
+        all BetterStatsManager needs to fetch and render the visualization.
+        #}
+        {% snippet 'better_stats/metric_card.html', metric=metric, embed=True %}
+
+        <div class="bstats-embed-footer">
+            <a href="{{ h.url_for('better_stats.dashboard', _external=True) }}"
+            target="_blank" rel="noopener noreferrer">
+                {{ g.site_title }}
+            </a>
+        </div>
+    </div>
+{% endblock -%}

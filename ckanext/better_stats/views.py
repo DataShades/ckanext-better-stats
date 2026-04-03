@@ -90,6 +90,41 @@ def get_metric_data(metric_name: str) -> Response:
     )
 
 
+@bp.route("/embed/<metric_name>")
+def embed_metric(metric_name: str) -> Response:
+    """Return a self-contained HTML page for embedding in an iframe."""
+    metric = MetricRegistry.get_metric(metric_name)
+
+    print(metric)
+
+    if not metric or not tk.h.check_user_can_access_metric(metric):
+        tk.abort(404)
+
+    viz_type = tk.request.args.get("viz", metric.default_visualization.value)
+
+    resp = make_response(
+        tk.render(
+            "better_stats/embed.html",
+            {
+                "metric": metric,
+                "viz_type": viz_type,
+                "metric_api_url": tk.url_for(
+                    "better_stats.get_metric_data",
+                    metric_name=metric_name,
+                    _external=True,
+                ),
+            },
+        )
+    )
+
+    # Allow the page to be framed from any origin (operators can restrict
+    # this via a reverse-proxy CSP header if needed).
+    resp.headers["X-Frame-Options"] = "ALLOWALL"
+    resp.headers["Content-Security-Policy"] = "frame-ancestors *"
+
+    return resp
+
+
 @bp.route("/export/<metric_name>")
 def export_metric(metric_name: str) -> Response:
     """Export metric data"""
@@ -105,31 +140,32 @@ def export_metric(metric_name: str) -> Response:
     format_type = tk.request.args.get("format", "csv")
     data = metric.get_export_data()
 
-    try:
-        if format_type == "csv":
-            output = io.StringIO()
-            writer = csv.writer(output)
-            writer.writerow(data["headers"])
-            writer.writerows(data["rows"])
+    if format_type == "csv":
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow(data["headers"])
+        writer.writerows(data["rows"])
 
-            response = make_response(output.getvalue())
-            response.headers["Content-Type"] = "text/csv"
-            response.headers["Content-Disposition"] = (
-                f"attachment; filename={metric_name}.csv"
-            )
-        elif format_type == "json":
-            response = make_response(json.dumps(data, indent=2))
-            response.headers["Content-Type"] = "application/json"
-            response.headers["Content-Disposition"] = (
-                f"attachment; filename={metric_name}.json"
-            )
-
-    except Exception as e:
-        return make_response(jsonify({"error": str(e)}), 500)
+        response = make_response(output.getvalue())
+        response.headers["Content-Type"] = "text/csv"
+        response.headers["Content-Disposition"] = (
+            f"attachment; filename={metric_name}.csv"
+        )
+    elif format_type == "json":
+        response = make_response(json.dumps(data, indent=2))
+        response.headers["Content-Type"] = "application/json"
+        response.headers["Content-Disposition"] = (
+            f"attachment; filename={metric_name}.json"
+        )
+    else:
+        return make_response(
+            jsonify({"error": tk._("Unsupported format")}), 400
+        )
 
     return response
 
 
 bp.add_url_rule("/dashboard", view_func=BetterStatsDashboardView.as_view("dashboard"))
 bp.add_url_rule("/settings", view_func=BetterStatsSettingsView.as_view("settings"))
+bp.add_url_rule("/embed/<metric_name>", view_func=embed_metric)
 bp.add_url_rule("/export/<metric_name>", view_func=export_metric)

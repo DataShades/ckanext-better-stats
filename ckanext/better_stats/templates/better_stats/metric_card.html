@@ -1,8 +1,7 @@
-<div class="metric-container"
-     data-metric="{{ metric.name }}"
-     data-order="{{ metric.order }}"
-     data-grid-size="{{ metric.grid_size }}"
-     data-default-viz="{{ metric.default_visualization.value }}">
+{% from "better_stats/embed_modal.html" import embed_modal %}
+
+<div class="metric-container" data-metric="{{ metric.name }}" data-order="{{ metric.order }}"
+    data-grid-size="{{ metric.grid_size }}" data-default-viz="{{ metric.default_visualization.value }}">
 
     <div class="metric-card">
         <div class="metric-header">
@@ -10,10 +9,10 @@
             <div class="metric-actions">
                 <div class="btn-group">
                     {% for viz in metric.supported_visualizations %}
-                        <button class="btn btn-sm btn-light viz-toggle{% if viz.value == metric.default_visualization.value %} active{% endif %}"
-                                data-type="{{ viz.value }}"
-                                data-metric="{{ metric.name }}"
-                                title="{{ h.bs_get_viz_label(viz.value) }}">
+                        <button
+                            class="btn btn-sm btn-light viz-toggle{% if viz.value == metric.default_visualization.value %} active{% endif %}"
+                            data-type="{{ viz.value }}" data-metric="{{ metric.name }}"
+                            title="{{ h.bs_get_viz_label(viz.value) }}">
                             <i class="{{ h.bs_get_viz_icon(viz.value) }}"></i>
                         </button>
                     {% endfor %}
@@ -29,6 +28,19 @@
                                 data-format="csv">{{ _("CSV") }}</a></li>
                         <li><a href="#" class="dropdown-item export-btn" data-metric="{{ metric.name }}"
                                 data-format="json">{{ _("JSON") }}</a></li>
+
+                        {% if not embed %}
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+
+                            <li>
+                                <a href="#" class="dropdown-item bstats-embed-btn" data-metric="{{ metric.name }}"
+                                    data-bs-toggle="modal" data-bs-target="#embedModal-{{ metric.name }}">
+                                    <i class="fa fa-code"></i> {{ _('Embed') }}
+                                </a>
+                            </li>
+                        {% endif %}
                     </ul>
                 </div>
 
@@ -50,3 +62,7 @@
         </div>
     </div>
 </div>
+
+{% if not embed %}
+    {{ embed_modal(metric) }}
+{% endif %}
