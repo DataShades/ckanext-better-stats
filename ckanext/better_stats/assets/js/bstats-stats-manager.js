@@ -21,6 +21,7 @@ class BetterStatsManager {
     }
 
     init() {
+        this._registerChartBackground();
         this.bindEvents();
         this.loadAllMetrics();
     }
@@ -59,6 +60,14 @@ class BetterStatsManager {
                 const metric = e.currentTarget.dataset.metric;
                 const format = e.currentTarget.dataset.format;
                 this.exportMetric(metric, format);
+            });
+        });
+
+        // Export PNG buttons
+        document.querySelectorAll('.export-image-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.exportImage(e.currentTarget.dataset.metric);
             });
         });
 
@@ -160,6 +169,28 @@ class BetterStatsManager {
         } else {
             this.charts[data.name] = this._createSingleChart(container, chartData, data.name);
         }
+    }
+
+    /**
+     * Register a new chart background plugin that will draw a background
+     * on the canvas before drawing the chart.
+     *
+     * We need it to have a white background on the chart when the chart
+     * is being exported as an image. Otherwise, the background will be
+     * transparent.
+     */
+    _registerChartBackground() {
+        Chart.register({
+            id: 'chartjs-chart-background',
+            beforeDraw: (chart, args, opts) => {
+                const ctx = chart.canvas.getContext('2d');
+                ctx.save();
+                ctx.globalCompositeOperation = 'destination-over';
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, chart.width, chart.height);
+                ctx.restore();
+            }
+        })
     }
 
     _createSingleChart(container, chartData, key, title = null) {
@@ -290,6 +321,37 @@ class BetterStatsManager {
     exportMetric(metricName, format) {
         const url = `/better_stats/export/${metricName}?format=${format}`;
         window.open(url, '_blank');
+    }
+
+    async exportImage(metricName) {
+        const filename = `metric-${metricName}-${new Date().toISOString()}.png`;
+        const chart = this.charts[metricName];
+        const content = document.getElementById(`metric-${metricName}`);
+
+        if (!content) {
+            return;
+        }
+
+        if (chart && content.querySelector(".metric-chart")) {
+            const singleChart = Array.isArray(chart) ? chart[0] : chart;
+            const dataUrl = singleChart.toBase64Image('image/png', 1.0);
+            this._triggerDownload(dataUrl, filename);
+            return;
+        }
+
+        try {
+            const result = await snapdom(content, { scale: 2 });
+            await result.download({ format: 'png', filename: filename, backgroundColor: "#ffffff"});
+        } catch (err) {
+            console.error('PNG export failed:', err);
+        }
+    }
+
+    _triggerDownload(dataUrl, filename) {
+        const link = document.createElement('a');
+        link.href = dataUrl;
+        link.download = filename;
+        link.click();
     }
 
     openEmbedModal(metricName) {

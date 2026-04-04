@@ -24,16 +24,28 @@
                         <i class="fa fa-download"></i>
                     </button>
                     <ul class="dropdown-menu">
-                        <li><a href="#" class="dropdown-item export-btn" data-metric="{{ metric.name }}"
-                                data-format="csv">{{ _("CSV") }}</a></li>
-                        <li><a href="#" class="dropdown-item export-btn" data-metric="{{ metric.name }}"
-                                data-format="json">{{ _("JSON") }}</a></li>
+                        <li>
+                            <a href="#" class="dropdown-item export-btn" data-metric="{{ metric.name }}" data-format="csv">
+                                <i class="fa fa-file-csv"></i> {{ _("CSV") }}
+                            </a>
+                        </li>
+
+                        <li>
+                            <a href="#" class="dropdown-item export-btn" data-metric="{{ metric.name }}" data-format="json">
+                                <i class="fa fa-file-code"></i> {{ _("JSON") }}
+                            </a>
+                        </li>
+
+                        <li><hr class="dropdown-divider"></li>
+
+                        <li>
+                            <a href="#" class="dropdown-item export-image-btn" data-metric="{{ metric.name }}"
+                                title="{{ _('Download chart or card as a PNG image') }}">
+                                <i class="fa fa-image"></i> {{ _('Export PNG') }}
+                            </a>
+                        </li>
 
                         {% if not embed %}
-                            <li>
-                                <hr class="dropdown-divider">
-                            </li>
-
                             <li>
                                 <a href="#" class="dropdown-item bstats-embed-btn" data-metric="{{ metric.name }}"
                                     data-bs-toggle="modal" data-bs-target="#embedModal-{{ metric.name }}">
