@@ -147,7 +147,7 @@ class DiskUsageMetric(MetricBase):
         const.VisualizationType.TABLE,
     ]
     default_visualization: ClassVar[const.VisualizationType] = (
-        const.VisualizationType.CHART
+        const.VisualizationType.TABLE
     )
     icon: ClassVar[str] = "bi-hdd"
     color: ClassVar[str] = "#198754"

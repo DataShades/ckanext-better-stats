@@ -234,7 +234,7 @@ class BetterStatsManager {
         const tableData = data.data;
 
         const table = document.createElement('table');
-        table.className = 'metric-table';
+        table.className = 'metric-table table table-striped table-active';
 
         // Headers
         const thead = document.createElement('thead');
@@ -325,17 +325,9 @@ class BetterStatsManager {
 
     async exportImage(metricName) {
         const filename = `metric-${metricName}-${new Date().toISOString()}.png`;
-        const chart = this.charts[metricName];
         const content = document.getElementById(`metric-${metricName}`);
 
         if (!content) {
-            return;
-        }
-
-        if (chart && content.querySelector(".metric-chart")) {
-            const singleChart = Array.isArray(chart) ? chart[0] : chart;
-            const dataUrl = singleChart.toBase64Image('image/png', 1.0);
-            this._triggerDownload(dataUrl, filename);
             return;
         }
 

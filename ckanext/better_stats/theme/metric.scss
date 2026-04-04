@@ -41,6 +41,8 @@ $color-mute-grey: #666;
 
     .metric-content {
         min-height: 200px;
+        max-height: 265px;
+        overflow: auto;
         position: relative;
 
         .metric-chart {
@@ -80,7 +82,7 @@ $color-mute-grey: #666;
 }
 
 
-.metric-table {
+.metric-table.table {
     width: 100%;
     border-collapse: collapse;
 
@@ -94,6 +96,10 @@ $color-mute-grey: #666;
     th {
         background-color: #f5f5f5;
         font-weight: bold;
+    }
+
+    tbody{
+        border-top: unset;
     }
 }
 
