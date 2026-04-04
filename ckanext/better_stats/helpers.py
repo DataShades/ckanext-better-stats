@@ -47,3 +47,12 @@ def bs_get_embed_code(metric_name: str, width: str = "600", height: str = "400")
         f'style="border:1px solid #e2e8f0;border-radius:8px">'
         f"</iframe>"
     )
+
+
+def bs_format_bytes(num_bytes: float) -> str:
+    """Convert a byte count to a human-readable string (e.g. ``"1.23 GB"``)."""
+    for unit in ("B", "KB", "MB", "GB", "TB"):
+        if num_bytes < 1024.0:
+            return f"{num_bytes:.2f} {unit}"
+        num_bytes /= 1024.0
+    return f"{num_bytes:.2f} PB"

@@ -4,6 +4,8 @@ from typing import Any, ClassVar
 
 import psutil
 
+import ckan.plugins.toolkit as tk
+
 from ckanext.better_stats import const
 from ckanext.better_stats.metrics.base import MetricBase
 
@@ -29,12 +31,17 @@ class MemoryMetric(MetricBase):
             order=1,
         )
 
+    @classmethod
+    def get_access_level(cls) -> str:
+        """Return the required access level value for this metric."""
+        return const.AccessLevel.ADMIN.value
+
     def get_data(self) -> dict[str, Any]:
         mem = psutil.virtual_memory()
         return {
-            "total": _format_bytes(mem.total),
-            "used": _format_bytes(mem.used),
-            "free": _format_bytes(mem.available),
+            "total": tk.h.bs_format_bytes(mem.total),
+            "used": tk.h.bs_format_bytes(mem.used),
+            "free": tk.h.bs_format_bytes(mem.available),
         }
 
     def get_chart_data(self) -> dict[str, Any]:
@@ -87,6 +94,11 @@ class CPUMetric(MetricBase):
             order=2,
             cache_timeout=15,
         )
+
+    @classmethod
+    def get_access_level(cls) -> str:
+        """Return the required access level value for this metric."""
+        return const.AccessLevel.ADMIN.value
 
     def get_data(self) -> dict[str, Any]:
         return {
@@ -149,6 +161,11 @@ class DiskUsageMetric(MetricBase):
             order=3,
         )
 
+    @classmethod
+    def get_access_level(cls) -> str:
+        """Return the required access level value for this metric."""
+        return const.AccessLevel.ADMIN.value
+
     def get_data(self) -> list[dict[str, Any]]:
         result: list[dict[str, Any]] = []
         for part in psutil.disk_partitions():
@@ -161,9 +178,9 @@ class DiskUsageMetric(MetricBase):
                     "device": part.device,
                     "mountpoint": part.mountpoint,
                     "fstype": part.fstype,
-                    "total": _format_bytes(usage.total),
-                    "used": _format_bytes(usage.used),
-                    "free": _format_bytes(usage.free),
+                    "total": tk.h.bs_format_bytes(usage.total),
+                    "used": tk.h.bs_format_bytes(usage.used),
+                    "free": tk.h.bs_format_bytes(usage.free),
                     "percent": usage.percent,
                 }
             )
@@ -215,12 +232,3 @@ class DiskUsageMetric(MetricBase):
                 for d in data
             ],
         }
-
-
-def _format_bytes(num_bytes: float) -> str:
-    """Convert a byte count to a human-readable string (e.g. ``"1.23 GB"``)."""
-    for unit in ("B", "KB", "MB", "GB", "TB"):
-        if num_bytes < 1024.0:
-            return f"{num_bytes:.2f} {unit}"
-        num_bytes /= 1024.0
-    return f"{num_bytes:.2f} PB"
