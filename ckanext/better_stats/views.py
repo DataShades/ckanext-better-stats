@@ -18,7 +18,10 @@ bp = Blueprint("better_stats", __name__, url_prefix="/better_stats")
 
 class BetterStatsDashboardView(MethodView):
     def get(self) -> str | Response:
-        tk.check_access("better_stats_view_dashboard", {"user": tk.current_user.name})
+        try:
+            tk.check_access("better_stats_view_dashboard", {"user": tk.current_user.name})
+        except tk.NotAuthorized:
+            tk.abort(403, tk._("You must be logged in to visit this page"))
 
         metrics = MetricRegistry.get_enabled_metrics()
 
@@ -36,7 +39,11 @@ class BetterStatsDashboardView(MethodView):
 
 class BetterStatsSettingsView(MethodView):
     def get(self) -> str | Response:
-        tk.check_access("better_stats_view_settings", {})
+        try:
+            tk.check_access("better_stats_view_settings", {})
+        except tk.NotAuthorized:
+            tk.abort(403, tk._("Only sysadmins are allowed to visit this page"))
+
         return tk.render("better_stats/settings.html", extra_vars={})
 
 
