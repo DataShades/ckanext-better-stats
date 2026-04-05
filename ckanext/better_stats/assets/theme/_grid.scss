@@ -9,6 +9,7 @@
 
 .metric-container {
   position: relative;
+  height: 100%;
 
   &[data-grid-size="half"]  { grid-column: span 6; }
   &[data-grid-size="third"] { grid-column: span 4; }

@@ -36,6 +36,14 @@
   text-overflow: ellipsis;
 }
 
+.metric-control  {
+    color: #94a3b8;
+
+    .btn {
+        color: #94a3b8;
+    }
+}
+
 .metric-actions-btn {
   background: none;
   border: none;
@@ -87,6 +95,9 @@
   min-height: 140px;
   position: relative;
   overflow: auto;
+
+  max-height: 350px;
+  overflow-y: auto;
 }
 
 // Footer

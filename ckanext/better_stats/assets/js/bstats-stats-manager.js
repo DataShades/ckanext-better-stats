@@ -173,7 +173,8 @@ class BetterStatsManager {
                 const item = document.createElement("div");
                 item.className = "metric-chart-item";
                 wrapper.appendChild(item);
-                return this._createSingleChart(item, sub, `${data.name}-${i}`, sub.title);
+                const subChart = { ...sub, options: { maintainAspectRatio: true, ...sub.options } };
+                return this._createSingleChart(item, subChart, `${data.name}-${i}`, sub.title);
             });
         } else {
             this.charts[data.name] = this._createSingleChart(container, chartData, data.name);
