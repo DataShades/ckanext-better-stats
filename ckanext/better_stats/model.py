@@ -45,3 +45,8 @@ class MetricConfig(tk.BaseModel):
         model.Session.commit()
 
         return obj
+
+    @classmethod
+    def clear_all(cls) -> None:
+        model.Session.query(cls).delete()
+        model.Session.commit()

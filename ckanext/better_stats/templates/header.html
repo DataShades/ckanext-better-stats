@@ -1,7 +1,7 @@
 {% ckan_extends %}
 
 {% block header_account_logged %}
-    {% if h.check_access('package_create') %}
+    {% if h.check_access('better_stats_view_settings') %}
         <li class="dropdown bstats-dropdown">
             <a href="#" class="dropdown-toggle" data-bs-toggle="dropdown" title="{{ _('Better Stats') }}">
                 <i class="fa fa-chart-bar" aria-hidden="true"></i>

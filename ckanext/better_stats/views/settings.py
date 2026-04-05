@@ -25,15 +25,32 @@ def before_request() -> None:
 
 class BetterStatsSettingsView(MethodView):
     def get(self) -> str | Response:
-        try:
-            tk.check_access("better_stats_view_settings", {})
-        except tk.NotAuthorized:
-            tk.abort(403, tk._("Only sysadmins are allowed to visit this page"))
+        rows = []
 
-        return tk.render("better_stats/settings.html", extra_vars={})
+        for metric in MetricRegistry.get_all_metrics():
+            cfg = MetricConfig.for_metric(metric.name)
+            rows.append(
+                {
+                    "name": metric.name,
+                    "title": metric.title,
+                    "icon": metric.icon,
+                    "enabled": cfg.enabled if cfg else True,
+                    "order": cfg.order if cfg else metric.order,
+                    "grid_size": cfg.grid_size if cfg else metric.grid_size,
+                    "access_level": cfg.access_level if cfg else metric.access_level,
+                    "cache_timeout": cfg.cache_timeout if cfg else metric.cache_timeout,
+                }
+            )
+
+        rows.sort(key=lambda r: r["order"])
+
+        return tk.render(
+            "better_stats/settings.html",
+            extra_vars={"rows": rows},
+        )
 
 
-def update_metric_config(metric_name: str) -> Response:
+def update_metric_config(metric_name: str) -> Response:  # noqa: PLR0912, C901
     """AJAX: update persisted config for one metric."""
     metric = MetricRegistry.get_metric(metric_name)
 
@@ -62,18 +79,14 @@ def update_metric_config(metric_name: str) -> Response:
     if "grid_size" in payload:
         val = payload["grid_size"]
         if val not in [e.value for e in const.GridSize]:
-            errors.append(
-                f"'grid_size' must be one of {sorted([e.value for e in const.GridSize])}"
-            )
+            errors.append(f"'grid_size' must be one of {sorted([e.value for e in const.GridSize])}")
         else:
             updates["grid_size"] = val
 
     if "access_level" in payload:
         val = payload["access_level"]
         if val not in [e.value for e in const.AccessLevel]:
-            errors.append(
-                f"'access_level' must be one of {sorted([e.value for e in const.AccessLevel])}"
-            )
+            errors.append(f"'access_level' must be one of {sorted([e.value for e in const.AccessLevel])}")
         else:
             updates["access_level"] = val
 
@@ -128,13 +141,18 @@ def clear_metric_cache(metric_name: str) -> Response:
     return jsonify({"cleared": metric_name})
 
 
+def reset_all_configs() -> Response:
+    """Delete all persisted MetricConfig rows, reverting every metric to its defaults."""
+    MetricConfig.clear_all()
+    return jsonify({"reset": True})
+
+
 bp.add_url_rule("/settings", view_func=BetterStatsSettingsView.as_view("settings"))
-bp.add_url_rule(
-    "/settings/metric/<metric_name>", methods=["POST"], view_func=update_metric_config
-)
+bp.add_url_rule("/settings/metric/<metric_name>", methods=["POST"], view_func=update_metric_config)
 bp.add_url_rule("/settings/cache/clear", methods=["POST"], view_func=clear_all_caches)
 bp.add_url_rule(
     "/settings/cache/clear/<metric_name>",
     methods=["POST"],
     view_func=clear_metric_cache,
 )
+bp.add_url_rule("/settings/reset", methods=["POST"], view_func=reset_all_configs)

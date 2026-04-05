@@ -1,19 +1,19 @@
 import ckan.plugins.toolkit as tk
-from ckan import model
+from ckan import model, types
 
 from ckanext.better_stats import const
 
 
-def better_stats_view_dashboard(context, data_dict):
+def better_stats_view_dashboard(context: types.Context, data_dict: types.DataDict) -> types.AuthResult:
     return {"success": True}
 
 
-def better_stats_view_settings(context, data_dict):
+def better_stats_view_settings(context: types.Context, data_dict: types.DataDict) -> types.AuthResult:
     return {"success": False}
 
 
 @tk.auth_sysadmins_check
-def better_stats_export_metric(context, data_dict):
+def better_stats_export_metric(context: types.Context, data_dict: types.DataDict) -> types.AuthResult:
     """Allow export if the user can view the metric.
 
     Sysadmins always pass.  For everyone else the caller must supply

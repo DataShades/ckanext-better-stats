@@ -29,11 +29,7 @@ class BetterStatsDashboardView(MethodView):
 
         metrics = MetricRegistry.get_enabled_metrics()
 
-        accessible_metrics = []
-
-        for metric in metrics:
-            if tk.h.check_user_can_access_metric(metric):
-                accessible_metrics.append(metric)
+        accessible_metrics = [metric for metric in metrics if tk.h.check_user_can_access_metric(metric)]
 
         return tk.render(
             "better_stats/dashboard.html",
@@ -94,8 +90,6 @@ def get_metric_data(metric_name: str) -> Response:
 def embed_metric(metric_name: str) -> Response:
     """Return a self-contained HTML page for embedding in an iframe."""
     metric = MetricRegistry.get_metric(metric_name)
-
-    print(metric)
 
     if not metric or not tk.h.check_user_can_access_metric(metric):
         tk.abort(404)

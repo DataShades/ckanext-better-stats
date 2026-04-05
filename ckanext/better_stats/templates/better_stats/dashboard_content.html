@@ -7,11 +7,15 @@ metrics - A list of metrics to render on the dashboard.
 <div class="module">
     <div class="p-4">
         <div class="mb-4">
-            <div class="btn-group pull-right">
-                <button class="btn btn-default" id="refresh-all" title="{{ _('Refresh All') }}">
-                    <i class="fa fa-refresh"></i> {{ _('Refresh All') }}
-                </button>
-            </div>
+            <button class="btn btn-default" id="refresh-all" title="{{ _('Refresh All') }}">
+                <i class="fa fa-refresh"></i> {{ _('Refresh All') }}
+            </button>
+
+            {% if h.check_access('better_stats_view_settings') %}
+                <a href="{{ h.url_for('better_stats_settings.settings')}}" class="btn btn-default">
+                    <i class="fa fa-cog"></i> {{ _("Settings") }}
+                </a>
+            {% endif %}
         </div>
 
         <div class="stats-grid" id="stats-grid">

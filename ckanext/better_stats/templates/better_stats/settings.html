@@ -1,40 +1,138 @@
 {% extends "page.html" %}
 
-{% import 'macros/form.html' as form %}
-
-{% block title %}
-    {{ _("Better Stats - Settings") }}
-{% endblock %}
+{% block title %}{{ _("Settings") }} — {{ _("Better Stats") }}{% endblock %}
 
 {% block breadcrumb_content %}
     {{ super() }}
+    <li><a href="{{ h.url_for('better_stats.dashboard') }}">{{ _("Better Stats") }}</a></li>
     <li class="active"><a href="{{ h.url_for('better_stats_settings.settings') }}">{{ _("Settings") }}</a></li>
 {% endblock %}
 
-{% block secondary_content %}
-    <div class="module module-narrow module-shallow">
-        <h2 class="module-heading">
-            <i class="fa fa-info-circle"></i>
-            {{_("Better Stats - Settings") }}
-        </h2>
-        <div class="module-content">
-            <p>
-                {{ _("Configure Better Stats.") }}
-            </p>
+{% block secondary %}{% endblock %}
 
-            <code>
-                {{ _("This is a work in progress.") }}
-            </code>
+{% block primary %}
+<div class="primary col p-0" role="main">
+    {% block primary_content %}
+
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    <div class="module"
+         data-module="bstats-stats-settings"
+         data-module-clear-all-url="{{ h.url_for('better_stats_settings.clear_all_caches') }}"
+         data-module-reset-url="{{ h.url_for('better_stats_settings.reset_all_configs') }}">
+        <div class="p-4">
+
+            <div class="d-flex align-items-center justify-content-between mb-4">
+                <h1 class="h3 mb-0">{{ _("Better Stats — Settings") }}</h1>
+                <a href="{{ h.url_for('better_stats.dashboard') }}" class="btn btn-default">
+                    <i class="fa fa-arrow-left"></i> {{ _("Back to Dashboard") }}
+                </a>
+            </div>
+
+            {# ── Global cache controls ── #}
+            <div class="card mb-4">
+                <div class="card-body d-flex align-items-center gap-3 flex-wrap">
+                    <span class="fw-semibold">{{ _("Cache") }}</span>
+                    <button type="button" class="btn btn-outline-danger ms-auto" id="btn-clear-all-caches">
+                        <i class="fa fa-trash"></i> {{ _("Clear All Caches") }}
+                    </button>
+                </div>
+            </div>
+
+            {# ── Metrics table ── #}
+            <div class="card">
+                <div class="card-body p-0">
+                    <table class="table table-hover align-middle mb-0 table-header" id="metrics-table">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width:2rem"></th>
+                                <th>{{ _("Metric") }}</th>
+                                <th style="width:6rem">{{ _("Enabled") }}</th>
+                                <th style="width:8rem">{{ _("Grid") }}</th>
+                                <th style="width:10rem">{{ _("Access") }}</th>
+                                <th style="width:8rem">{{ _("Cache TTL") }}</th>
+                                <th style="width:7rem"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="metrics-tbody" class="border-top-0">
+                            {% for row in rows %}
+                            <tr class="metric-row"
+                                data-metric="{{ row.name }}"
+                                data-update-url="{{ h.url_for('better_stats_settings.update_metric_config', metric_name=row.name) }}"
+                                data-cache-url="{{ h.url_for('better_stats_settings.clear_metric_cache', metric_name=row.name) }}">
+
+                                <td class="sortable-handle text-muted" style="cursor:grab" title="{{ _('Drag to reorder') }}">
+                                    <i class="fa fa-bars"></i>
+                                </td>
+
+                                <td>
+                                    <i class="{{ row.icon }} me-1 text-muted"></i>
+                                    <span class="fw-medium">{{ row.title }}</span>
+                                    <small class="text-muted ms-1">({{ row.name }})</small>
+                                </td>
+
+                                <td>
+                                    <div class="form-check form-switch mb-0">
+                                        <input class="form-check-input metric-field"
+                                            type="checkbox"
+                                            data-field="enabled"
+                                            {% if row.enabled %}checked{% endif %}>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <select class="form-select form-select-sm metric-field" data-field="grid_size">
+                                        <option value="half" {% if row.grid_size == 'half'  %}selected{% endif %}>{{ _("Half") }}</option>
+                                        <option value="third" {% if row.grid_size == 'third' %}selected{% endif %}>{{ _("Third") }}</option>
+                                        <option value="full" {% if row.grid_size == 'full'  %}selected{% endif %}>{{ _("Full") }}</option>
+                                    </select>
+                                </td>
+
+                                <td>
+                                    <select class="form-select form-select-sm metric-field" data-field="access_level">
+                                        <option value="public" {% if row.access_level == 'public' %}selected{% endif %}>{{ _("Public") }}</option>
+                                        <option value="authenticated" {% if row.access_level == 'authenticated' %}selected{% endif %}>{{ _("Authenticated") }}</option>
+                                        <option value="admin" {% if row.access_level == 'admin' %}selected{% endif %}>{{ _("Admin") }}</option>
+                                    </select>
+                                </td>
+
+                                <td>
+                                    <input type="number"
+                                        class="form-control form-control-sm metric-field"
+                                        data-field="cache_timeout"
+                                        value="{{ row.cache_timeout }}"
+                                        min="0" step="1"
+                                        style="width:6rem">
+                                </td>
+
+                                <td class="text-end">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary btn-clear-cache"
+                                        title="{{ _('Clear cache for this metric') }}">
+                                        <i class="fa fa-refresh"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {# ── Footer actions ── #}
+            <div class="d-flex justify-content-between mt-3">
+                <button type="button" class="btn btn-outline-danger btn-sm" id="btn-reset-all">
+                    <i class="fa fa-undo"></i> {{ _("Reset All to Defaults") }}
+                </button>
+                <span class="text-muted small align-self-center" id="autosave-status"></span>
+            </div>
+
         </div>
     </div>
-{% endblock %}
-
-{% block primary_content %}
-
+    {% endblock %}
+</div>
 {% endblock %}
 
 {%- block scripts %}
-    {% asset 'better_stats/better_stats-js' %}
-
+    {% asset 'better_stats/better_stats-settings-js' %}
     {{ super() }}
 {% endblock %}
