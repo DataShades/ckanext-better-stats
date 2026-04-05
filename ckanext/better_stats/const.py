@@ -22,4 +22,3 @@ class ExportFormat(Enum):
 class GridSize(Enum):
     FULL = "full"
     HALF = "half"
-    THIRD = "third"

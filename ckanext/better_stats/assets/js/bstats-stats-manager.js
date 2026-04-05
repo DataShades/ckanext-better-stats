@@ -218,8 +218,7 @@ class BetterStatsManager {
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: true,
-                aspectRatio: 2,
+                maintainAspectRatio: false,
                 plugins: {
                     legend: {
                         display: chartData.type === 'pie' || chartData.type === 'doughnut',

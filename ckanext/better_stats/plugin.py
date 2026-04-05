@@ -1,7 +1,7 @@
 from ckan import plugins as p
 from ckan import types
 from ckan.common import CKANConfig
-from ckan.plugins import tk
+from ckan.plugins import toolkit as tk
 
 
 @tk.blanket.blueprints

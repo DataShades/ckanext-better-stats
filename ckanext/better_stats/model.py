@@ -20,7 +20,7 @@ class MetricConfig(tk.BaseModel):
     metric_name = Column(String(100), unique=True, nullable=False, index=True)
     enabled = Column(Boolean, default=True, nullable=False)
     order = Column(Integer, default=100)
-    grid_size = Column(String(10), default="half")  # "half" | "full" | "third"
+    grid_size = Column(String(10), default="half")
     access_level = Column(String(20), default="public")
     cache_timeout = Column(Integer, default=3600)
     extras = Column(MutableDict.as_mutable(JSONB), default={})
