@@ -17,3 +17,9 @@ class ExportFormat(Enum):
     CSV = "csv"
     JSON = "json"
     IMAGE = "image"
+
+
+class GridSize(Enum):
+    FULL = "full"
+    HALF = "half"
+    THIRD = "third"

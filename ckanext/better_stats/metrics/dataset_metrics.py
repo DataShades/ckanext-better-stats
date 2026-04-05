@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from typing import Any, ClassVar
 
-from ckanext.better_stats import const
-from ckanext.better_stats.metrics.base import MetricBase
+from sqlalchemy import func
 
 import ckan.plugins.toolkit as tk
 from ckan import model
-from sqlalchemy import func
+
+from ckanext.better_stats import const
+from ckanext.better_stats.metrics.base import MetricBase
 
 
 class DatasetCountMetric(MetricBase):

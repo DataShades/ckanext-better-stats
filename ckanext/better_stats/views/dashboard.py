@@ -4,16 +4,17 @@ import json
 import logging
 from datetime import UTC, datetime
 
+from flask import Blueprint, Response, jsonify, make_response
+from flask.views import MethodView
+
+import ckan.plugins.toolkit as tk
+
 from ckanext.better_stats import const
 from ckanext.better_stats.metrics.base import (
     MetricBase,
     MetricRegistry,
     before_metric_render_signal,
 )
-
-import ckan.plugins.toolkit as tk
-from flask import Blueprint, Response, jsonify, make_response
-from flask.views import MethodView
 
 log = logging.getLogger(__name__)
 bp = Blueprint("better_stats", __name__, url_prefix="/better_stats")
@@ -38,16 +39,6 @@ class BetterStatsDashboardView(MethodView):
             "better_stats/dashboard.html",
             extra_vars={"accessible_metrics": accessible_metrics},
         )
-
-
-class BetterStatsSettingsView(MethodView):
-    def get(self) -> str | Response:
-        try:
-            tk.check_access("better_stats_view_settings", {})
-        except tk.NotAuthorized:
-            tk.abort(403, tk._("Only sysadmins are allowed to visit this page"))
-
-        return tk.render("better_stats/settings.html", extra_vars={})
 
 
 @bp.route("/metric/<metric_name>")
@@ -159,9 +150,7 @@ def export_metric(metric_name: str) -> Response:
     if format_type not in metric.supported_export_formats:
         return make_response(jsonify({"error": tk._("Unsupported format")}), 400)
 
-    return MetricExporter(
-        metric, f"{metric_name}_{datetime.now(UTC).isoformat()}", format_type
-    ).export_metric()
+    return MetricExporter(metric, f"{metric_name}_{datetime.now(UTC).isoformat()}", format_type).export_metric()
 
 
 class MetricExporter:
@@ -206,6 +195,5 @@ class MetricExporter:
 
 
 bp.add_url_rule("/dashboard", view_func=BetterStatsDashboardView.as_view("dashboard"))
-bp.add_url_rule("/settings", view_func=BetterStatsSettingsView.as_view("settings"))
 bp.add_url_rule("/embed/<metric_name>", view_func=embed_metric)
 bp.add_url_rule("/export/<metric_name>", view_func=export_metric)

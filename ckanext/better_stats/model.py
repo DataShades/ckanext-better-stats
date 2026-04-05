@@ -1,11 +1,12 @@
 import uuid
 from datetime import UTC, datetime
 
-import ckan.plugins.toolkit as tk
-from ckan import model
 from sqlalchemy import Boolean, Column, DateTime, Integer, String
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.mutable import MutableDict
+
+import ckan.plugins.toolkit as tk
+from ckan import model
 
 
 def _current_datetime():

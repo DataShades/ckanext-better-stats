@@ -1,6 +1,6 @@
-from ckanext.better_stats import const
-
 import ckan.plugins.toolkit as tk
+
+from ckanext.better_stats import const
 
 
 def check_user_can_access_metric(metric):

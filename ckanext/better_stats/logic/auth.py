@@ -1,7 +1,7 @@
-from ckanext.better_stats import const
-
 import ckan.plugins.toolkit as tk
 from ckan import model
+
+from ckanext.better_stats import const
 
 
 def better_stats_view_dashboard(context, data_dict):

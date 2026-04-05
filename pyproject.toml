@@ -110,3 +110,8 @@ section-order = [
               "self",
               "local-folder",
 ]
+
+[tool.ruff.lint.isort.sections]
+ckan = ["ckan"]
+ckanext = ["ckanext"]
+self = ["ckanext.better_stats"]

@@ -4,10 +4,10 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable
 from typing import Any, ClassVar
 
+import ckan.plugins.toolkit as tk
+
 from ckanext.better_stats import cache, const
 from ckanext.better_stats.model import MetricConfig
-
-import ckan.plugins.toolkit as tk
 
 
 class MetricBase(ABC):

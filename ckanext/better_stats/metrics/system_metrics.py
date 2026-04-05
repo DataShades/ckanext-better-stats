@@ -2,11 +2,12 @@ from __future__ import annotations
 
 from typing import Any, ClassVar
 
-from ckanext.better_stats import const
-from ckanext.better_stats.metrics.base import MetricBase
+import psutil
 
 import ckan.plugins.toolkit as tk
-import psutil
+
+from ckanext.better_stats import const
+from ckanext.better_stats.metrics.base import MetricBase
 
 
 class MemoryMetric(MetricBase):
