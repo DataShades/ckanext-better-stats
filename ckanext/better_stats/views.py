@@ -1,16 +1,19 @@
-import logging
-import json
 import csv
 import io
-
-from flask import Blueprint, Response, jsonify, make_response
-from flask.views import MethodView
-
-import ckan.plugins.toolkit as tk
+import json
+import logging
+from datetime import UTC, datetime
 
 from ckanext.better_stats import const
-from ckanext.better_stats.metrics.base import MetricRegistry, before_metric_render_signal
+from ckanext.better_stats.metrics.base import (
+    MetricBase,
+    MetricRegistry,
+    before_metric_render_signal,
+)
 
+import ckan.plugins.toolkit as tk
+from flask import Blueprint, Response, jsonify, make_response
+from flask.views import MethodView
 
 log = logging.getLogger(__name__)
 bp = Blueprint("better_stats", __name__, url_prefix="/better_stats")
@@ -53,9 +56,7 @@ def get_metric_data(metric_name: str) -> Response:
     metric = MetricRegistry.get_metric(metric_name)
 
     if not metric or not tk.h.check_user_can_access_metric(metric):
-        return make_response(
-            jsonify({"error": "Metric not found or not accessible"}), 404
-        )
+        return make_response(jsonify({"error": "Metric not found or not accessible"}), 404)
 
     requested = tk.request.args.get("type", metric.default_visualization.value)
     refresh = tk.asbool(tk.request.args.get("refresh", False))
@@ -77,7 +78,9 @@ def get_metric_data(metric_name: str) -> Response:
     except Exception as e:
         return make_response(jsonify({"error": str(e)}), 500)
 
-    for _, result in before_metric_render_signal.send(None, context={"metric": metric, "viz_type": viz_type.value, "data": data}):
+    for _, result in before_metric_render_signal.send(
+        None, context={"metric": metric, "viz_type": viz_type.value, "data": data}
+    ):
         if result is not None:
             data = result
             break
@@ -89,10 +92,9 @@ def get_metric_data(metric_name: str) -> Response:
             "description": metric.description,
             "data": data,
             "type": viz_type.value,
-            "supported_visualizations": [
-                v.value for v in metric.supported_visualizations
-            ],
+            "supported_visualizations": [v.value for v in metric.supported_visualizations],
             "default_visualization": metric.default_visualization.value,
+            "supported_export_formats": list(metric.supported_export_formats),
         }
     )
 
@@ -134,42 +136,73 @@ def embed_metric(metric_name: str) -> Response:
 
 @bp.route("/export/<metric_name>")
 def export_metric(metric_name: str) -> Response:
-    """Export metric data"""
-
+    """Export metric data."""
     metric = MetricRegistry.get_metric(metric_name)
 
     if not metric:
         return make_response(jsonify({"error": tk._("Metric not found")}), 404)
 
-    if not tk.h.check_user_can_access_metric(metric) or not metric.can_export():
+    try:
+        tk.check_access(
+            "better_stats_export_metric",
+            {"user": tk.current_user.name},
+            {"metric": metric},
+        )
+    except tk.NotAuthorized:
         return make_response(jsonify({"error": tk._("Export not available")}), 403)
 
-    format_type = tk.request.args.get("format", "csv")
-    data = metric.get_export_data()
+    if not metric.can_export():
+        return make_response(jsonify({"error": tk._("Export not available")}), 403)
 
-    if format_type == "csv":
+    format_type = tk.request.args.get("format", const.ExportFormat.CSV.value)
+
+    if format_type not in metric.supported_export_formats:
+        return make_response(jsonify({"error": tk._("Unsupported format")}), 400)
+
+    return MetricExporter(
+        metric, f"{metric_name}_{datetime.now(UTC).isoformat()}", format_type
+    ).export_metric()
+
+
+class MetricExporter:
+    def __init__(self, metric: MetricBase, filename: str, format_type: str) -> None:
+        self.metric = metric
+        self.filename = filename
+        self.format_type = format_type
+        self.data = metric.get_export_data()
+
+    def export_metric(self) -> Response:
+        if self.format_type == const.ExportFormat.CSV.value:
+            return self._export_as_csv()
+        if self.format_type == const.ExportFormat.JSON.value:
+            return self._export_as_json()
+        return make_response(jsonify({"error": tk._("Unsupported format")}), 400)
+
+    def _export_as_csv(self) -> Response:
         output = io.StringIO()
         writer = csv.writer(output)
-        writer.writerow(data["headers"])
-        writer.writerows(data["rows"])
+        writer.writerow(self.data.get("headers", []))
+        writer.writerows(self.data.get("rows", []))
 
         response = make_response(output.getvalue())
         response.headers["Content-Type"] = "text/csv"
-        response.headers["Content-Disposition"] = (
-            f"attachment; filename={metric_name}.csv"
-        )
-    elif format_type == "json":
-        response = make_response(json.dumps(data, indent=2))
-        response.headers["Content-Type"] = "application/json"
-        response.headers["Content-Disposition"] = (
-            f"attachment; filename={metric_name}.json"
-        )
-    else:
-        return make_response(
-            jsonify({"error": tk._("Unsupported format")}), 400
-        )
+        response.headers["Content-Disposition"] = f"attachment; filename={self.filename}.csv"
 
-    return response
+        return response
+
+    def _export_as_json(self) -> Response:
+        envelope = {
+            "metric": self.metric.name,
+            "title": self.metric.title,
+            "generated_at": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "site_url": tk.config.get("ckan.site_url", ""),
+            "data": self.data,
+        }
+        response = make_response(json.dumps(envelope, indent=2))
+        response.headers["Content-Type"] = "application/json"
+        response.headers["Content-Disposition"] = f"attachment; filename={self.filename}.json"
+
+        return response
 
 
 bp.add_url_rule("/dashboard", view_func=BetterStatsDashboardView.as_view("dashboard"))

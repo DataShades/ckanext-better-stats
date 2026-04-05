@@ -2,12 +2,11 @@ from __future__ import annotations
 
 from typing import Any, ClassVar
 
-import psutil
-
-import ckan.plugins.toolkit as tk
-
 from ckanext.better_stats import const
 from ckanext.better_stats.metrics.base import MetricBase
+
+import ckan.plugins.toolkit as tk
+import psutil
 
 
 class MemoryMetric(MetricBase):
@@ -17,9 +16,7 @@ class MemoryMetric(MetricBase):
         const.VisualizationType.CHART,
         const.VisualizationType.TABLE,
     ]
-    default_visualization: ClassVar[const.VisualizationType] = (
-        const.VisualizationType.CHART
-    )
+    default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.CHART
     icon: ClassVar[str] = "bi-memory"
     color: ClassVar[str] = "#198754"
 
@@ -29,12 +26,8 @@ class MemoryMetric(MetricBase):
             title="System Memory Usage",
             description="Memory usage of the system",
             order=1,
+            access_level=const.AccessLevel.ADMIN.value,
         )
-
-    @classmethod
-    def get_access_level(cls) -> str:
-        """Return the required access level value for this metric."""
-        return const.AccessLevel.ADMIN.value
 
     def get_data(self) -> dict[str, Any]:
         mem = psutil.virtual_memory()
@@ -80,9 +73,7 @@ class CPUMetric(MetricBase):
         const.VisualizationType.CHART,
         const.VisualizationType.TABLE,
     ]
-    default_visualization: ClassVar[const.VisualizationType] = (
-        const.VisualizationType.CHART
-    )
+    default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.CHART
     icon: ClassVar[str] = "bi-cpu"
     color: ClassVar[str] = "#198754"
 
@@ -93,12 +84,8 @@ class CPUMetric(MetricBase):
             description="Current CPU usage percentage",
             order=2,
             cache_timeout=15,
+            access_level=const.AccessLevel.ADMIN.value,
         )
-
-    @classmethod
-    def get_access_level(cls) -> str:
-        """Return the required access level value for this metric."""
-        return const.AccessLevel.ADMIN.value
 
     def get_data(self) -> dict[str, Any]:
         return {
@@ -130,9 +117,7 @@ class CPUMetric(MetricBase):
     def get_table_data(self) -> dict[str, Any]:
         data = self.get_data()
         rows: list[list[str]] = [["Total", f"{data['total']}%"]]
-        rows.extend(
-            [f"Core {i}", f"{core}%"] for i, core in enumerate(data["per_core"])
-        )
+        rows.extend([f"Core {i}", f"{core}%"] for i, core in enumerate(data["per_core"]))
         return {
             "headers": ["Metric", "Value"],
             "rows": rows,
@@ -146,9 +131,7 @@ class DiskUsageMetric(MetricBase):
         const.VisualizationType.CHART,
         const.VisualizationType.TABLE,
     ]
-    default_visualization: ClassVar[const.VisualizationType] = (
-        const.VisualizationType.TABLE
-    )
+    default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.TABLE
     icon: ClassVar[str] = "bi-hdd"
     color: ClassVar[str] = "#198754"
 
@@ -159,12 +142,8 @@ class DiskUsageMetric(MetricBase):
             description="Disk usage of each partition",
             grid_size="full",
             order=3,
+            access_level=const.AccessLevel.ADMIN.value,
         )
-
-    @classmethod
-    def get_access_level(cls) -> str:
-        """Return the required access level value for this metric."""
-        return const.AccessLevel.ADMIN.value
 
     def get_data(self) -> list[dict[str, Any]]:
         result: list[dict[str, Any]] = []
@@ -216,8 +195,13 @@ class DiskUsageMetric(MetricBase):
         data = self.get_data()
         return {
             "headers": [
-                "Device", "Mountpoint", "Type",
-                "Total", "Used", "Free", "Usage %",
+                "Device",
+                "Mountpoint",
+                "Type",
+                "Total",
+                "Used",
+                "Free",
+                "Usage %",
             ],
             "rows": [
                 [

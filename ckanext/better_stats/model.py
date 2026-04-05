@@ -1,16 +1,15 @@
-from datetime import datetime, timezone
 import uuid
+from datetime import UTC, datetime
 
-from sqlalchemy import Column, String, Boolean, Integer, DateTime
+import ckan.plugins.toolkit as tk
+from ckan import model
+from sqlalchemy import Boolean, Column, DateTime, Integer, String
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.mutable import MutableDict
 
-import ckan.model as model
-import ckan.plugins.toolkit as tk
-
 
 def _current_datetime():
-    return datetime.now(tz=timezone.utc)
+    return datetime.now(tz=UTC)
 
 
 class MetricConfig(tk.BaseModel):

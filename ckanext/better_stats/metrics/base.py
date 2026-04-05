@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Callable, ClassVar
+from collections.abc import Callable
+from typing import Any, ClassVar
+
+from ckanext.better_stats import cache, const
+from ckanext.better_stats.model import MetricConfig
 
 import ckan.plugins.toolkit as tk
-
-from ckanext.better_stats import const, cache
 
 
 class MetricBase(ABC):
@@ -21,12 +23,8 @@ class MetricBase(ABC):
     listed in :attr:`supported_visualizations`.
     """
 
-    supported_visualizations: ClassVar[list[const.VisualizationType]] = [
-        const.VisualizationType.CHART
-    ]
-    default_visualization: ClassVar[const.VisualizationType] = (
-        const.VisualizationType.CHART
-    )
+    supported_visualizations: ClassVar[list[const.VisualizationType]] = [const.VisualizationType.CHART]
+    default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.CHART
     icon: ClassVar[str] = "bi-bar-chart"
     color: ClassVar[str] = "#0d6efd"
     supported_export_formats: ClassVar[list[str]] = ["csv", "json"]
@@ -39,6 +37,7 @@ class MetricBase(ABC):
         grid_size: str = "half",
         order: int = 100,
         cache_timeout: int = 60,
+        access_level: str = const.AccessLevel.PUBLIC.value,
     ) -> None:
         self.name = name
         self.title = title
@@ -46,6 +45,7 @@ class MetricBase(ABC):
         self.grid_size = grid_size
         self.order = order
         self.cache_timeout = cache_timeout
+        self.access_level = access_level
 
     @property
     def cache_key(self) -> str:
@@ -78,9 +78,7 @@ class MetricBase(ABC):
             return {"value": data, "label": self.title}
         return None
 
-    def _compute_viz_data(
-        self, viz_type: const.VisualizationType
-    ) -> dict[str, Any] | None:
+    def _compute_viz_data(self, viz_type: const.VisualizationType) -> dict[str, Any] | None:
         """Dispatch to the appropriate visualization method without caching.
 
         Returns ``None`` for unknown or unsupported visualization types.
@@ -99,7 +97,6 @@ class MetricBase(ABC):
         On a cache miss the result of :meth:`_compute_viz_data` is stored
         before being returned.  Returns ``None`` for unsupported types.
         """
-
         key = f"{self.cache_key}:{viz_type.value}"
 
         if cached := cache.cache_get(key):
@@ -114,9 +111,7 @@ class MetricBase(ABC):
         """Return ``True`` if this metric supports *viz_type*."""
         return viz_type in self.supported_visualizations
 
-    def get_cached_data(
-        self, viz_type: const.VisualizationType, refresh: bool = False
-    ) -> dict[str, Any] | None:
+    def get_cached_data(self, viz_type: const.VisualizationType, refresh: bool = False) -> dict[str, Any] | None:
         """Return visualization data for *viz_type*, with optional forced refresh.
 
         When *refresh* is ``True`` the cached entry for *viz_type* is deleted
@@ -147,11 +142,6 @@ class MetricBase(ABC):
         """Return data in export format (defaults to table data)."""
         return self.get_table_data() or {}
 
-    @classmethod
-    def get_access_level(cls) -> str:
-        """Return the required access level value for this metric."""
-        return const.AccessLevel.PUBLIC.value
-
     def to_dict(self) -> dict[str, Any]:
         """Return a JSON-serialisable dict of metric metadata."""
         return {
@@ -162,12 +152,10 @@ class MetricBase(ABC):
             "color": self.color,
             "grid_size": self.grid_size,
             "order": self.order,
-            "supported_visualizations": [
-                v.value for v in self.supported_visualizations
-            ],
+            "supported_visualizations": [v.value for v in self.supported_visualizations],
             "default_visualization": self.default_visualization.value,
             "supported_export_formats": list(self.supported_export_formats),
-            "access_level": self.get_access_level(),
+            "access_level": self.access_level,
         }
 
 
@@ -234,13 +222,37 @@ class MetricRegistry:
 
     @classmethod
     def get_enabled_metrics(cls) -> list[MetricBase]:
-        """Return enabled metrics sorted by order.
+        """Return enabled metrics sorted by stored order.
 
-        Filtering against :class:`~ckanext.better_stats.model.MetricConfig`
-        will be wired in Phase 1.4; for now this delegates to
-        :meth:`get_all_metrics`.
+        Queries :class:`~ckanext.better_stats.model.MetricConfig` for each
+        registered metric and applies stored overrides (``enabled``, ``order``,
+        ``grid_size``, ``cache_timeout``, ``access_level``) to the metric
+        instance before returning.  Metrics with ``enabled=False`` are
+        excluded.  Falls back to :meth:`get_all_metrics` if the DB is
+        unavailable (e.g. during tests without a DB fixture).
         """
-        return cls.get_all_metrics()
+        cls._ensure_loaded()
+
+        try:
+            results: list[MetricBase] = []
+            for name, factory in cls.METRICS.items():
+                metric = factory()
+                cfg = MetricConfig.for_metric(name)
+
+                if cfg is not None:
+                    if not cfg.enabled:
+                        continue
+
+                    metric.order = cfg.order
+                    metric.grid_size = cfg.grid_size
+                    metric.cache_timeout = cfg.cache_timeout
+                    metric.access_level = cfg.access_level
+
+                results.append(metric)
+
+            return sorted(results, key=lambda m: m.order)
+        except Exception:  # DB not ready or table missing — degrade gracefully
+            return cls.get_all_metrics()
 
     @classmethod
     def reset(cls) -> None:

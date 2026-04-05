@@ -2,13 +2,12 @@ from __future__ import annotations
 
 from typing import Any, ClassVar
 
-from sqlalchemy import func
-
-import ckan.model as model
-import ckan.plugins.toolkit as tk
-
 from ckanext.better_stats import const
 from ckanext.better_stats.metrics.base import MetricBase
+
+import ckan.plugins.toolkit as tk
+from ckan import model
+from sqlalchemy import func
 
 
 class DatasetCountMetric(MetricBase):
@@ -21,11 +20,10 @@ class DatasetCountMetric(MetricBase):
         const.VisualizationType.CARD,
         const.VisualizationType.TABLE,
     ]
-    default_visualization: ClassVar[const.VisualizationType] = (
-        const.VisualizationType.TABLE
-    )
+    default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.TABLE
     icon: ClassVar[str] = "bi-database"
     color: ClassVar[str] = "#0d6efd"
+    supported_export_formats = ["csv"]
 
     def __init__(self) -> None:
         super().__init__(
@@ -59,9 +57,7 @@ class DatasetsByOrganizationMetric(MetricBase):
         const.VisualizationType.CHART,
         const.VisualizationType.TABLE,
     ]
-    default_visualization: ClassVar[const.VisualizationType] = (
-        const.VisualizationType.CHART
-    )
+    default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.CHART
     icon: ClassVar[str] = "bi-building"
     color: ClassVar[str] = "#0d6efd"
 
@@ -115,9 +111,7 @@ class DatasetCreationHistoryMetric(MetricBase):
         const.VisualizationType.CHART,
         const.VisualizationType.TABLE,
     ]
-    default_visualization: ClassVar[const.VisualizationType] = (
-        const.VisualizationType.CHART
-    )
+    default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.CHART
     icon: ClassVar[str] = "bi-calendar-range"
     color: ClassVar[str] = "#0d6efd"
 
@@ -143,10 +137,7 @@ class DatasetCreationHistoryMetric(MetricBase):
             .order_by("day")
             .all()
         )
-        return [
-            {"day": row.day.strftime("%Y-%m-%d"), "count": row.count}
-            for row in rows
-        ]
+        return [{"day": row.day.strftime("%Y-%m-%d"), "count": row.count} for row in rows]
 
     def get_chart_data(self) -> dict[str, Any]:
         data = self.get_data()

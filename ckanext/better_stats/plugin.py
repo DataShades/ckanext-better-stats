@@ -1,6 +1,5 @@
-import ckan.plugins as plugins
-import ckan.plugins.toolkit as toolkit
-from ckan import types
+from ckan import plugins, types
+from ckan.plugins import toolkit
 
 
 @toolkit.blanket.blueprints
@@ -28,9 +27,9 @@ class BetterStatsPlugin(plugins.SingletonPlugin):
 
     @staticmethod
     def register_metrics(sender: None):
-        from ckanext.better_stats.metrics.base import MetricRegistry
         from ckanext.better_stats.metrics import dataset_metrics as ds_metrics
         from ckanext.better_stats.metrics import system_metrics as sys_metrics
+        from ckanext.better_stats.metrics.base import MetricRegistry
 
         # Register metrics
         MetricRegistry.register("dataset_count", ds_metrics.DatasetCountMetric)

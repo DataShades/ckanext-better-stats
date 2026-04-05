@@ -24,17 +24,15 @@
                         <i class="fa fa-download"></i>
                     </button>
                     <ul class="dropdown-menu">
-                        <li>
-                            <a href="#" class="dropdown-item export-btn" data-metric="{{ metric.name }}" data-format="csv">
-                                <i class="fa fa-file-csv"></i> {{ _("CSV") }}
-                            </a>
-                        </li>
-
-                        <li>
-                            <a href="#" class="dropdown-item export-btn" data-metric="{{ metric.name }}" data-format="json">
-                                <i class="fa fa-file-code"></i> {{ _("JSON") }}
-                            </a>
-                        </li>
+                        {% for fmt in ("csv", "json") %}
+                            {% if fmt in metric.supported_export_formats %}
+                                <li>
+                                    <a href="#" class="dropdown-item export-btn" data-metric="{{ metric.name }}" data-format="{{ fmt }}">
+                                        <i class="fa fa-file-csv"></i> {{ fmt | upper }}
+                                    </a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
 
                         <li><hr class="dropdown-divider"></li>
 

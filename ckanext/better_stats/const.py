@@ -11,3 +11,9 @@ class VisualizationType(Enum):
     CHART = "chart"
     TABLE = "table"
     CARD = "card"
+
+
+class ExportFormat(Enum):
+    CSV = "csv"
+    JSON = "json"
+    IMAGE = "image"

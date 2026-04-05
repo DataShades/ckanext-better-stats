@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from setuptools import setup
 
 # Note: Do not add new arguments to setup(), instead add setuptools
