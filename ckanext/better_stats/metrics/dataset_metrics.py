@@ -22,7 +22,7 @@ class DatasetCountMetric(MetricBase):
         const.VisualizationType.TABLE,
     ]
     default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.TABLE
-    icon: ClassVar[str] = "bi-database"
+    icon: ClassVar[str] = "fa-solid fa-database"
     color: ClassVar[str] = "#0d6efd"
     supported_export_formats = ["csv"]
 
@@ -59,7 +59,7 @@ class DatasetsByOrganizationMetric(MetricBase):
         const.VisualizationType.TABLE,
     ]
     default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.CHART
-    icon: ClassVar[str] = "bi-building"
+    icon: ClassVar[str] = "fa-solid fa-building"
     color: ClassVar[str] = "#0d6efd"
 
     def __init__(self) -> None:
@@ -113,7 +113,7 @@ class DatasetCreationHistoryMetric(MetricBase):
         const.VisualizationType.TABLE,
     ]
     default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.CHART
-    icon: ClassVar[str] = "bi-calendar-range"
+    icon: ClassVar[str] = "fa-solid fa-calendar-days"
     color: ClassVar[str] = "#0d6efd"
 
     def __init__(self) -> None:

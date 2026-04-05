@@ -18,7 +18,7 @@ class MemoryMetric(MetricBase):
         const.VisualizationType.TABLE,
     ]
     default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.CHART
-    icon: ClassVar[str] = "bi-memory"
+    icon: ClassVar[str] = "fa-solid fa-memory"
     color: ClassVar[str] = "#198754"
 
     def __init__(self) -> None:
@@ -75,7 +75,7 @@ class CPUMetric(MetricBase):
         const.VisualizationType.TABLE,
     ]
     default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.CHART
-    icon: ClassVar[str] = "bi-cpu"
+    icon: ClassVar[str] = "fa-solid fa-microchip"
     color: ClassVar[str] = "#198754"
 
     def __init__(self) -> None:
@@ -133,7 +133,7 @@ class DiskUsageMetric(MetricBase):
         const.VisualizationType.TABLE,
     ]
     default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.TABLE
-    icon: ClassVar[str] = "bi-hdd"
+    icon: ClassVar[str] = "fa-solid fa-hard-drive"
     color: ClassVar[str] = "#198754"
 
     def __init__(self) -> None:

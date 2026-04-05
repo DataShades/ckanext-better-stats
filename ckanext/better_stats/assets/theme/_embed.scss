@@ -1,0 +1,52 @@
+// ── Embed page ────────────────────────────────────────────────
+
+.bstats-embed-page {
+  padding: 0;
+  margin: 0;
+
+  .metric-card {
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+    padding: 10px;
+
+    &:hover { box-shadow: none; }
+  }
+
+  .metric-header { border-bottom: 1px solid #eee; }
+}
+
+.bstats-embed-footer {
+  padding: 4px 10px;
+  border-top: 1px solid #eee;
+  text-align: right;
+
+  a {
+    font-size: 11px;
+    color: #aaa;
+    text-decoration: none;
+
+    &:hover { color: #337ab7; text-decoration: underline; }
+  }
+}
+
+// ── Account masthead dropdown ─────────────────────────────────
+
+.account-masthead .account .bstats-dropdown {
+  border: var(--bs-dropdown-border-width) solid var(--bs-dropdown-border-color);
+
+  li {
+    width: 100%;
+    border: unset;
+
+    a {
+      font-weight: normal;
+      color: var(--bs-dropdown-link-color);
+
+      &:hover {
+        background-color: var(--bs-dropdown-link-hover-bg);
+        color: var(--bs-dropdown-link-color);
+      }
+    }
+  }
+}

@@ -1,77 +1,105 @@
 {% from "better_stats/embed_modal.html" import embed_modal %}
 
-<div class="metric-container" data-metric="{{ metric.name }}" data-order="{{ metric.order }}"
-    data-grid-size="{{ metric.grid_size }}" data-default-viz="{{ metric.default_visualization.value }}">
+<div class="metric-container"
+     data-metric="{{ metric.name }}"
+     data-order="{{ metric.order }}"
+     data-grid-size="{{ metric.grid_size }}"
+     data-default-viz="{{ metric.default_visualization.value }}">
 
     <div class="metric-card">
+
+        {# ── Header: icon + title | actions dropdown ── #}
         <div class="metric-header">
-            <h3 class="me-3">{{ metric.title }}</h3>
-            <div class="metric-actions">
-                <div class="btn-group">
-                    {% for viz in metric.supported_visualizations %}
-                        <button
-                            class="btn btn-sm btn-light viz-toggle{% if viz.value == metric.default_visualization.value %} active{% endif %}"
-                            data-type="{{ viz.value }}" data-metric="{{ metric.name }}"
-                            title="{{ h.bs_get_viz_label(viz.value) }}">
-                            <i class="{{ h.bs_get_viz_icon(viz.value) }}"></i>
+            <span class="metric-title-group" title="{{ metric.description }}">
+                <i class="{{ metric.icon }}"></i>
+                <span class="metric-title">{{ metric.title }}</span>
+            </span>
+
+            <div class="dropdown">
+                <button class="metric-actions-btn" data-bs-toggle="dropdown"
+                        aria-expanded="false" title="{{ _('Actions') }}">
+                    <i class="fa fa-ellipsis-v"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                        <button class="dropdown-item refresh-metric" data-metric="{{ metric.name }}">
+                            <i class="fa fa-refresh me-2 fa-fw"></i>{{ _('Refresh') }}
                         </button>
-                    {% endfor %}
-                </div>
+                    </li>
 
-                <div class="btn-group">
-                    <button class="btn btn-sm btn-light dropdown-toggle" data-bs-toggle="dropdown"
-                        title="{{ _('Export') }}">
-                        <i class="fa fa-download"></i>
-                    </button>
-                    <ul class="dropdown-menu">
-                        {% for fmt in ("csv", "json") %}
-                            {% if fmt in metric.supported_export_formats %}
-                                <li>
-                                    <a href="#" class="dropdown-item export-btn" data-metric="{{ metric.name }}" data-format="{{ fmt }}">
-                                        <i class="fa fa-file-csv"></i> {{ fmt | upper }}
-                                    </a>
-                                </li>
-                            {% endif %}
-                        {% endfor %}
+                    <li><hr class="dropdown-divider"></li>
 
-                        <li><hr class="dropdown-divider"></li>
-
+                    {% for fmt in metric.supported_export_formats %}
+                        {% if fmt != 'image' %}
                         <li>
-                            <a href="#" class="dropdown-item export-image-btn" data-metric="{{ metric.name }}"
-                                title="{{ _('Download chart or card as a PNG image') }}">
-                                <i class="fa fa-image"></i> {{ _('Export PNG') }}
+                            <a class="dropdown-item export-btn" href="#"
+                               data-metric="{{ metric.name }}" data-format="{{ fmt }}">
+                                <i class="fa fa-download me-2 fa-fw"></i>{{ _('Export') }} {{ fmt | upper }}
                             </a>
                         </li>
-
-                        {% if not embed %}
-                            <li>
-                                <a href="#" class="dropdown-item bstats-embed-btn" data-metric="{{ metric.name }}"
-                                    data-bs-toggle="modal" data-bs-target="#embedModal-{{ metric.name }}">
-                                    <i class="fa fa-code"></i> {{ _('Embed') }}
-                                </a>
-                            </li>
                         {% endif %}
-                    </ul>
-                </div>
+                    {% endfor %}
 
-                <button class="btn btn-sm btn-light refresh-metric" data-metric="{{ metric.name }}"
-                    title="{{ _('Refresh') }}">
-                    <i class="fa fa-refresh"></i>
+                    {% if 'image' in metric.supported_export_formats %}
+                        <li>
+                            <a class="dropdown-item export-image-btn" href="#"
+                            data-metric="{{ metric.name }}">
+                                <i class="fa fa-image me-2 fa-fw"></i>{{ _('Export PNG') }}
+                            </a>
+                        </li>
+                    {% endif %}
+
+                    {% if not embed %}
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item bstats-embed-btn" href="#"
+                            data-metric="{{ metric.name }}"
+                            data-bs-toggle="modal"
+                            data-bs-target="#embedModal-{{ metric.name }}">
+                                <i class="fa fa-code me-2 fa-fw"></i>{{ _('Embed') }}
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+
+        {# ── Pill-style viz switcher (only when >1 option) ── #}
+        {% if metric.supported_visualizations | length > 1 %}
+            <div class="metric-viz-switcher">
+                {% for viz in metric.supported_visualizations %}
+                <button class="viz-pill{% if viz.value == metric.default_visualization.value %} active{% endif %}"
+                        data-type="{{ viz.value }}" data-metric="{{ metric.name }}">
+                    <i class="{{ h.bs_get_viz_icon(viz.value) }}"></i>
+                    {{ h.bs_get_viz_label(viz.value) }}
                 </button>
+                {% endfor %}
             </div>
-        </div>
+        {% endif %}
 
-        <div class="metric-description">
-            <p>{{ metric.description }}</p>
-        </div>
-
+        {# ── Visualization content (skeleton shown until JS loads data) ── #}
         <div class="metric-content" id="metric-{{ metric.name }}">
-            <div class="loading-indicator">
-                <i class="fa fa-spinner fa-spin"></i> {{ _('Loading...') }}
+            <div class="metric-skeleton">
+                <div class="placeholder col-5 mb-2" style="height:.7rem"></div>
+                <div class="placeholder col-12" style="height:var(--metric-chart-height)"></div>
             </div>
         </div>
-    </div>
-</div>
+
+        {# ── Footer: cache age | expand ── #}
+        {% if not embed %}
+        <div class="metric-footer">
+            <span class="metric-cache-age" data-metric="{{ metric.name }}">—</span>
+            <button class="metric-expand-btn"
+                    data-metric="{{ metric.name }}"
+                    data-bs-toggle="modal"
+                    data-bs-target="#bstats-fullscreen-modal">
+                <i class="fa fa-expand me-1"></i>{{ _('Expand') }}
+            </button>
+        </div>
+        {% endif %}
+
+    </div>{# /.metric-card #}
+</div>{# /.metric-container #}
 
 {% if not embed %}
     {{ embed_modal(metric) }}

@@ -1,0 +1,43 @@
+// 12-column CSS Grid
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+  margin-top: 1.25rem;
+}
+
+.metric-container {
+  position: relative;
+
+  &[data-grid-size="half"]  { grid-column: span 6; }
+  &[data-grid-size="third"] { grid-column: span 4; }
+  &[data-grid-size="full"]  { grid-column: span 12; }
+}
+
+@media (max-width: 768px) {
+  .stats-grid { grid-template-columns: 1fr; }
+  .metric-container { grid-column: span 12 !important; }
+}
+
+// Dashboard toolbar
+.bstats-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+
+  .bstats-search { max-width: 240px; }
+}
+
+// Empty search state
+.bstats-no-results {
+  display: none;
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #64748b;
+
+  i { font-size: 2rem; margin-bottom: 0.75rem; display: block; }
+}

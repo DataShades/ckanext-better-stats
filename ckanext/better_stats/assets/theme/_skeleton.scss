@@ -1,0 +1,16 @@
+// ── Loading skeleton animation ────────────────────────────────
+
+.metric-skeleton {
+  padding: 0.25rem 0;
+
+  .placeholder {
+    display: block;
+    border-radius: 4px;
+    background-color: #e9eef5;
+    animation: bstats-glow 1.8s ease-in-out infinite;
+  }
+}
+
+@keyframes bstats-glow {
+  50% { opacity: 0.35; }
+}

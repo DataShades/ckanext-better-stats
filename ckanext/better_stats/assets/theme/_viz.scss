@@ -1,0 +1,91 @@
+// ── Visualization content areas ───────────────────────────────
+
+// Chart canvas
+.metric-chart {
+  width: 100%;
+  height: var(--metric-chart-height);
+}
+
+// Multi-chart layout (side-by-side small charts)
+.metric-chart-multi {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+
+  .metric-chart-item {
+    flex: 1 1 0;
+    min-width: 160px;
+    max-width: 280px;
+
+    .metric-chart-label {
+      font-size: 0.75rem;
+      color: #666;
+      text-align: center;
+      margin-bottom: 0.25rem;
+    }
+  }
+}
+
+// Table viz
+.metric-table.table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th, td {
+    padding: 8px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+  }
+
+  th { background-color: #f5f5f5; font-weight: bold; }
+
+  tbody { border-top: unset; }
+}
+
+// Card (single-number) viz
+.metric-card-display {
+  text-align: center;
+  padding: 40px 20px;
+
+  .metric-card-value {
+    font-size: 48px;
+    font-weight: bold;
+    color: #337ab7;
+    margin-bottom: 10px;
+  }
+
+  .metric-card-label {
+    font-size: 1rem;
+    color: #666;
+  }
+}
+
+// Access-denied overlay
+.access-denied {
+  background-color: #f8f8f8;
+  border: 2px dashed #ccc;
+  text-align: center;
+  padding: 40px;
+  filter: blur(2px);
+
+  &::after {
+    content: "Please log in to view this metric";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: hsla(0, 0%, 100%, 0.9);
+    padding: 10px 20px;
+    border-radius: 0.25rem;
+    font-weight: bold;
+    filter: none;
+  }
+}
+
+// Fullscreen modal content area
+#bstats-fullscreen-content {
+  height: 480px;
+  position: relative;
+
+  .metric-chart { height: 100%; }
+}
