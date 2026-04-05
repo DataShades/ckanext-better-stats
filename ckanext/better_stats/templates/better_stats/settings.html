@@ -16,7 +16,8 @@
 
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <div class="module"
+    <form class="module"
+         name="better-stats-settings-form"
          data-module="bstats-stats-settings"
          data-module-clear-all-url="{{ h.url_for('better_stats_settings.clear_all_caches') }}"
          data-module-reset-url="{{ h.url_for('better_stats_settings.reset_all_configs') }}">
@@ -126,7 +127,7 @@
             </div>
 
         </div>
-    </div>
+    </form>
     {% endblock %}
 </div>
 {% endblock %}

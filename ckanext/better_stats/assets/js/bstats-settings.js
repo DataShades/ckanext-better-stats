@@ -12,6 +12,7 @@ ckan.module("bstats-stats-settings", function ($) {
             this._timers = {};
 
             this._initSortable();
+            this.el[0].reset();
 
             this.el.find("#btn-clear-all-caches").on("click", this._onClearAll);
             this.el.find("#btn-reset-all").on("click", this._onResetAll);
