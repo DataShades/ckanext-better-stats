@@ -62,7 +62,7 @@ def get_metric_data(metric_name: str) -> Response:
 
     try:
         data = metric.get_viz_data(viz_type)
-    except Exception as e:
+    except ValueError as e:
         return make_response(jsonify({"error": str(e)}), 500)
 
     for _, result in before_metric_render_signal.send(

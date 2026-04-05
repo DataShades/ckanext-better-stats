@@ -149,9 +149,9 @@ class BetterStatsManager {
 
     renderMetric(container, data, vizType) {
         switch (vizType) {
-            case "chart":    this.renderChart(container, data);    break;
-            case "table":    this.renderTable(container, data);    break;
-            case "card":     this.renderCard(container, data);     break;
+            case "chart": this.renderChart(container, data); break;
+            case "table": this.renderTable(container, data); break;
+            case "card": this.renderCard(container, data); break;
             case "progress": this.renderProgress(container, data); break;
         }
     }

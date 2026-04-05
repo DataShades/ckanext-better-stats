@@ -4,7 +4,7 @@ from ckanext.better_stats import const
 
 
 def check_user_can_access_metric(metric):
-    """Check if current user can access metric"""
+    """Check if current user can access metric."""
     if metric.access_level == const.AccessLevel.PUBLIC.value:
         return True
     if metric.access_level == const.AccessLevel.AUTHENTICATED.value:

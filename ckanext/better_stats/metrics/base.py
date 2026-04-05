@@ -26,7 +26,6 @@ class MetricBase(ABC):
     supported_visualizations: ClassVar[list[const.VisualizationType]] = [const.VisualizationType.CHART]
     default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.CHART
     icon: ClassVar[str] = "fa-solid fa-chart-bar"
-    color: ClassVar[str] = "#0d6efd"
     supported_export_formats: ClassVar[list[str]] = ["csv", "json", "image"]
 
     def __init__(
@@ -158,7 +157,6 @@ class MetricBase(ABC):
             "title": self.title,
             "description": self.description,
             "icon": self.icon,
-            "color": self.color,
             "grid_size": self.grid_size,
             "order": self.order,
             "supported_visualizations": [v.value for v in self.supported_visualizations],
@@ -275,7 +273,7 @@ class MetricRegistry:
                 results.append(metric)
 
             return sorted(results, key=lambda m: m.order)
-        except Exception:  # DB not ready or table missing — degrade gracefully
+        except Exception:  # noqa: BLE001
             return cls.get_all_metrics()
 
     @classmethod

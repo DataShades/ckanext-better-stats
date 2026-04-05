@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
 from typing import Any, ClassVar
 
 from sqlalchemy import func
@@ -23,7 +24,6 @@ class DatasetCountMetric(MetricBase):
     ]
     default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.TABLE
     icon: ClassVar[str] = "fa-solid fa-database"
-    color: ClassVar[str] = "#0d6efd"
     supported_export_formats = ["csv"]
 
     def __init__(self) -> None:
@@ -60,7 +60,6 @@ class DatasetsByOrganizationMetric(MetricBase):
     ]
     default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.CHART
     icon: ClassVar[str] = "fa-solid fa-building"
-    color: ClassVar[str] = "#0d6efd"
 
     def __init__(self) -> None:
         super().__init__(
@@ -114,7 +113,6 @@ class DatasetCreationHistoryMetric(MetricBase):
     ]
     default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.CHART
     icon: ClassVar[str] = "fa-solid fa-calendar-days"
-    color: ClassVar[str] = "#0d6efd"
 
     def __init__(self) -> None:
         super().__init__(
@@ -154,3 +152,172 @@ class DatasetCreationHistoryMetric(MetricBase):
             "headers": [tk._("Day"), tk._("Datasets Created")],
             "rows": [[item["day"], item["count"]] for item in data],
         }
+
+
+class ResourcesByFormatMetric(MetricBase):
+    """Distribution of resources across file formats (top 10)."""
+
+    supported_visualizations: ClassVar[list[const.VisualizationType]] = [
+        const.VisualizationType.CHART,
+        const.VisualizationType.TABLE,
+    ]
+    default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.CHART
+    icon: ClassVar[str] = "fa-solid fa-file-code"
+
+    def __init__(self) -> None:
+        super().__init__(
+            name="resources_by_format",
+            title=tk._("Resources by Format"),
+            description=tk._("Distribution of resources across file formats"),
+            order=4,
+        )
+
+    def get_data(self) -> list[dict[str, Any]]:
+        rows = (
+            model.Session.query(
+                func.coalesce(func.nullif(func.upper(model.Resource.format), ""), "Unknown").label("format"),
+                func.count(model.Resource.id).label("count"),
+            )
+            .filter(model.Resource.state == "active")
+            .group_by("format")
+            .order_by(func.count(model.Resource.id).desc())
+            .limit(10)
+            .all()
+        )
+        return [{"format": row.format, "count": row.count} for row in rows]
+
+    def get_chart_data(self) -> dict[str, Any]:
+        data = self.get_data()
+        return {
+            "type": "pie",
+            "labels": [item["format"] for item in data],
+            "data": [item["count"] for item in data],
+        }
+
+    def get_table_data(self) -> dict[str, Any]:
+        data = self.get_data()
+        return {
+            "headers": [tk._("Format"), tk._("Resources")],
+            "rows": [[item["format"], item["count"]] for item in data],
+        }
+
+
+class TopTagsMetric(MetricBase):
+    """Most frequently used tags across all active datasets (top 15)."""
+
+    supported_visualizations: ClassVar[list[const.VisualizationType]] = [
+        const.VisualizationType.CHART,
+        const.VisualizationType.TABLE,
+    ]
+    default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.CHART
+    icon: ClassVar[str] = "fa-solid fa-tags"
+
+    def __init__(self) -> None:
+        super().__init__(
+            name="top_tags",
+            title=tk._("Top Tags"),
+            description=tk._("Most frequently used tags across datasets"),
+            order=5,
+        )
+
+    def get_data(self) -> list[dict[str, Any]]:
+        rows = (
+            model.Session.query(
+                model.Tag.name,
+                func.count(model.PackageTag.package_id).label("count"),
+            )
+            .join(model.PackageTag, model.Tag.id == model.PackageTag.tag_id)
+            .join(model.Package, model.PackageTag.package_id == model.Package.id)
+            .filter(
+                model.Package.state == "active",
+                model.Package.type == "dataset",
+                model.PackageTag.state == "active",
+            )
+            .group_by(model.Tag.name)
+            .order_by(func.count(model.PackageTag.package_id).desc())
+            .limit(15)
+            .all()
+        )
+        return [{"tag": row.name, "count": row.count} for row in rows]
+
+    def get_chart_data(self) -> dict[str, Any]:
+        data = self.get_data()
+        return {
+            "type": "bar",
+            "labels": [item["tag"] for item in data],
+            "data": [item["count"] for item in data],
+            "options": {
+                "indexAxis": "y",
+                "plugins": {"legend": {"display": False}},
+                "scales": {
+                    "x": {"beginAtZero": True, "title": {"display": True, "text": tk._("Datasets")}},
+                },
+            },
+        }
+
+    def get_table_data(self) -> dict[str, Any]:
+        data = self.get_data()
+        return {
+            "headers": [tk._("Tag"), tk._("Datasets")],
+            "rows": [[item["tag"], item["count"]] for item in data],
+        }
+
+
+class StaleDatasetsMetric(MetricBase):
+    """Datasets that have not been updated in over a year."""
+
+    supported_visualizations: ClassVar[list[const.VisualizationType]] = [
+        const.VisualizationType.CARD,
+        const.VisualizationType.TABLE,
+    ]
+    default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.TABLE
+    icon: ClassVar[str] = "fa-solid fa-hourglass-end"
+
+    def __init__(self) -> None:
+        super().__init__(
+            name="stale_datasets",
+            title=tk._("Stale Datasets"),
+            description=tk._("Datasets not updated in over a year"),
+            order=6,
+            grid_size="full",
+        )
+
+    def _cutoff(self) -> datetime:
+        return datetime.now(UTC).replace(tzinfo=None) - timedelta(days=365)
+
+    def get_data(self) -> list[dict[str, Any]]:
+        rows = (
+            model.Session.query(
+                model.Package.name,
+                model.Package.title,
+                model.Package.metadata_modified,
+            )
+            .filter(
+                model.Package.state == "active",
+                model.Package.type == "dataset",
+                model.Package.metadata_modified < self._cutoff(),
+            )
+            .order_by(model.Package.metadata_modified.asc())
+            .all()
+        )
+        return [
+            {
+                "name": row.name,
+                "title": row.title or row.name,
+                "last_updated": row.metadata_modified.strftime("%Y-%m-%d"),
+            }
+            for row in rows
+        ]
+
+    def get_card_data(self) -> dict[str, Any]:
+        return {"value": len(self.get_data()), "label": tk._("Stale Datasets")}
+
+    def get_table_data(self) -> dict[str, Any]:
+        data = self.get_data()
+        return {
+            "headers": [tk._("Dataset"), tk._("Last Updated")],
+            "rows": [[item["title"], item["last_updated"]] for item in data],
+        }
+
+    def get_export_data(self) -> dict[str, Any]:
+        return self.get_table_data()
