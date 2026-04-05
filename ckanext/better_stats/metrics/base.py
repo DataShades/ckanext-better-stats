@@ -78,6 +78,14 @@ class MetricBase(ABC):
             return {"value": data, "label": self.title}
         return None
 
+    def get_progress_data(self) -> dict[str, Any] | None:
+        """Return ``{"items": [{"label": str, "value": num, "max": num, "unit": str}]}``
+        or ``None`` if unsupported.
+
+        Each item renders as a labelled horizontal progress bar.
+        """
+        return None
+
     def _compute_viz_data(self, viz_type: const.VisualizationType) -> dict[str, Any] | None:
         """Dispatch to the appropriate visualization method without caching.
 
@@ -87,6 +95,7 @@ class MetricBase(ABC):
             const.VisualizationType.CHART: self.get_chart_data,
             const.VisualizationType.TABLE: self.get_table_data,
             const.VisualizationType.CARD: self.get_card_data,
+            const.VisualizationType.PROGRESS: self.get_progress_data,
         }
         handler = dispatch.get(viz_type)
         return handler() if handler else None

@@ -15,52 +15,49 @@
                 <span class="metric-title">{{ metric.title }}</span>
             </span>
 
-            <div class="dropdown">
-                <button class="metric-actions-btn" data-bs-toggle="dropdown"
-                        aria-expanded="false" title="{{ _('Actions') }}">
-                    <i class="fa fa-ellipsis-v"></i>
+            <div class="metric-control d-flex">
+                <button class="btn btn-sm refresh-metric" data-metric="{{ metric.name }}" title="{{ _('Refresh') }}">
+                    <i class="fa fa-refresh fa-fw"></i>
                 </button>
-                <ul class="dropdown-menu dropdown-menu-end">
-                    <li>
-                        <button class="dropdown-item refresh-metric" data-metric="{{ metric.name }}">
-                            <i class="fa fa-refresh me-2 fa-fw"></i>{{ _('Refresh') }}
-                        </button>
-                    </li>
+                <div class="dropdown">
+                    <button class="metric-actions-btn" data-bs-toggle="dropdown"
+                            aria-expanded="false" title="{{ _('Actions') }}">
+                        <i class="fa fa-ellipsis-v"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        {% for fmt in metric.supported_export_formats %}
+                            {% if fmt != 'image' %}
+                            <li>
+                                <a class="dropdown-item export-btn" href="#"
+                                data-metric="{{ metric.name }}" data-format="{{ fmt }}">
+                                    <i class="fa fa-download me-2 fa-fw"></i>{{ _('Export') }} {{ fmt | upper }}
+                                </a>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
 
-                    <li><hr class="dropdown-divider"></li>
-
-                    {% for fmt in metric.supported_export_formats %}
-                        {% if fmt != 'image' %}
-                        <li>
-                            <a class="dropdown-item export-btn" href="#"
-                               data-metric="{{ metric.name }}" data-format="{{ fmt }}">
-                                <i class="fa fa-download me-2 fa-fw"></i>{{ _('Export') }} {{ fmt | upper }}
-                            </a>
-                        </li>
+                        {% if 'image' in metric.supported_export_formats %}
+                            <li>
+                                <a class="dropdown-item export-image-btn" href="#"
+                                data-metric="{{ metric.name }}">
+                                    <i class="fa fa-image me-2 fa-fw"></i>{{ _('Export PNG') }}
+                                </a>
+                            </li>
                         {% endif %}
-                    {% endfor %}
 
-                    {% if 'image' in metric.supported_export_formats %}
-                        <li>
-                            <a class="dropdown-item export-image-btn" href="#"
-                            data-metric="{{ metric.name }}">
-                                <i class="fa fa-image me-2 fa-fw"></i>{{ _('Export PNG') }}
-                            </a>
-                        </li>
-                    {% endif %}
-
-                    {% if not embed %}
-                        <li><hr class="dropdown-divider"></li>
-                        <li>
-                            <a class="dropdown-item bstats-embed-btn" href="#"
-                            data-metric="{{ metric.name }}"
-                            data-bs-toggle="modal"
-                            data-bs-target="#embedModal-{{ metric.name }}">
-                                <i class="fa fa-code me-2 fa-fw"></i>{{ _('Embed') }}
-                            </a>
-                        </li>
-                    {% endif %}
-                </ul>
+                        {% if not embed %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item bstats-embed-btn" href="#"
+                                data-metric="{{ metric.name }}"
+                                data-bs-toggle="modal"
+                                data-bs-target="#embedModal-{{ metric.name }}">
+                                    <i class="fa fa-code me-2 fa-fw"></i>{{ _('Embed') }}
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </div>
             </div>
         </div>
 

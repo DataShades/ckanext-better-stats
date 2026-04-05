@@ -82,6 +82,24 @@
   }
 }
 
+// Progress viz
+.metric-progress {
+  padding: 0.25rem 0;
+
+  .metric-progress-item {
+    margin-bottom: 1rem;
+
+    &:last-child { margin-bottom: 0; }
+
+    span { font-size: 0.85rem; }
+
+    .progress {
+      height: 10px;
+      border-radius: 999px;
+    }
+  }
+}
+
 // Fullscreen modal content area
 #bstats-fullscreen-content {
   height: 480px;

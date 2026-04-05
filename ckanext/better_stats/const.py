@@ -11,6 +11,7 @@ class VisualizationType(Enum):
     CHART = "chart"
     TABLE = "table"
     CARD = "card"
+    PROGRESS = "progress"
 
 
 class ExportFormat(Enum):

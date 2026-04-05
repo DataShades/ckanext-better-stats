@@ -149,9 +149,10 @@ class BetterStatsManager {
 
     renderMetric(container, data, vizType) {
         switch (vizType) {
-            case "chart": this.renderChart(container, data); break;
-            case "table": this.renderTable(container, data); break;
-            case "card":  this.renderCard(container, data);  break;
+            case "chart":    this.renderChart(container, data);    break;
+            case "table":    this.renderTable(container, data);    break;
+            case "card":     this.renderCard(container, data);     break;
+            case "progress": this.renderProgress(container, data); break;
         }
     }
 
@@ -206,6 +207,35 @@ class BetterStatsManager {
         });
         table.appendChild(tbody);
         container.appendChild(table);
+    }
+
+    renderProgress(container, data) {
+        const items = data.data?.items;
+        if (!items?.length) {
+            container.innerHTML = '<div class="alert alert-info">No data available</div>';
+            return;
+        }
+        const wrapper = document.createElement("div");
+        wrapper.className = "metric-progress";
+        items.forEach((item) => {
+            const pct = Math.min(100, Math.round((item.value / item.max) * 100));
+            const color = pct > 90 ? "danger" : pct > 70 ? "warning" : "success";
+            wrapper.insertAdjacentHTML(
+                "beforeend",
+                `<div class="metric-progress-item">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>${item.label}</span>
+                        <span class="text-muted">${item.value} / ${item.max} ${item.unit}</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar bg-${color}" style="width:${pct}%"
+                             role="progressbar" aria-valuenow="${pct}"
+                             aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                </div>`
+            );
+        });
+        container.appendChild(wrapper);
     }
 
     renderCard(container, data) {

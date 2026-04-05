@@ -14,10 +14,11 @@ class MemoryMetric(MetricBase):
     """System RAM usage (total, used, and free)."""
 
     supported_visualizations: ClassVar[list[const.VisualizationType]] = [
+        const.VisualizationType.PROGRESS,
         const.VisualizationType.CHART,
         const.VisualizationType.TABLE,
     ]
-    default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.CHART
+    default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.PROGRESS
     icon: ClassVar[str] = "fa-solid fa-memory"
     color: ClassVar[str] = "#198754"
 
@@ -66,15 +67,26 @@ class MemoryMetric(MetricBase):
             ],
         }
 
+    def get_progress_data(self) -> dict[str, Any]:
+        mem = psutil.virtual_memory()
+        used_gb = round(mem.used / (1024 ** 3), 1)
+        total_gb = round(mem.total / (1024 ** 3), 1)
+        return {
+            "items": [
+                {"label": "RAM", "value": used_gb, "max": total_gb, "unit": "GB"},
+            ]
+        }
+
 
 class CPUMetric(MetricBase):
     """Current CPU usage as a percentage (total and per-core)."""
 
     supported_visualizations: ClassVar[list[const.VisualizationType]] = [
+        const.VisualizationType.PROGRESS,
         const.VisualizationType.CHART,
         const.VisualizationType.TABLE,
     ]
-    default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.CHART
+    default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.PROGRESS
     icon: ClassVar[str] = "fa-solid fa-microchip"
     color: ClassVar[str] = "#198754"
 
@@ -124,15 +136,25 @@ class CPUMetric(MetricBase):
             "rows": rows,
         }
 
+    def get_progress_data(self) -> dict[str, Any]:
+        data = self.get_data()
+        items = [{"label": "Total", "value": data["total"], "max": 100, "unit": "%"}]
+        items.extend(
+            {"label": f"Core {i}", "value": core, "max": 100, "unit": "%"}
+            for i, core in enumerate(data["per_core"])
+        )
+        return {"items": items}
+
 
 class DiskUsageMetric(MetricBase):
     """Disk usage broken down by partition."""
 
     supported_visualizations: ClassVar[list[const.VisualizationType]] = [
+        const.VisualizationType.PROGRESS,
         const.VisualizationType.CHART,
         const.VisualizationType.TABLE,
     ]
-    default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.TABLE
+    default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.PROGRESS
     icon: ClassVar[str] = "fa-solid fa-hard-drive"
     color: ClassVar[str] = "#198754"
 
@@ -217,3 +239,18 @@ class DiskUsageMetric(MetricBase):
                 for d in data
             ],
         }
+
+    def get_progress_data(self) -> dict[str, Any]:
+        items = []
+        for part in psutil.disk_partitions():
+            try:
+                usage = psutil.disk_usage(part.mountpoint)
+            except PermissionError:
+                continue
+            items.append({
+                "label": part.mountpoint,
+                "value": round(usage.used / (1024 ** 3), 1),
+                "max": round(usage.total / (1024 ** 3), 1),
+                "unit": "GB",
+            })
+        return {"items": items}
