@@ -21,7 +21,7 @@ class MetricConfig(tk.BaseModel):
     enabled = Column(Boolean, default=True, nullable=False)
     order = Column(Integer, default=100)
     grid_size = Column(String(10), default="half")
-    access_level = Column(String(20), default="public")
+    access_level = Column(String(20))
     cache_timeout = Column(Integer, default=3600)
     extras = Column(MutableDict.as_mutable(JSONB), default={})
     created = Column(DateTime, default=_current_datetime)

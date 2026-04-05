@@ -31,3 +31,13 @@
 
     {{ super() }}
 {% endblock %}
+
+{% block header_account_notlogged %}
+    <li>
+        <a href="{{ h.url_for('better_stats.dashboard') }}">
+            <i class="fa fa-chart-pie" aria-hidden="true"></i>
+        </a>
+    </li>
+
+    {{ super() }}
+{% endblock %}

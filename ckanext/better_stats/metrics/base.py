@@ -215,10 +215,25 @@ class MetricRegistry:
 
     @classmethod
     def get_metric(cls, name: str) -> MetricBase | None:
-        """Return a fresh instance of the named metric, or ``None`` if not found."""
+        """Return a configured instance of the named metric, or ``None`` if not found or disabled."""
         cls._ensure_loaded()
         factory = cls.METRICS.get(name)
-        return factory() if factory else None
+
+        if not factory:
+            return None
+
+        metric = factory()
+        cfg = MetricConfig.for_metric(name)
+
+        if cfg is not None:
+            if not cfg.enabled:
+                return None
+
+            metric.order = cfg.order
+            metric.grid_size = cfg.grid_size
+            metric.cache_timeout = cfg.cache_timeout
+            metric.access_level = cfg.access_level or metric.access_level
+        return metric
 
     @classmethod
     def get_all_metrics(cls) -> list[MetricBase]:
@@ -252,10 +267,10 @@ class MetricRegistry:
                     if not cfg.enabled:
                         continue
 
-                    metric.order = cfg.order
-                    metric.grid_size = cfg.grid_size
-                    metric.cache_timeout = cfg.cache_timeout
-                    metric.access_level = cfg.access_level
+                    metric.order = cfg.order  # type: ignore
+                    metric.grid_size = cfg.grid_size  # type: ignore
+                    metric.cache_timeout = cfg.cache_timeout  # type: ignore
+                    metric.access_level = cfg.access_level or metric.access_level  # type: ignore
 
                 results.append(metric)
 

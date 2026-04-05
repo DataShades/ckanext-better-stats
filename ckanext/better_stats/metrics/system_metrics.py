@@ -69,8 +69,8 @@ class MemoryMetric(MetricBase):
 
     def get_progress_data(self) -> dict[str, Any]:
         mem = psutil.virtual_memory()
-        used_gb = round(mem.used / (1024 ** 3), 1)
-        total_gb = round(mem.total / (1024 ** 3), 1)
+        used_gb = round(mem.used / (1024**3), 1)
+        total_gb = round(mem.total / (1024**3), 1)
         return {
             "items": [
                 {"label": "RAM", "value": used_gb, "max": total_gb, "unit": "GB"},
@@ -140,8 +140,7 @@ class CPUMetric(MetricBase):
         data = self.get_data()
         items = [{"label": "Total", "value": data["total"], "max": 100, "unit": "%"}]
         items.extend(
-            {"label": f"Core {i}", "value": core, "max": 100, "unit": "%"}
-            for i, core in enumerate(data["per_core"])
+            {"label": f"Core {i}", "value": core, "max": 100, "unit": "%"} for i, core in enumerate(data["per_core"])
         )
         return {"items": items}
 
@@ -247,10 +246,12 @@ class DiskUsageMetric(MetricBase):
                 usage = psutil.disk_usage(part.mountpoint)
             except PermissionError:
                 continue
-            items.append({
-                "label": part.mountpoint,
-                "value": round(usage.used / (1024 ** 3), 1),
-                "max": round(usage.total / (1024 ** 3), 1),
-                "unit": "GB",
-            })
+            items.append(
+                {
+                    "label": part.mountpoint,
+                    "value": round(usage.used / (1024**3), 1),
+                    "max": round(usage.total / (1024**3), 1),
+                    "unit": "GB",
+                }
+            )
         return {"items": items}

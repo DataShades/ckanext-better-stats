@@ -24,7 +24,7 @@ def upgrade():
         sa.Column("enabled", sa.Boolean(), nullable=False, server_default=sa.true()),
         sa.Column("order", sa.Integer(), nullable=True, server_default="100"),
         sa.Column("grid_size", sa.String(10), nullable=True, server_default="half"),
-        sa.Column("access_level", sa.String(20), nullable=True, server_default="public"),
+        sa.Column("access_level", sa.String(20), nullable=True),
         sa.Column("cache_timeout", sa.Integer(), nullable=True, server_default="3600"),
         sa.Column(
             "extras",

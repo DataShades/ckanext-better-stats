@@ -25,7 +25,7 @@ class BetterStatsDashboardView(MethodView):
         try:
             tk.check_access("better_stats_view_dashboard", {"user": tk.current_user.name})
         except tk.NotAuthorized:
-            tk.abort(403, tk._("You must be logged in to visit this page"))
+            tk.abort(403, tk._("Access denied"))
 
         metrics = MetricRegistry.get_enabled_metrics()
 
@@ -91,7 +91,7 @@ def embed_metric(metric_name: str) -> Response:
     """Return a self-contained HTML page for embedding in an iframe."""
     metric = MetricRegistry.get_metric(metric_name)
 
-    if not metric or not tk.h.check_user_can_access_metric(metric):
+    if not metric:
         tk.abort(404)
 
     viz_type = tk.request.args.get("viz", metric.default_visualization.value)
@@ -127,16 +127,7 @@ def export_metric(metric_name: str) -> Response:
     if not metric:
         return make_response(jsonify({"error": tk._("Metric not found")}), 404)
 
-    try:
-        tk.check_access(
-            "better_stats_export_metric",
-            {"user": tk.current_user.name},
-            {"metric": metric},
-        )
-    except tk.NotAuthorized:
-        return make_response(jsonify({"error": tk._("Export not available")}), 403)
-
-    if not metric.can_export():
+    if not tk.h.check_user_can_access_metric(metric) or not metric.can_export():
         return make_response(jsonify({"error": tk._("Export not available")}), 403)
 
     format_type = tk.request.args.get("format", const.ExportFormat.CSV.value)

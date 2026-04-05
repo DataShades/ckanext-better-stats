@@ -17,18 +17,18 @@ def check_user_can_access_metric(metric):
 
 def bs_get_viz_icon(viz_type: str) -> str:
     return {
-        "chart":    "fa fa-line-chart",
-        "table":    "fa fa-table",
-        "card":     "fa fa-calculator",
+        "chart": "fa fa-line-chart",
+        "table": "fa fa-table",
+        "card": "fa fa-calculator",
         "progress": "fa fa-tasks",
     }.get(viz_type, "fa fa-question")
 
 
 def bs_get_viz_label(viz_type: str) -> str:
     return {
-        "chart":    tk._("Chart"),
-        "table":    tk._("Table"),
-        "card":     tk._("Card"),
+        "chart": tk._("Chart"),
+        "table": tk._("Table"),
+        "card": tk._("Card"),
         "progress": tk._("Progress"),
     }.get(viz_type, viz_type)
 
