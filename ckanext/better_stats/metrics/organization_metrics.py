@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, ClassVar
 
-from sqlalchemy import func
+from sqlalchemy import func, select
 
 import ckan.plugins.toolkit as tk
 from ckan import model
@@ -295,11 +295,12 @@ class InactiveOrganizationsMetric(MetricBase):
             .filter(
                 model.Group.type == "organization",
                 model.Group.state == model.State.ACTIVE,
-                ~model.Group.id.in_(orgs_with_datasets),
+                ~model.Group.id.in_(select(orgs_with_datasets.c.group_id)),
             )
             .order_by(model.Group.title)
             .all()
         )
+
         return [
             {
                 "organization": row.title,

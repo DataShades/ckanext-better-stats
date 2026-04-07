@@ -19,9 +19,7 @@ class UserCountMetric(MetricBase):
         const.VisualizationType.CHART,
         const.VisualizationType.TABLE,
     ]
-    default_visualization: ClassVar[const.VisualizationType] = (
-        const.VisualizationType.CARD
-    )
+    default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.CARD
     icon: ClassVar[str] = "fa-solid fa-users"
 
     def __init__(self) -> None:
@@ -34,11 +32,7 @@ class UserCountMetric(MetricBase):
         )
 
     def get_data(self) -> int:
-        return (
-            model.Session.query(model.User)
-            .filter(model.User.state == model.State.ACTIVE)
-            .count()
-        )
+        return model.Session.query(model.User).filter(model.User.state == model.State.ACTIVE).count()
 
     def get_card_data(self) -> dict[str, Any]:
         return {"value": self.get_data(), "label": tk._("Registered Users")}
@@ -88,18 +82,14 @@ class DatasetCompletenessMetric(MetricBase):
         const.VisualizationType.PROGRESS,
         const.VisualizationType.TABLE,
     ]
-    default_visualization: ClassVar[const.VisualizationType] = (
-        const.VisualizationType.PROGRESS
-    )
+    default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.PROGRESS
     icon: ClassVar[str] = "fa-solid fa-circle-check"
 
     def __init__(self) -> None:
         super().__init__(
             name="dataset_completeness",
             title=tk._("Dataset Completeness"),
-            description=tk._(
-                "Percentage of datasets with description, tags, and resources"
-            ),
+            description=tk._("Percentage of datasets with description, tags, and resources"),
             order=8,
             access_level=const.AccessLevel.ADMIN.value,
         )
