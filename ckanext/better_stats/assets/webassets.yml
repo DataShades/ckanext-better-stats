@@ -2,9 +2,8 @@ better_stats-js:
   filter: rjsmin
   output: ckanext-better_stats/%(version)s-better_stats.js
   contents:
-    - js/vendor/chart.min.js
+    - js/vendor/echarts.min.js
     - js/vendor/snapdom.min.js
-
     - js/bstats-stats-manager.js
   extra:
     preload:

@@ -20,7 +20,6 @@ class BetterStatsManager {
     }
 
     init() {
-        this._registerChartBackground();
         this._bindEvents();
         this._startCacheAgeTimer();
         this.loadAllMetrics();
@@ -111,8 +110,6 @@ class BetterStatsManager {
         });
     }
 
-    // ── Loading ────────────────────────────────────────────────
-
     async loadAllMetrics() {
         const containers = this.container.querySelectorAll(".metric-container");
         for (const c of containers) {
@@ -145,8 +142,6 @@ class BetterStatsManager {
         }
     }
 
-    // ── Rendering ─────────────────────────────────────────────
-
     renderMetric(container, data, vizType) {
         switch (vizType) {
             case "chart": this.renderChart(container, data); break;
@@ -161,51 +156,44 @@ class BetterStatsManager {
 
         const existing = this.charts[data.name];
         if (existing) {
-            (Array.isArray(existing) ? existing : [existing]).forEach((c) => c.destroy());
+            (Array.isArray(existing) ? existing : [existing]).forEach((c) => c.dispose());
             delete this.charts[data.name];
         }
 
         if (chartData.type === "multi") {
-            const wrapper = document.createElement("div");
-            wrapper.className = "metric-chart-multi";
+            const wrapper = this._el("div", { className: "metric-chart-multi" });
             container.appendChild(wrapper);
-            this.charts[data.name] = chartData.charts.map((sub, i) => {
-                const item = document.createElement("div");
-                item.className = "metric-chart-item";
+
+            this.charts[data.name] = chartData.charts.map((sub) => {
+                const item = this._el("div", { className: "metric-chart-item" });
                 wrapper.appendChild(item);
-                const subChart = { ...sub, options: { maintainAspectRatio: true, ...sub.options } };
-                return this._createSingleChart(item, subChart, `${data.name}-${i}`, sub.title);
+                return this._createChart(item, sub);
             });
         } else {
-            this.charts[data.name] = this._createSingleChart(container, chartData, data.name);
+            this.charts[data.name] = this._createChart(container, chartData, data.name);
         }
     }
 
     renderTable(container, data) {
         const tableData = data.data;
 
-        const wrapper = document.createElement("div");
-        wrapper.className = "metric-table-wrapper";
+        const wrapper = this._el("div", { className: "metric-table-wrapper" });
+        const table = this._el("table", { className: "metric-table" });
+        const thead = this._el("thead");
+        const headerRow = this._el("tr");
 
-        const table = document.createElement("table");
-        table.className = "metric-table";
-
-        const thead = document.createElement("thead");
-        const headerRow = document.createElement("tr");
         (tableData.headers || []).forEach((h) => {
-            const th = document.createElement("th");
-            th.textContent = h;
-            headerRow.appendChild(th);
+            headerRow.appendChild(this._el("th", { textContent: h }));
         });
+
         thead.appendChild(headerRow);
         table.appendChild(thead);
 
-        const tbody = document.createElement("tbody");
+        const tbody = this._el("tbody");
         (tableData.rows || []).forEach((row) => {
-            const tr = document.createElement("tr");
+            const tr = this._el("tr");
             row.forEach((cell) => {
-                const td = document.createElement("td");
-                td.textContent = cell;
+                const td = this._el("td", { textContent: cell });
                 if (cell !== null && cell !== "" && !isNaN(Number(cell))) {
                     td.classList.add("cell-numeric");
                 }
@@ -224,8 +212,7 @@ class BetterStatsManager {
             container.innerHTML = '<div class="alert alert-info">No data available</div>';
             return;
         }
-        const wrapper = document.createElement("div");
-        wrapper.className = "metric-progress";
+        const wrapper = this._el("div", { className: "metric-progress" });
         items.forEach((item) => {
             const pct = Math.min(100, Math.round((item.value / item.max) * 100));
             const color = pct > 90 ? "danger" : pct > 70 ? "warning" : "success";
@@ -253,15 +240,13 @@ class BetterStatsManager {
             container.innerHTML = '<div class="alert alert-info">Card view not available</div>';
             return;
         }
-        const div = document.createElement("div");
-        div.className = "metric-card-display";
-        div.innerHTML =
-            `<div class="metric-card-value">${this.formatNumber(cardData.value)}</div>` +
-            `<div class="metric-card-label">${cardData.label}</div>`;
+        const div = this._el("div", {
+            className: "metric-card-display",
+            innerHTML: `<div class="metric-card-value">${this.formatNumber(cardData.value)}</div>` +
+                       `<div class="metric-card-label">${cardData.label}</div>`,
+        });
         container.appendChild(div);
     }
-
-    // ── Interactions ───────────────────────────────────────────
 
     async switchVisualization(metricName, vizType, pill) {
         const allPills = this.container.querySelectorAll(`.viz-pill[data-metric="${metricName}"]`);
@@ -325,8 +310,6 @@ class BetterStatsManager {
         }).catch(() => document.execCommand("copy"));
     }
 
-    // ── Fullscreen modal ───────────────────────────────────────
-
     async _openFullscreen() {
         const metricName = this._pendingFullscreen;
         if (!metricName) return;
@@ -348,7 +331,7 @@ class BetterStatsManager {
             contentEl.innerHTML = "";
 
             if (vizType === "chart") {
-                this._fullscreenChart = this._createSingleChart(contentEl, data.data, `${metricName}-fs`);
+                this._fullscreenChart = this._createChart(contentEl, data.data, `${metricName}-fs`);
             } else {
                 this.renderMetric(contentEl, data, vizType);
             }
@@ -359,15 +342,13 @@ class BetterStatsManager {
 
     _closeFullscreen() {
         if (this._fullscreenChart) {
-            this._fullscreenChart.destroy();
+            this._fullscreenChart.dispose();
             this._fullscreenChart = null;
         }
         const contentEl = document.getElementById("bstats-fullscreen-content");
         if (contentEl) contentEl.innerHTML = "";
         this._pendingFullscreen = null;
     }
-
-    // ── Cache age ──────────────────────────────────────────────
 
     _startCacheAgeTimer() {
         setInterval(() => {
@@ -384,53 +365,56 @@ class BetterStatsManager {
         else el.textContent = `Updated ${Math.floor(secs / 3600)}h ago`;
     }
 
-    // ── Chart helpers ──────────────────────────────────────────
+    _createChart(container, chartData) {
+        const holder = this._el("div", { className: "metric-chart" });
+        container.appendChild(holder);
 
-    _registerChartBackground() {
-        Chart.register({
-            id: "chartjs-chart-background",
-            beforeDraw: (chart) => {
-                const ctx = chart.canvas.getContext("2d");
-                ctx.save();
-                ctx.globalCompositeOperation = "destination-over";
-                ctx.fillStyle = "white";
-                ctx.fillRect(0, 0, chart.width, chart.height);
-                ctx.restore();
-            },
-        });
-    }
+        const type = chartData.type || "bar";
+        const chart = echarts.init(holder);
 
-    _createSingleChart(container, chartData, key, title = null) {
-        if (title) {
-            const label = document.createElement("p");
-            label.className = "metric-chart-label";
-            label.textContent = title;
-            container.appendChild(label);
-        }
-        const canvas = document.createElement("canvas");
-        canvas.className = "metric-chart";
-        container.appendChild(canvas);
+        let option;
 
-        return new Chart(canvas.getContext("2d"), {
-            type: chartData.type || "bar",
-            data: {
-                labels: chartData.labels || [],
-                datasets: [{
-                    data: chartData.data || [],
-                    backgroundColor: this.getChartColors(chartData.data?.length || 0),
-                    borderColor: "#337ab7",
-                    borderWidth: 1,
+        if (type === "pie" || type === "doughnut") {
+            option = {
+                tooltip: { trigger: "item" },
+                legend: { orient: "vertical", left: "left" },
+                series: [{
+                    type: "pie",
+                    radius: type === "doughnut" ? ["40%", "70%"] : "60%",
+                    data: (chartData.labels || []).map((label, i) => ({
+                        name: String(label),
+                        value: chartData.data[i] ?? 0,
+                    })),
                 }],
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: chartData.type === "pie" || chartData.type === "doughnut" },
-                },
-                ...chartData.options,
-            },
-        });
+            };
+        } else if (type === "line") {
+            option = {
+                tooltip: { trigger: "axis" },
+                xAxis: { type: "category", data: chartData.labels || [] },
+                yAxis: { type: "value" },
+                series: [{ type: "line", data: chartData.data || [], smooth: true }],
+            };
+        } else {
+            const isHorizontal = chartData.options?.indexAxis === "y";
+            const barSeries = { type: "bar", data: chartData.data || [], colorBy: "data" };
+            option = isHorizontal
+                ? {
+                    tooltip: { trigger: "axis" },
+                    xAxis: { type: "value" },
+                    yAxis: { type: "category", data: chartData.labels || [] },
+                    series: [barSeries],
+                }
+                : {
+                    tooltip: { trigger: "axis" },
+                    xAxis: { type: "category", data: chartData.labels || [] },
+                    yAxis: { type: "value" },
+                    series: [barSeries],
+                };
+        }
+
+        chart.setOption(option);
+
+        return chart;
     }
 
     _updatePills(metricName, vizType) {
@@ -439,13 +423,10 @@ class BetterStatsManager {
         });
     }
 
-    // ── HTML fragments ─────────────────────────────────────────
-
     _skeletonHTML() {
         return (
             '<div class="metric-skeleton">' +
-            '  <div class="placeholder col-5 mb-2" style="height:.7rem"></div>' +
-            '  <div class="placeholder col-12" style="height:var(--metric-chart-height)"></div>' +
+            '  <div class="placeholder col-12"></div>' +
             "</div>"
         );
     }
@@ -460,15 +441,8 @@ class BetterStatsManager {
         );
     }
 
-    // ── Utilities ──────────────────────────────────────────────
-
-    getChartColors(count) {
-        const colors = [
-            "#337ab7","#5cb85c","#f0ad4e","#d9534f","#5bc0de",
-            "#9467bd","#8c564b","#e377c2","#7f7f7f","#bcbd22",
-            "#17becf","#ff7f0e","#2ca02c","#d62728","#9467bd",
-        ];
-        return colors.slice(0, count);
+    _el(tag, props = {}) {
+        return Object.assign(document.createElement(tag), props);
     }
 
     formatNumber(num) {

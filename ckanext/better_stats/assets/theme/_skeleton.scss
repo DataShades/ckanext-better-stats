@@ -1,9 +1,8 @@
-// ── Loading skeleton animation ────────────────────────────────
-
 .metric-skeleton {
   padding: 0.25rem 0;
 
   .placeholder {
+    height: calc(var(--metric-chart-height) - 10px);
     display: block;
     border-radius: 4px;
     background-color: #e9eef5;
