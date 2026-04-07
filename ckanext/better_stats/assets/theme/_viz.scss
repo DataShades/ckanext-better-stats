@@ -27,19 +27,53 @@
 }
 
 // Table viz
-.metric-table.table {
+.metric-table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.metric-table {
   width: 100%;
   border-collapse: collapse;
+  font-size: 0.875rem;
 
-  th, td {
-    padding: 8px;
+  thead th {
+    padding: 0.5rem 1rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #94a3b8;
     text-align: left;
-    border-bottom: 1px solid #ddd;
+    border-bottom: 1px solid #e2e8f0;
+    white-space: nowrap;
+    background: transparent;
   }
 
-  th { background-color: #f5f5f5; font-weight: bold; }
+  tbody {
+    border-top: none;
 
-  tbody { border-top: unset; }
+    tr {
+      transition: background-color 0.12s ease;
+      &:hover { background-color: #f8fafc; }
+    }
+
+    td {
+      padding: 0.6rem 1rem;
+      color: #1e293b;
+      border-bottom: 1px solid #f1f5f9;
+      vertical-align: middle;
+    }
+
+    tr:last-child td { border-bottom: none; }
+  }
+
+  // Numeric cells — set by JS when cell content is a number
+  .cell-numeric {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    color: #334155;
+  }
 }
 
 // Card (single-number) viz

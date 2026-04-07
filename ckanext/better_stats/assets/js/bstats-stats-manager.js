@@ -183,8 +183,12 @@ class BetterStatsManager {
 
     renderTable(container, data) {
         const tableData = data.data;
+
+        const wrapper = document.createElement("div");
+        wrapper.className = "metric-table-wrapper";
+
         const table = document.createElement("table");
-        table.className = "metric-table table table-striped";
+        table.className = "metric-table";
 
         const thead = document.createElement("thead");
         const headerRow = document.createElement("tr");
@@ -202,12 +206,16 @@ class BetterStatsManager {
             row.forEach((cell) => {
                 const td = document.createElement("td");
                 td.textContent = cell;
+                if (cell !== null && cell !== "" && !isNaN(Number(cell))) {
+                    td.classList.add("cell-numeric");
+                }
                 tr.appendChild(td);
             });
             tbody.appendChild(tr);
         });
         table.appendChild(tbody);
-        container.appendChild(table);
+        wrapper.appendChild(table);
+        container.appendChild(wrapper);
     }
 
     renderProgress(container, data) {
