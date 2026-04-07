@@ -10,9 +10,12 @@
 
         {# ── Header: icon + title | actions dropdown ── #}
         <div class="metric-header">
-            <span class="metric-title-group" title="{{ metric.description }}">
+            <span class="metric-title-group"{% if metric.description %} title="{{ metric.description }}" data-bs-toggle="tooltip" data-bs-placement="right"{% endif %}>
                 <i class="{{ metric.icon }}"></i>
                 <span class="metric-title">{{ metric.title }}</span>
+                {% if metric.description %}
+                    {% include "better_stats/svg/info.svg" %}
+                {% endif %}
             </span>
 
             <div class="metric-control d-flex align-items-center">

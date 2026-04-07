@@ -3,6 +3,7 @@ from ckan import types
 from ckan.common import CKANConfig
 from ckan.plugins import toolkit as tk
 
+from ckanext.better_stats.metrics import register_metrics
 
 @tk.blanket.blueprints
 @tk.blanket.helpers
@@ -29,6 +30,4 @@ class BetterStatsPlugin(p.SingletonPlugin):
 
     @staticmethod
     def register_metrics(sender: None):
-        from ckanext.better_stats.metrics import register_metrics
-
         register_metrics()

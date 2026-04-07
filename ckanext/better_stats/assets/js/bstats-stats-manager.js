@@ -23,6 +23,9 @@ class BetterStatsManager {
         this._bindEvents();
         this._startCacheAgeTimer();
         this.loadAllMetrics();
+        this.container.querySelectorAll("[data-bs-toggle='tooltip']").forEach(
+            (el) => new bootstrap.Tooltip(el)
+        );
     }
 
     _bindEvents() {
