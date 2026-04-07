@@ -154,7 +154,7 @@ class MetricExporter:
 
     def _export_as_csv(self) -> Response:
         output = io.StringIO()
-        writer = csv.writer(output)
+        writer = csv.writer(output, quoting=csv.QUOTE_ALL)
         writer.writerow(self.data.get("headers", []))
         writer.writerows(self.data.get("rows", []))
 
