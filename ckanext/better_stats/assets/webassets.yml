@@ -3,6 +3,7 @@ better_stats-js:
   output: ckanext-better_stats/%(version)s-better_stats.js
   contents:
     - js/vendor/echarts.min.js
+    - js/vendor/echarts-dark.js
     - js/vendor/snapdom.min.js
     - js/bstats-stats-manager.js
   extra:

@@ -8,15 +8,18 @@ metrics - list of accessible MetricBase instances to render.
         {# ── Toolbar ── #}
         <div class="bstats-toolbar">
             <div class="input-group bstats-search">
-                <span class="input-group-text bg-white border-end-0">
-                    <i class="fa fa-search text-muted"></i>
+                <span class="input-group-text btn btn-default">
+                    <i class="fa fa-search"></i>
                 </span>
                 <input type="text" id="bstats-metric-search"
-                       class="form-control border-start-0 ps-0"
+                       class="form-control border-start-0"
                        placeholder="{{ _('Filter metrics\u2026') }}">
             </div>
 
             <div class="ms-auto d-flex gap-2">
+                <button class="btn btn-default" id="bstats-theme-toggle" title="{{ _('Toggle dark mode') }}">
+                    <i class="fa fa-moon"></i>
+                </button>
                 <button class="btn btn-default" id="refresh-all">
                     <i class="fa fa-refresh"></i> {{ _('Refresh All') }}
                 </button>

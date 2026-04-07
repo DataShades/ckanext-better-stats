@@ -21,6 +21,7 @@ class BetterStatsManager {
 
     init() {
         this._bindEvents();
+        this._initTheme();
         this._startCacheAgeTimer();
         this.loadAllMetrics();
         this.container.querySelectorAll("[data-bs-toggle='tooltip']").forEach(
@@ -46,6 +47,11 @@ class BetterStatsManager {
         // Refresh all
         document.getElementById("refresh-all")?.addEventListener("click", () => {
             this.refreshAllMetrics();
+        });
+
+        // Dark mode toggle
+        document.getElementById("bstats-theme-toggle")?.addEventListener("click", () => {
+            this._toggleTheme();
         });
 
         // Export CSV / JSON
@@ -398,6 +404,40 @@ class BetterStatsManager {
         this._pendingFullscreen = null;
     }
 
+    _isDark() {
+        return this.container.dataset.bstatsTheme === "dark";
+    }
+
+    _initTheme() {
+        if (localStorage.getItem("bstats-theme") === "dark") {
+            this.container.dataset.bstatsTheme = "dark";
+            this._updateToggleIcon(true);
+        }
+    }
+
+    _toggleTheme() {
+        const dark = !this._isDark();
+        this.container.dataset.bstatsTheme = dark ? "dark" : "";
+        localStorage.setItem("bstats-theme", dark ? "dark" : "");
+        this._updateToggleIcon(dark);
+        this._updateChartsTheme();
+    }
+
+    _updateToggleIcon(dark) {
+        const icon = document.querySelector("#bstats-theme-toggle i");
+        if (icon) icon.className = dark ? "fa fa-sun" : "fa fa-moon";
+    }
+
+    _updateChartsTheme() {
+        const dark = this._isDark();
+        Object.values(this.charts).forEach((entry) => {
+            (Array.isArray(entry) ? entry : [entry]).forEach((chart) => {
+                chart.setTheme(dark ? "dark" : {});
+                chart.setOption(chart._chartOptions || {});
+            });
+        });
+    }
+
     _startCacheAgeTimer() {
         setInterval(() => {
             Object.keys(this.loadTimes).forEach((name) => this._updateCacheAge(name));
@@ -418,7 +458,7 @@ class BetterStatsManager {
         container.appendChild(holder);
 
         const type = chartData.type || "bar";
-        const chart = echarts.init(holder);
+        const chart = echarts.init(holder, this._isDark() ? "dark" : "default");
 
         let option;
 
@@ -461,6 +501,7 @@ class BetterStatsManager {
         }
 
         chart.setOption(option);
+        chart._chartOptions = option;
 
         return chart;
     }

@@ -1,0 +1,168 @@
+[data-bstats-theme="dark"] {
+  .module {
+    background: #0f172a;
+    border-color: #1e293b;
+  }
+
+  .metric-card {
+    background: #1e293b;
+    border-color: #334155;
+
+    &:hover {
+      box-shadow: 0 4px 16px rgba(0, 0, 0, .4);
+    }
+
+    &-display {
+      .metric-card-value {
+        color: #60a5fa;
+      }
+
+      .metric-card-label {
+        color: #94a3b8;
+      }
+    }
+  }
+
+  .metric-title-group {
+    color: #e2e8f0;
+  }
+
+  .metric-actions-btn {
+    &:hover {
+      color: #e2e8f0;
+      background: #334155;
+    }
+  }
+
+  .metric-viz-switcher {
+    border-bottom-color: #334155;
+  }
+
+  .viz-pill {
+    border-color: #334155;
+    color: #94a3b8;
+
+    &:hover {
+      border-color: #94a3b8;
+      color: #e2e8f0;
+    }
+  }
+
+  .metric-footer {
+    border-top-color: #334155;
+  }
+
+  .metric-expand-btn {
+    color: #94a3b8;
+
+    &:hover {
+      color: #e2e8f0;
+    }
+  }
+
+  .metric-table {
+    thead th {
+      color: #64748b;
+      border-bottom-color: #334155;
+    }
+
+    tbody {
+      tr:hover {
+        background-color: #253045;
+      }
+
+      td {
+        color: #e2e8f0;
+        border-bottom-color: #2d3748;
+      }
+    }
+
+    a {
+      color: #60a5fa;
+
+      &:hover {
+        color: #93c5fd;
+      }
+    }
+  }
+
+  .metric-skeleton {
+    .placeholder {
+      background-color: #2d3748;
+    }
+  }
+
+  .metric-error,
+  .bstats-no-results,
+  .metric-progress-item span {
+    color: #94a3b8;
+  }
+
+  .bstats-search {
+    .input-group-text {
+      background: #1e293b;
+      border-color: #334155;
+      color: #64748b;
+    }
+
+    .form-control {
+      background: #1e293b;
+      border-color: #334155;
+      color: #e2e8f0;
+
+      &::placeholder {
+        color: #ffffff;
+      }
+    }
+  }
+
+  .btn.btn-default {
+    background: #1e293b;
+    border-color: #334155;
+    color: #e2e8f0;
+
+    .fa {
+      color: #e2e8f0;
+    }
+
+    &:hover {
+      background: #253045 !important;
+    }
+  }
+
+  .dropdown-menu {
+    background: #1e293b;
+    border-color: #334155;
+  }
+
+  .dropdown-item {
+    color: #e2e8f0;
+
+    &:hover,
+    &:focus {
+      background: #253045;
+      color: #e2e8f0;
+    }
+  }
+
+  .dropdown-divider {
+    border-color: #334155;
+  }
+
+  .modal-content {
+    background: #1e293b;
+    border-color: #334155;
+  }
+
+  .modal-header {
+    border-bottom-color: #334155;
+  }
+
+  .modal-title {
+    color: #e2e8f0;
+  }
+
+  .btn-close {
+    filter: invert(1) grayscale(1);
+  }
+}
