@@ -2,6 +2,7 @@ from .dataset_metrics import (
     DatasetCountMetric,
     DatasetCreationHistoryMetric,
     DatasetsByOrganizationMetric,
+    DatasetsWithoutResourcesMetric,
     ResourcesByFormatMetric,
     StaleDatasetsMetric,
     TopTagsMetric,
@@ -22,6 +23,7 @@ __all__ = [
     "DatasetCreationHistoryMetric",
     "ResourcesByFormatMetric",
     "TopTagsMetric",
+    "DatasetsWithoutResourcesMetric",
     "StaleDatasetsMetric",
     "OrganizationCountMetric",
     "OrganizationMembershipMetric",
@@ -41,6 +43,7 @@ def register_metrics():
     MetricRegistry.register("dataset_creation_history", DatasetCreationHistoryMetric)
     MetricRegistry.register("resources_by_format", ResourcesByFormatMetric)
     MetricRegistry.register("top_tags", TopTagsMetric)
+    MetricRegistry.register("datasets_without_resources", DatasetsWithoutResourcesMetric)
     MetricRegistry.register("stale_datasets", StaleDatasetsMetric)
     MetricRegistry.register("organization_count", OrganizationCountMetric)
     MetricRegistry.register("organization_membership", OrganizationMembershipMetric)

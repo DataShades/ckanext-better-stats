@@ -67,13 +67,6 @@
 
     tr:last-child td { border-bottom: none; }
   }
-
-  // Numeric cells — set by JS when cell content is a number
-  .cell-numeric {
-    text-align: right;
-    font-variant-numeric: tabular-nums;
-    color: #334155;
-  }
 }
 
 // Card (single-number) viz

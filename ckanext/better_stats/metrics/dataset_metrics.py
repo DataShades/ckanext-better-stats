@@ -22,7 +22,9 @@ class DatasetCountMetric(MetricBase):
         const.VisualizationType.CARD,
         const.VisualizationType.TABLE,
     ]
-    default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.TABLE
+    default_visualization: ClassVar[const.VisualizationType] = (
+        const.VisualizationType.TABLE
+    )
     icon: ClassVar[str] = "fa-solid fa-database"
     supported_export_formats = ["csv"]
 
@@ -58,7 +60,9 @@ class DatasetsByOrganizationMetric(MetricBase):
         const.VisualizationType.CHART,
         const.VisualizationType.TABLE,
     ]
-    default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.CHART
+    default_visualization: ClassVar[const.VisualizationType] = (
+        const.VisualizationType.CHART
+    )
     icon: ClassVar[str] = "fa-solid fa-building"
 
     def __init__(self) -> None:
@@ -111,7 +115,9 @@ class DatasetCreationHistoryMetric(MetricBase):
         const.VisualizationType.CHART,
         const.VisualizationType.TABLE,
     ]
-    default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.CHART
+    default_visualization: ClassVar[const.VisualizationType] = (
+        const.VisualizationType.CHART
+    )
     icon: ClassVar[str] = "fa-solid fa-calendar-days"
 
     def __init__(self) -> None:
@@ -136,7 +142,9 @@ class DatasetCreationHistoryMetric(MetricBase):
             .order_by("day")
             .all()
         )
-        return [{"day": row.day.strftime("%Y-%m-%d"), "count": row.count} for row in rows]
+        return [
+            {"day": row.day.strftime("%Y-%m-%d"), "count": row.count} for row in rows
+        ]
 
     def get_chart_data(self) -> dict[str, Any]:
         data = self.get_data()
@@ -161,7 +169,9 @@ class ResourcesByFormatMetric(MetricBase):
         const.VisualizationType.CHART,
         const.VisualizationType.TABLE,
     ]
-    default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.CHART
+    default_visualization: ClassVar[const.VisualizationType] = (
+        const.VisualizationType.CHART
+    )
     icon: ClassVar[str] = "fa-solid fa-file-code"
 
     def __init__(self) -> None:
@@ -175,7 +185,9 @@ class ResourcesByFormatMetric(MetricBase):
     def get_data(self) -> list[dict[str, Any]]:
         rows = (
             model.Session.query(
-                func.coalesce(func.nullif(func.upper(model.Resource.format), ""), "Unknown").label("format"),
+                func.coalesce(
+                    func.nullif(func.upper(model.Resource.format), ""), "Unknown"
+                ).label("format"),
                 func.count(model.Resource.id).label("count"),
             )
             .filter(model.Resource.state == "active")
@@ -209,7 +221,9 @@ class TopTagsMetric(MetricBase):
         const.VisualizationType.CHART,
         const.VisualizationType.TABLE,
     ]
-    default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.CHART
+    default_visualization: ClassVar[const.VisualizationType] = (
+        const.VisualizationType.CHART
+    )
     icon: ClassVar[str] = "fa-solid fa-tags"
 
     def __init__(self) -> None:
@@ -250,7 +264,10 @@ class TopTagsMetric(MetricBase):
                 "indexAxis": "y",
                 "plugins": {"legend": {"display": False}},
                 "scales": {
-                    "x": {"beginAtZero": True, "title": {"display": True, "text": tk._("Datasets")}},
+                    "x": {
+                        "beginAtZero": True,
+                        "title": {"display": True, "text": tk._("Datasets")},
+                    },
                 },
             },
         }
@@ -263,6 +280,81 @@ class TopTagsMetric(MetricBase):
         }
 
 
+class DatasetsWithoutResourcesMetric(MetricBase):
+    """Datasets that have no attached resources."""
+
+    supported_visualizations: ClassVar[list[const.VisualizationType]] = [
+        const.VisualizationType.CARD,
+        const.VisualizationType.TABLE,
+    ]
+    default_visualization: ClassVar[const.VisualizationType] = (
+        const.VisualizationType.TABLE
+    )
+    icon: ClassVar[str] = "fa-solid fa-file-circle-xmark"
+
+    def __init__(self) -> None:
+        super().__init__(
+            name="datasets_without_resources",
+            title=tk._("Datasets Without Resources"),
+            description=tk._("Datasets that have no attached resources"),
+            order=6,
+            grid_size="full",
+        )
+
+    def get_data(self) -> list[dict[str, Any]]:
+        rows = (
+            model.Session.query(model.Package.name, model.Package.title)
+            .filter(
+                model.Package.state == model.State.ACTIVE,
+                model.Package.type == "dataset",
+                ~model.Package.id.in_(
+                    (
+                        model.Session.query(model.Resource.package_id)
+                        .filter(model.Resource.state == model.State.ACTIVE)
+                        .subquery()
+                    )
+                ),
+            )
+            .order_by(model.Package.title)
+            .all()
+        )
+
+        return [
+            {
+                "name": row.name,
+                "title": row.title or row.name,
+                "url": tk.url_for("dataset.read", id=row.name, _external=False),
+            }
+            for row in rows
+        ]
+
+    def get_card_data(self) -> dict[str, Any]:
+        return {
+            "value": len(self.get_data()),
+            "label": tk._("Datasets Without Resources"),
+        }
+
+    def get_table_data(self) -> dict[str, Any]:
+        data = self.get_data()
+        return {
+            "headers": [tk._("Dataset"), tk._("URL")],
+            "rows": [
+                [
+                    item["title"],
+                    {"text": item["url"], "url": item["url"]},
+                ]
+                for item in data
+            ],
+        }
+
+    def get_export_data(self) -> dict[str, Any]:
+        data = self.get_data()
+        return {
+            "headers": [tk._("Dataset"), tk._("URL")],
+            "rows": [[item["title"], item["url"]] for item in data],
+        }
+
+
 class StaleDatasetsMetric(MetricBase):
     """Datasets that have not been updated in over a year."""
 
@@ -270,7 +362,9 @@ class StaleDatasetsMetric(MetricBase):
         const.VisualizationType.CARD,
         const.VisualizationType.TABLE,
     ]
-    default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.TABLE
+    default_visualization: ClassVar[const.VisualizationType] = (
+        const.VisualizationType.TABLE
+    )
     icon: ClassVar[str] = "fa-solid fa-hourglass-end"
 
     def __init__(self) -> None:
@@ -278,7 +372,7 @@ class StaleDatasetsMetric(MetricBase):
             name="stale_datasets",
             title=tk._("Stale Datasets"),
             description=tk._("Datasets not updated in over a year"),
-            order=6,
+            order=7,
             grid_size="full",
         )
 

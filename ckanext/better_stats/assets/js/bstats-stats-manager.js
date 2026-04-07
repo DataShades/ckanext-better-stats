@@ -196,14 +196,20 @@ class BetterStatsManager {
         (tableData.rows || []).forEach((row) => {
             const tr = this._el("tr");
             row.forEach((cell) => {
-                const td = this._el("td", { textContent: cell });
-                if (cell !== null && cell !== "" && !isNaN(Number(cell))) {
-                    td.classList.add("cell-numeric");
+                const td = this._el("td");
+
+                if (cell !== null && typeof cell === "object" && cell.url) {
+                    const a = this._el("a", { textContent: cell.text ?? cell.url, href: cell.url });
+                    td.appendChild(a);
+                } else {
+                    td.textContent = cell;
                 }
+
                 tr.appendChild(td);
             });
             tbody.appendChild(tr);
         });
+
         table.appendChild(tbody);
         wrapper.appendChild(table);
         container.appendChild(wrapper);
