@@ -3,6 +3,7 @@ import io
 import json
 import logging
 from datetime import UTC, datetime
+from typing import Any
 
 from flask import Blueprint, Response, jsonify, make_response
 from flask.views import MethodView
@@ -35,6 +36,64 @@ class BetterStatsDashboardView(MethodView):
             "better_stats/dashboard.html",
             extra_vars={"accessible_metrics": accessible_metrics},
         )
+
+
+@bp.route("/metrics")
+def get_metrics_batch() -> Response:
+    """Return visualization data for multiple metrics in one request.
+
+    Query parameters:
+        names   – comma-separated list of metric names (required)
+        refresh – if truthy, invalidate cache for every requested metric
+    """
+    raw_names = tk.request.args.get("names", "")
+    names = [n.strip() for n in raw_names.split(",") if n.strip()]
+
+    if not names:
+        return make_response(jsonify({"error": tk._("No metric names provided")}), 400)
+
+    refresh = tk.asbool(tk.request.args.get("refresh", False))
+
+    results: dict[str, Any] = {}
+    errors: dict[str, str] = {}
+
+    for name in names:
+        metric = MetricRegistry.get_metric(name)
+
+        if not metric or not tk.h.check_user_can_access_metric(metric):
+            errors[name] = tk._("Not found or not accessible")
+            continue
+
+        viz_type = metric.default_visualization
+
+        if refresh:
+            metric.refresh_cache()
+
+        try:
+            data = metric.get_viz_data(viz_type)
+        except Exception as exc:  # noqa: BLE001
+            errors[name] = str(exc)
+            continue
+
+        for _, result in before_metric_render_signal.send(
+            None, context={"metric": metric, "viz_type": viz_type.value, "data": data}
+        ):
+            if result is not None:
+                data = result
+                break
+
+        results[name] = {
+            "name": metric.name,
+            "title": metric.title,
+            "description": metric.description,
+            "data": data,
+            "type": viz_type.value,
+            "supported_visualizations": [v.value for v in metric.supported_visualizations],
+            "default_visualization": metric.default_visualization.value,
+            "supported_export_formats": list(metric.supported_export_formats),
+        }
+
+    return jsonify({"metrics": results, "errors": errors})
 
 
 @bp.route("/metric/<metric_name>")
@@ -180,5 +239,6 @@ class MetricExporter:
 
 
 bp.add_url_rule("/dashboard", view_func=BetterStatsDashboardView.as_view("dashboard"))
+bp.add_url_rule("/metrics", view_func=get_metrics_batch)
 bp.add_url_rule("/embed/<metric_name>", view_func=embed_metric)
 bp.add_url_rule("/export/<metric_name>", view_func=export_metric)

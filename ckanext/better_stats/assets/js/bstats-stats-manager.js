@@ -114,10 +114,8 @@ class BetterStatsManager {
     }
 
     async loadAllMetrics() {
-        const containers = this.container.querySelectorAll(".metric-container");
-        for (const c of containers) {
-            await this.loadMetric(c.dataset.metric, c.dataset.defaultViz || "chart");
-        }
+        const containers = [...this.container.querySelectorAll(".metric-container")];
+        if (containers.length) await this._loadBatch(containers);
     }
 
     async loadMetric(metricName, vizType = "chart", refresh = false) {
@@ -269,8 +267,49 @@ class BetterStatsManager {
     }
 
     async refreshAllMetrics() {
-        for (const c of this.container.querySelectorAll(".metric-container")) {
-            await this.refreshMetric(c.dataset.metric);
+        const containers = [...this.container.querySelectorAll(".metric-container")];
+        if (containers.length) await this._loadBatch(containers, true);
+    }
+
+    async _loadBatch(containers, refresh = false) {
+        if (refresh) {
+            containers.forEach((c) => {
+                const el = document.getElementById(`metric-${c.dataset.metric}`);
+                if (el) el.innerHTML = this._skeletonHTML();
+            });
+        }
+
+        const names = containers.map((c) => c.dataset.metric).join(",");
+        const url = `/better_stats/metrics?names=${encodeURIComponent(names)}${refresh ? "&refresh=true" : ""}`;
+
+        try {
+            const resp = await fetch(url);
+            const batch = await resp.json();
+
+            containers.forEach((c) => {
+                const metricName = c.dataset.metric;
+                const el = document.getElementById(`metric-${metricName}`);
+                if (!el) return;
+
+                const data = batch.metrics?.[metricName];
+                if (!data) {
+                    el.innerHTML = this._errorHTML(metricName, batch.errors?.[metricName] || "Not available");
+                    return;
+                }
+
+                el.innerHTML = "";
+                const vizType = data.type;
+                this.renderMetric(el, data, vizType);
+                this.currentVizTypes[metricName] = vizType;
+                this._updatePills(metricName, vizType);
+                this.loadTimes[metricName] = Date.now();
+                this._updateCacheAge(metricName);
+            });
+        } catch (err) {
+            // Batch request failed — fall back to individual loads
+            for (const c of containers) {
+                await this.loadMetric(c.dataset.metric, c.dataset.defaultViz || "chart", refresh);
+            }
         }
     }
 
