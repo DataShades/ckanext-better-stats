@@ -1,5 +1,5 @@
 import uuid
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import Boolean, Column, DateTime, Integer, String
 from sqlalchemy.dialects.postgresql import JSONB
@@ -10,7 +10,7 @@ from ckan import model
 
 
 def _current_datetime():
-    return datetime.now(tz=UTC)
+    return datetime.now(tz=timezone.utc)
 
 
 class MetricConfig(tk.BaseModel):

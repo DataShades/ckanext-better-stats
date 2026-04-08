@@ -35,7 +35,10 @@ def better_stats_export_metric(context: types.Context, data_dict: types.DataDict
     user = model.User.get(context.get("user", ""))
 
     if not user:
-        return {"success": False, "msg": tk._("Must be logged in to export this metric")}
+        return {
+            "success": False,
+            "msg": tk._("Must be logged in to export this metric"),
+        }
 
     if access_level == const.AccessLevel.AUTHENTICATED.value:
         return {"success": True}

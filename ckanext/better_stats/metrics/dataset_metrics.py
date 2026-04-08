@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, ClassVar
 
 from sqlalchemy import func, select
@@ -359,7 +359,7 @@ class StaleDatasetsMetric(MetricBase):
         )
 
     def _cutoff(self) -> datetime:
-        return datetime.now(UTC).replace(tzinfo=None) - timedelta(days=365)
+        return datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=365)
 
     def get_data(self) -> list[dict[str, Any]]:
         rows = (

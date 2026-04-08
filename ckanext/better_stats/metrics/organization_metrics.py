@@ -33,7 +33,10 @@ class OrganizationCountMetric(MetricBase):
     def get_data(self) -> int:
         return (
             model.Session.query(model.Group)
-            .filter(model.Group.type == "organization", model.Group.state == model.State.ACTIVE)
+            .filter(
+                model.Group.type == "organization",
+                model.Group.state == model.State.ACTIVE,
+            )
             .count()
         )
 
@@ -46,7 +49,10 @@ class OrganizationCountMetric(MetricBase):
                 func.date_trunc("month", model.Group.created).label("month"),
                 func.count(model.Group.id).label("count"),
             )
-            .filter(model.Group.type == "organization", model.Group.state == model.State.ACTIVE)
+            .filter(
+                model.Group.type == "organization",
+                model.Group.state == model.State.ACTIVE,
+            )
             .group_by("month")
             .order_by("month")
             .all()
@@ -64,7 +70,10 @@ class OrganizationCountMetric(MetricBase):
     def get_table_data(self) -> dict[str, Any]:
         rows = (
             model.Session.query(model.Group.title, model.Group.created)
-            .filter(model.Group.type == "organization", model.Group.state == model.State.ACTIVE)
+            .filter(
+                model.Group.type == "organization",
+                model.Group.state == model.State.ACTIVE,
+            )
             .order_by(model.Group.created.desc())
             .all()
         )
