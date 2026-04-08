@@ -24,4 +24,4 @@ better_stats-css:
   filter: cssrewrite
   output: ckanext-better_stats/%(version)s-better_stats.css
   contents:
-    - css/style.css
+    - css/styles.css
