@@ -41,18 +41,20 @@ class MemoryMetric(MetricBase):
     def get_chart_data(self) -> dict[str, Any]:
         mem = psutil.virtual_memory()
         return {
-            "type": "doughnut",
-            "data": [mem.used, mem.available],
-            "labels": ["Used", "Free"],
-            "max": mem.total,
-            "rotation": -90,
-            "aspectRatio": 2,
-            "circumference": 180,
-            "options": {
-                "aspectRatio": 2,
-                "circumference": 180,
-                "rotation": -90,
-            },
+            "tooltip": {"trigger": "item"},
+            "series": [
+                {
+                    "type": "pie",
+                    "radius": ["50%", "90%"],
+                    "center": ["50%", "75%"],
+                    "startAngle": 180,
+                    "endAngle": 360,
+                    "data": [
+                        {"name": "Used", "value": mem.used},
+                        {"name": "Free", "value": mem.available},
+                    ],
+                }
+            ],
         }
 
     def get_table_data(self) -> dict[str, Any]:
@@ -109,20 +111,10 @@ class CPUMetric(MetricBase):
         labels = ["Total"] + [f"Core {i}" for i in range(len(data["per_core"]))]
         values = [data["total"]] + data["per_core"]
         return {
-            "type": "bar",
-            "data": values,
-            "labels": labels,
-            "max": 100,
-            "options": {
-                "scales": {
-                    "y": {
-                        "beginAtZero": True,
-                        "max": 100,
-                        "title": {"display": True, "text": "CPU Usage (%)"},
-                    }
-                },
-                "aspectRatio": 2,
-            },
+            "tooltip": {"trigger": "axis"},
+            "xAxis": {"type": "category", "data": labels},
+            "yAxis": {"type": "value", "name": "CPU Usage (%)"},
+            "series": [{"type": "bar", "data": values, "colorBy": "data"}],
         }
 
     def get_table_data(self) -> dict[str, Any]:
@@ -185,30 +177,29 @@ class DiskUsageMetric(MetricBase):
         return result
 
     def get_chart_data(self) -> dict[str, Any]:
-        charts: list[dict[str, Any]] = []
+        partitions = []
+        used_values = []
+        free_values = []
+
         for part in psutil.disk_partitions():
             try:
                 usage = psutil.disk_usage(part.mountpoint)
             except PermissionError:
                 continue
-            charts.append(
-                {
-                    "type": "doughnut",
-                    "data": [usage.used, usage.free],
-                    "labels": ["Used", "Free"],
-                    "max": usage.total,
-                    "rotation": -90,
-                    "aspectRatio": 2,
-                    "circumference": 180,
-                    "options": {
-                        "aspectRatio": 2,
-                        "circumference": 180,
-                        "rotation": -90,
-                    },
-                    "title": f"{part.device} ({part.mountpoint})",
-                }
-            )
-        return {"type": "multi", "charts": charts}
+            partitions.append(part.mountpoint)
+            used_values.append(round(usage.used / (1024**3), 2))
+            free_values.append(round(usage.free / (1024**3), 2))
+        return {
+            "tooltip": {"trigger": "axis", "axisPointer": {"type": "shadow"}},
+            "legend": {},
+            "grid": {"left": 120, "right": 20, "top": 40, "bottom": 20},
+            "xAxis": {"type": "value", "name": "GB", "nameLocation": "end"},
+            "yAxis": {"type": "category", "data": partitions},
+            "series": [
+                {"name": "Used", "type": "bar", "stack": "total", "data": used_values},
+                {"name": "Free", "type": "bar", "stack": "total", "data": free_values},
+            ],
+        }
 
     def get_table_data(self) -> dict[str, Any]:
         data = self.get_data()

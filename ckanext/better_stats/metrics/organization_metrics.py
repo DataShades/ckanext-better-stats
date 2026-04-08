@@ -58,13 +58,10 @@ class OrganizationCountMetric(MetricBase):
             .all()
         )
         return {
-            "type": "line",
-            "labels": [row.month.strftime("%Y-%m") for row in rows],
-            "data": [row.count for row in rows],
-            "options": {
-                "plugins": {"legend": {"display": False}},
-                "scales": {"y": {"beginAtZero": True, "ticks": {"stepSize": 1}}},
-            },
+            "tooltip": {"trigger": "axis"},
+            "xAxis": {"type": "category", "data": [row.month.strftime("%Y-%m") for row in rows]},
+            "yAxis": {"type": "value", "minInterval": 1},
+            "series": [{"type": "line", "data": [row.count for row in rows], "smooth": True}],
         }
 
     def get_table_data(self) -> dict[str, Any]:
@@ -131,19 +128,37 @@ class OrganizationMembershipMetric(MetricBase):
         data = self.get_data()
         return {
             "type": "bar",
-            "labels": [item["organization"] for item in data],
-            "data": [item["members"] for item in data],
-            "options": {
-                "indexAxis": "y",
-                "plugins": {"legend": {"display": False}},
-                "scales": {
-                    "x": {
-                        "beginAtZero": True,
-                        "ticks": {"stepSize": 1},
-                        "title": {"display": True, "text": tk._("Members")},
-                    },
+            "tooltip": {
+                "trigger": "axis",
+                "axisPointer": {"type": "shadow"},
+            },
+            "grid": {
+                "left": 150,
+                "right": 20,
+                "top": 20,
+                "bottom": 40,
+            },
+            "xAxis": {
+                "type": "value",
+                "minInterval": 1,
+                "name": tk._("Members"),
+            },
+            "yAxis": {
+                "type": "category",
+                "data": [item["organization"] for item in data],
+                "axisLabel": {
+                    "width": 140,
+                    "overflow": "truncate",
+                    "ellipsis": "...",
                 },
             },
+            "series": [
+                {
+                    "type": "bar",
+                    "data": [item["members"] for item in data],
+                    "colorBy": "data",
+                }
+            ],
         }
 
     def get_table_data(self) -> dict[str, Any]:
@@ -222,6 +237,7 @@ class OrganizationOverviewMetric(MetricBase):
         rows = (
             model.Session.query(
                 model.Group.title,
+                model.Group.name,
                 func.coalesce(dataset_counts.c.datasets, 0).label("datasets"),
                 func.coalesce(resource_counts.c.resources, 0).label("resources"),
                 func.coalesce(member_counts.c.members, 0).label("members"),
@@ -238,7 +254,7 @@ class OrganizationOverviewMetric(MetricBase):
         )
         return [
             {
-                "organization": row.title,
+                "organization": {"label": row.title, "url": tk.url_for("organization.read", id=row.name)},
                 "datasets": row.datasets,
                 "resources": row.resources,
                 "members": row.members,
@@ -257,7 +273,7 @@ class OrganizationOverviewMetric(MetricBase):
             ],
             "rows": [
                 [
-                    item["organization"],
+                    {"text": item["organization"]["label"], "url": item["organization"]["url"]},
                     item["datasets"],
                     item["resources"],
                     item["members"],
@@ -358,10 +374,10 @@ class OrganizationSizesMetric(MetricBase):
             .join(model.Member, model.Group.id == model.Member.group_id)
             .join(model.Package, model.Member.table_id == model.Package.id)
             .filter(
-                model.Package.state == "active",
+                model.Package.state == model.State.ACTIVE,
                 model.Package.type == "dataset",
                 model.Group.type == "organization",
-                model.Group.state == "active",
+                model.Group.state == model.State.ACTIVE,
                 model.Member.table_name == "package",
             )
             .group_by(model.Group.title, model.Group.name)
@@ -381,8 +397,16 @@ class OrganizationSizesMetric(MetricBase):
         data = self.get_data()
 
         return {
-            "type": "treemap",
-            "data": [{"name": item["organization"] or "Unknown", "value": item["count"]} for item in data],
+            "tooltip": {"formatter": "{b}: {c}"},
+            "series": [
+                {
+                    "type": "treemap",
+                    "data": [{"name": item["organization"] or "Unknown", "value": item["count"]} for item in data],
+                    "label": {"show": True, "formatter": "{b}"},
+                    "itemStyle": {"borderColor": "#fff"},
+                    "roam": False,
+                }
+            ],
         }
 
     def get_table_data(self) -> dict[str, Any]:

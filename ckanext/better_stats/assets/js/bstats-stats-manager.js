@@ -458,62 +458,9 @@ class BetterStatsManager {
         const holder = this._el("div", { className: "metric-chart" });
         container.appendChild(holder);
 
-        const type = chartData.type || "bar";
         const chart = echarts.init(holder, this._isDark() ? "dark" : "default");
-
-        let option;
-
-        if (type === "pie" || type === "doughnut") {
-            option = {
-                tooltip: { trigger: "item" },
-                legend: { orient: "vertical", left: "left" },
-                series: [{
-                    type: "pie",
-                    radius: type === "doughnut" ? ["40%", "70%"] : "60%",
-                    data: (chartData.labels || []).map((label, i) => ({
-                        name: String(label),
-                        value: chartData.data[i] ?? 0,
-                    })),
-                }],
-            };
-        } else if (type === "line") {
-            option = {
-                tooltip: { trigger: "axis" },
-                xAxis: { type: "category", data: chartData.labels || [] },
-                yAxis: { type: "value" },
-                series: [{ type: "line", data: chartData.data || [], smooth: true }],
-            };
-        } else if (type === "treemap") {
-            option = {
-                tooltip: { formatter: "{b}: {c}" },
-                series: [{ 
-                    type: "treemap", 
-                    data: chartData.data || [],
-                    label: { show: true, formatter: "{b}" },
-                    itemStyle: { borderColor: "#fff" },
-                    roam: false,
-                }],
-            };
-        } else {
-            const isHorizontal = chartData.options?.indexAxis === "y";
-            const barSeries = { type: "bar", data: chartData.data || [], colorBy: "data" };
-            option = isHorizontal
-                ? {
-                    tooltip: { trigger: "axis" },
-                    xAxis: { type: "value" },
-                    yAxis: { type: "category", data: chartData.labels || [] },
-                    series: [barSeries],
-                }
-                : {
-                    tooltip: { trigger: "axis" },
-                    xAxis: { type: "category", data: chartData.labels || [] },
-                    yAxis: { type: "value" },
-                    series: [barSeries],
-                };
-        }
-
-        chart.setOption(option);
-        chart._chartOptions = option;
+        chart.setOption(chartData);
+        chart._chartOptions = chartData;
 
         return chart;
     }

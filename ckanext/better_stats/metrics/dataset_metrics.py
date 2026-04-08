@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 from typing import Any, ClassVar
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 
 import ckan.plugins.toolkit as tk
 from ckan import model
@@ -38,7 +38,7 @@ class DatasetCountMetric(MetricBase):
         return (
             model.Session.query(model.Package)
             .filter(
-                model.Package.state == "active",
+                model.Package.state == model.State.ACTIVE,
                 model.Package.type == "dataset",
             )
             .count()
@@ -78,12 +78,13 @@ class DatasetsByOrganizationMetric(MetricBase):
             .join(model.Member, model.Group.id == model.Member.group_id)
             .join(model.Package, model.Member.table_id == model.Package.id)
             .filter(
-                model.Package.state == "active",
+                model.Package.state == model.State.ACTIVE,
                 model.Package.type == "dataset",
                 model.Group.type == "organization",
                 model.Member.table_name == "package",
             )
             .group_by(model.Group.title)
+            .order_by(text("count desc"))
             .all()
         )
         return [{"organization": row.title, "count": row.count} for row in rows]
@@ -91,9 +92,15 @@ class DatasetsByOrganizationMetric(MetricBase):
     def get_chart_data(self) -> dict[str, Any]:
         data = self.get_data()
         return {
-            "type": "pie",
-            "labels": [item["organization"] for item in data],
-            "data": [item["count"] for item in data],
+            "tooltip": {"trigger": "item"},
+            "legend": {"orient": "vertical", "left": "left"},
+            "series": [
+                {
+                    "type": "pie",
+                    "radius": "60%",
+                    "data": [{"name": item["organization"], "value": item["count"]} for item in data],
+                }
+            ],
         }
 
     def get_table_data(self) -> dict[str, Any]:
@@ -129,7 +136,7 @@ class DatasetCreationHistoryMetric(MetricBase):
                 func.count(model.Package.id).label("count"),
             )
             .filter(
-                model.Package.state == "active",
+                model.Package.state == model.State.ACTIVE,
                 model.Package.type == "dataset",
             )
             .group_by("day")
@@ -141,9 +148,10 @@ class DatasetCreationHistoryMetric(MetricBase):
     def get_chart_data(self) -> dict[str, Any]:
         data = self.get_data()
         return {
-            "type": "line",
-            "labels": [item["day"] for item in data],
-            "data": [item["count"] for item in data],
+            "tooltip": {"trigger": "axis"},
+            "xAxis": {"type": "category", "data": [item["day"] for item in data]},
+            "yAxis": {"type": "value", "minInterval": 1},
+            "series": [{"type": "line", "data": [item["count"] for item in data], "smooth": True}],
         }
 
     def get_table_data(self) -> dict[str, Any]:
@@ -178,7 +186,7 @@ class ResourcesByFormatMetric(MetricBase):
                 func.coalesce(func.nullif(func.upper(model.Resource.format), ""), "Unknown").label("format"),
                 func.count(model.Resource.id).label("count"),
             )
-            .filter(model.Resource.state == "active")
+            .filter(model.Resource.state == model.State.ACTIVE)
             .group_by("format")
             .order_by(func.count(model.Resource.id).desc())
             .limit(10)
@@ -189,9 +197,15 @@ class ResourcesByFormatMetric(MetricBase):
     def get_chart_data(self) -> dict[str, Any]:
         data = self.get_data()
         return {
-            "type": "pie",
-            "labels": [item["format"] for item in data],
-            "data": [item["count"] for item in data],
+            "tooltip": {"trigger": "item"},
+            "legend": {"orient": "vertical", "left": "left"},
+            "series": [
+                {
+                    "type": "pie",
+                    "radius": "60%",
+                    "data": [{"name": item["format"], "value": item["count"]} for item in data],
+                }
+            ],
         }
 
     def get_table_data(self) -> dict[str, Any]:
@@ -229,9 +243,9 @@ class TopTagsMetric(MetricBase):
             .join(model.PackageTag, model.Tag.id == model.PackageTag.tag_id)
             .join(model.Package, model.PackageTag.package_id == model.Package.id)
             .filter(
-                model.Package.state == "active",
+                model.Package.state == model.State.ACTIVE,
                 model.Package.type == "dataset",
-                model.PackageTag.state == "active",
+                model.PackageTag.state == model.State.ACTIVE,
             )
             .group_by(model.Tag.name)
             .order_by(func.count(model.PackageTag.package_id).desc())
@@ -243,19 +257,15 @@ class TopTagsMetric(MetricBase):
     def get_chart_data(self) -> dict[str, Any]:
         data = self.get_data()
         return {
-            "type": "bar",
-            "labels": [item["tag"] for item in data],
-            "data": [item["count"] for item in data],
-            "options": {
-                "indexAxis": "y",
-                "plugins": {"legend": {"display": False}},
-                "scales": {
-                    "x": {
-                        "beginAtZero": True,
-                        "title": {"display": True, "text": tk._("Datasets")},
-                    },
-                },
+            "tooltip": {"trigger": "axis", "axisPointer": {"type": "shadow"}},
+            "grid": {"left": 150, "right": 20, "top": 20, "bottom": 40},
+            "xAxis": {"type": "value", "minInterval": 1, "name": tk._("Datasets")},
+            "yAxis": {
+                "type": "category",
+                "data": [item["tag"] for item in data],
+                "axisLabel": {"width": 140, "overflow": "truncate", "ellipsis": "..."},
             },
+            "series": [{"type": "bar", "data": [item["count"] for item in data]}],
         }
 
     def get_table_data(self) -> dict[str, Any]:
@@ -369,7 +379,7 @@ class StaleDatasetsMetric(MetricBase):
                 model.Package.metadata_modified,
             )
             .filter(
-                model.Package.state == "active",
+                model.Package.state == model.State.ACTIVE,
                 model.Package.type == "dataset",
                 model.Package.metadata_modified < self._cutoff(),
             )

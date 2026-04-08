@@ -49,13 +49,10 @@ class UserCountMetric(MetricBase):
             .all()
         )
         return {
-            "type": "line",
-            "labels": [row.month.strftime("%Y-%m") for row in rows],
-            "data": [row.count for row in rows],
-            "options": {
-                "plugins": {"legend": {"display": False}},
-                "scales": {"y": {"beginAtZero": True}},
-            },
+            "tooltip": {"trigger": "axis"},
+            "xAxis": {"type": "category", "data": [row.month.strftime("%Y-%m") for row in rows]},
+            "yAxis": {"type": "value", "minInterval": 1},
+            "series": [{"type": "line", "data": [row.count for row in rows], "smooth": True}],
         }
 
     def get_table_data(self) -> dict[str, Any]:
