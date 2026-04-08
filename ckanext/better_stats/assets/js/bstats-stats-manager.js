@@ -131,7 +131,7 @@ class BetterStatsManager {
         el.innerHTML = this._skeletonHTML();
 
         try {
-            const url = `/better_stats/metric/${metricName}?type=${vizType}${refresh ? "&refresh=true" : ""}`;
+            const url = ckan.url(`/better_stats/metric/${metricName}?type=${vizType}${refresh ? "&refresh=true" : ""}`);
             const resp = await fetch(url);
             const data = await resp.json();
 
@@ -286,7 +286,7 @@ class BetterStatsManager {
         }
 
         const names = containers.map((c) => c.dataset.metric).join(",");
-        const url = `/better_stats/metrics?names=${encodeURIComponent(names)}${refresh ? "&refresh=true" : ""}`;
+        const url = ckan.url(`/better_stats/metrics?names=${encodeURIComponent(names)}${refresh ? "&refresh=true" : ""}`);
 
         try {
             const resp = await fetch(url);
@@ -377,7 +377,7 @@ class BetterStatsManager {
         const vizType = this.currentVizTypes[metricName] || "chart";
 
         try {
-            const resp = await fetch(`/better_stats/metric/${metricName}?type=${vizType}`);
+            const resp = await fetch(ckan.url(`/better_stats/metric/${metricName}?type=${vizType}`));
             const data = await resp.json();
             if (data.error) throw new Error(data.error);
 
