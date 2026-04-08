@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, ClassVar
 
-from sqlalchemy import func
+from sqlalchemy import func, select
 
 import ckan.plugins.toolkit as tk
 from ckan import model
@@ -19,7 +19,9 @@ class UserCountMetric(MetricBase):
         const.VisualizationType.CHART,
         const.VisualizationType.TABLE,
     ]
-    default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.CARD
+    default_visualization: ClassVar[const.VisualizationType] = (
+        const.VisualizationType.CARD
+    )
     icon: ClassVar[str] = "fa-solid fa-users"
 
     def __init__(self) -> None:
@@ -32,7 +34,11 @@ class UserCountMetric(MetricBase):
         )
 
     def get_data(self) -> int:
-        return model.Session.query(model.User).filter(model.User.state == model.State.ACTIVE).count()
+        return (
+            model.Session.query(model.User)
+            .filter(model.User.state == model.State.ACTIVE)
+            .count()
+        )
 
     def get_card_data(self) -> dict[str, Any]:
         return {"value": self.get_data(), "label": tk._("Registered Users")}
@@ -82,14 +88,18 @@ class DatasetCompletenessMetric(MetricBase):
         const.VisualizationType.PROGRESS,
         const.VisualizationType.TABLE,
     ]
-    default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.PROGRESS
+    default_visualization: ClassVar[const.VisualizationType] = (
+        const.VisualizationType.PROGRESS
+    )
     icon: ClassVar[str] = "fa-solid fa-circle-check"
 
     def __init__(self) -> None:
         super().__init__(
             name="dataset_completeness",
             title=tk._("Dataset Completeness"),
-            description=tk._("Percentage of datasets with description, tags, and resources"),
+            description=tk._(
+                "Percentage of datasets with description, tags, and resources"
+            ),
             order=8,
             access_level=const.AccessLevel.ADMIN.value,
         )
@@ -99,6 +109,7 @@ class DatasetCompletenessMetric(MetricBase):
             model.Package.state == model.State.ACTIVE, model.Package.type == "dataset"
         )
         total = base.count()
+
         if total == 0:
             return {
                 "total": 0,
@@ -112,21 +123,27 @@ class DatasetCompletenessMetric(MetricBase):
             func.length(func.trim(model.Package.notes)) > 0,
         ).count()
 
-        tagged_ids = (
-            model.Session.query(model.PackageTag.package_id)
-            .filter(model.PackageTag.state == model.State.ACTIVE)
-            .distinct()
-            .subquery()
-        )
-        with_tags = base.filter(model.Package.id.in_(tagged_ids)).count()
+        with_tags = base.filter(
+            model.Package.id.in_(
+                select(
+                    model.Session.query(model.PackageTag.package_id)
+                    .filter(model.PackageTag.state == model.State.ACTIVE)
+                    .distinct()
+                    .subquery()
+                )
+            )
+        ).count()
 
-        resource_ids = (
-            model.Session.query(model.Resource.package_id)
-            .filter(model.Resource.state == model.State.ACTIVE)
-            .distinct()
-            .subquery()
-        )
-        with_resources = base.filter(model.Package.id.in_(resource_ids)).count()
+        with_resources = base.filter(
+            model.Package.id.in_(
+                select(
+                    model.Session.query(model.Resource.package_id)
+                    .filter(model.Resource.state == model.State.ACTIVE)
+                    .distinct()
+                    .subquery()
+                )
+            )
+        ).count()
 
         return {
             "total": total,

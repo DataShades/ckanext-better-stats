@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 from typing import Any, ClassVar
 
-from sqlalchemy import func
+from sqlalchemy import func, select
 
 import ckan.plugins.toolkit as tk
 from ckan import model
@@ -308,7 +308,7 @@ class DatasetsWithoutResourcesMetric(MetricBase):
                 model.Package.state == model.State.ACTIVE,
                 model.Package.type == "dataset",
                 ~model.Package.id.in_(
-                    (
+                    select(
                         model.Session.query(model.Resource.package_id)
                         .filter(model.Resource.state == model.State.ACTIVE)
                         .subquery()
