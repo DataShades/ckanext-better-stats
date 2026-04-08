@@ -32,7 +32,7 @@ class MetricConfig(tk.BaseModel):
         return model.Session.query(cls).filter_by(metric_name=metric_name).first()
 
     @classmethod
-    def upsert(cls, metric_name: str, **kwargs) -> "MetricConfig":
+    def upsert(cls, metric_name: str, **kwargs: dict[str, str | int | bool]) -> "MetricConfig":
         obj = cls.for_metric(metric_name)
 
         if not obj:

@@ -22,9 +22,7 @@ class DatasetCountMetric(MetricBase):
         const.VisualizationType.CARD,
         const.VisualizationType.TABLE,
     ]
-    default_visualization: ClassVar[const.VisualizationType] = (
-        const.VisualizationType.TABLE
-    )
+    default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.TABLE
     icon: ClassVar[str] = "fa-solid fa-database"
     supported_export_formats = ["csv"]
 
@@ -60,9 +58,7 @@ class DatasetsByOrganizationMetric(MetricBase):
         const.VisualizationType.CHART,
         const.VisualizationType.TABLE,
     ]
-    default_visualization: ClassVar[const.VisualizationType] = (
-        const.VisualizationType.CHART
-    )
+    default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.CHART
     icon: ClassVar[str] = "fa-solid fa-building"
 
     def __init__(self) -> None:
@@ -115,9 +111,7 @@ class DatasetCreationHistoryMetric(MetricBase):
         const.VisualizationType.CHART,
         const.VisualizationType.TABLE,
     ]
-    default_visualization: ClassVar[const.VisualizationType] = (
-        const.VisualizationType.CHART
-    )
+    default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.CHART
     icon: ClassVar[str] = "fa-solid fa-calendar-days"
 
     def __init__(self) -> None:
@@ -142,9 +136,7 @@ class DatasetCreationHistoryMetric(MetricBase):
             .order_by("day")
             .all()
         )
-        return [
-            {"day": row.day.strftime("%Y-%m-%d"), "count": row.count} for row in rows
-        ]
+        return [{"day": row.day.strftime("%Y-%m-%d"), "count": row.count} for row in rows]
 
     def get_chart_data(self) -> dict[str, Any]:
         data = self.get_data()
@@ -169,9 +161,7 @@ class ResourcesByFormatMetric(MetricBase):
         const.VisualizationType.CHART,
         const.VisualizationType.TABLE,
     ]
-    default_visualization: ClassVar[const.VisualizationType] = (
-        const.VisualizationType.CHART
-    )
+    default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.CHART
     icon: ClassVar[str] = "fa-solid fa-file-code"
 
     def __init__(self) -> None:
@@ -185,9 +175,7 @@ class ResourcesByFormatMetric(MetricBase):
     def get_data(self) -> list[dict[str, Any]]:
         rows = (
             model.Session.query(
-                func.coalesce(
-                    func.nullif(func.upper(model.Resource.format), ""), "Unknown"
-                ).label("format"),
+                func.coalesce(func.nullif(func.upper(model.Resource.format), ""), "Unknown").label("format"),
                 func.count(model.Resource.id).label("count"),
             )
             .filter(model.Resource.state == "active")
@@ -221,9 +209,7 @@ class TopTagsMetric(MetricBase):
         const.VisualizationType.CHART,
         const.VisualizationType.TABLE,
     ]
-    default_visualization: ClassVar[const.VisualizationType] = (
-        const.VisualizationType.CHART
-    )
+    default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.CHART
     icon: ClassVar[str] = "fa-solid fa-tags"
 
     def __init__(self) -> None:
@@ -287,9 +273,7 @@ class DatasetsWithoutResourcesMetric(MetricBase):
         const.VisualizationType.CARD,
         const.VisualizationType.TABLE,
     ]
-    default_visualization: ClassVar[const.VisualizationType] = (
-        const.VisualizationType.TABLE
-    )
+    default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.TABLE
     icon: ClassVar[str] = "fa-solid fa-file-circle-xmark"
 
     def __init__(self) -> None:
@@ -362,9 +346,7 @@ class StaleDatasetsMetric(MetricBase):
         const.VisualizationType.CARD,
         const.VisualizationType.TABLE,
     ]
-    default_visualization: ClassVar[const.VisualizationType] = (
-        const.VisualizationType.TABLE
-    )
+    default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.TABLE
     icon: ClassVar[str] = "fa-solid fa-hourglass-end"
 
     def __init__(self) -> None:

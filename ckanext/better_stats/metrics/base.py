@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Callable
-from typing import Any, ClassVar
+from typing import Any, ClassVar, cast
 
 import ckan.plugins.toolkit as tk
 
@@ -28,7 +28,7 @@ class MetricBase(ABC):
     icon: ClassVar[str] = "fa-solid fa-chart-bar"
     supported_export_formats: ClassVar[list[str]] = ["csv", "json", "image"]
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         name: str,
         title: str = "",
@@ -67,7 +67,9 @@ class MetricBase(ABC):
         return None
 
     def get_card_data(self) -> dict[str, Any] | None:
-        """Return ``{"value": ..., "label": ...}`` or ``None`` if unsupported.
+        """Return card data.
+
+        Return ``{"value": ..., "label": ...}`` or ``None`` if unsupported.
 
         The default implementation works for any metric whose :meth:`get_data`
         returns a plain ``int`` or ``float``.
@@ -78,7 +80,9 @@ class MetricBase(ABC):
         return None
 
     def get_progress_data(self) -> dict[str, Any] | None:
-        """Return ``{"items": [{"label": str, "value": num, "max": num, "unit": str}]}``
+        """Return progress data.
+
+        Return ``{"items": [{"label": str, "value": num, "max": num, "unit": str}]}``
         or ``None`` if unsupported.
 
         Each item renders as a labelled horizontal progress bar.
@@ -227,10 +231,11 @@ class MetricRegistry:
             if not cfg.enabled:
                 return None
 
-            metric.order = cfg.order
-            metric.grid_size = cfg.grid_size
-            metric.cache_timeout = cfg.cache_timeout
-            metric.access_level = cfg.access_level or metric.access_level
+            metric.order = cast(int, cfg.order)
+            metric.grid_size = str(cfg.grid_size)
+            metric.cache_timeout = cast(int, cfg.cache_timeout)
+            metric.access_level = str(cfg.access_level or metric.access_level)
+
         return metric
 
     @classmethod

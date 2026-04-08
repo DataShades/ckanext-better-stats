@@ -1,3 +1,6 @@
+from ckanext.better_stats.metrics.base import MetricRegistry
+
+from .base import MetricBase
 from .dataset_metrics import (
     DatasetCountMetric,
     DatasetCreationHistoryMetric,
@@ -15,9 +18,9 @@ from .organization_metrics import (
 )
 from .portal_metrics import DatasetCompletenessMetric, UserCountMetric
 from .system_metrics import CPUMetric, DiskUsageMetric, MemoryMetric
-from ckanext.better_stats.metrics.base import MetricRegistry
 
 __all__ = [
+    "MetricBase",
     "DatasetCountMetric",
     "DatasetsByOrganizationMetric",
     "DatasetCreationHistoryMetric",

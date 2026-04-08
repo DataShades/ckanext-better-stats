@@ -1,9 +1,11 @@
 import ckan.plugins.toolkit as tk
 
-from ckanext.better_stats import const
+from ckanext.better_stats import const, metrics
+
+BYTE_MULTIPLIER = 1024.0
 
 
-def check_user_can_access_metric(metric):
+def check_user_can_access_metric(metric: metrics.MetricBase) -> bool:
     """Check if current user can access metric."""
     if metric.access_level == const.AccessLevel.PUBLIC.value:
         return True
@@ -52,7 +54,7 @@ def bs_get_embed_code(metric_name: str, width: str = "600", height: str = "400")
 def bs_format_bytes(num_bytes: float) -> str:
     """Convert a byte count to a human-readable string (e.g. ``"1.23 GB"``)."""
     for unit in ("B", "KB", "MB", "GB", "TB"):
-        if num_bytes < 1024.0:
+        if num_bytes < BYTE_MULTIPLIER:
             return f"{num_bytes:.2f} {unit}"
-        num_bytes /= 1024.0
+        num_bytes /= BYTE_MULTIPLIER
     return f"{num_bytes:.2f} PB"
