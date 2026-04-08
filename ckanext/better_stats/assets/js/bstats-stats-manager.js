@@ -483,6 +483,17 @@ class BetterStatsManager {
                 yAxis: { type: "value" },
                 series: [{ type: "line", data: chartData.data || [], smooth: true }],
             };
+        } else if (type === "treemap") {
+            option = {
+                tooltip: { formatter: "{b}: {c}" },
+                series: [{ 
+                    type: "treemap", 
+                    data: chartData.data || [],
+                    label: { show: true, formatter: "{b}" },
+                    itemStyle: { borderColor: "#fff" },
+                    roam: false,
+                }],
+            };
         } else {
             const isHorizontal = chartData.options?.indexAxis === "y";
             const barSeries = { type: "bar", data: chartData.data || [], colorBy: "data" };

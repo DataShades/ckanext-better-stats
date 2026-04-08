@@ -15,6 +15,7 @@ from .organization_metrics import (
     OrganizationCountMetric,
     OrganizationMembershipMetric,
     OrganizationOverviewMetric,
+    OrganizationSizesMetric,
 )
 from .portal_metrics import DatasetCompletenessMetric, UserCountMetric
 from .system_metrics import CPUMetric, DiskUsageMetric, MemoryMetric
@@ -31,6 +32,7 @@ __all__ = [
     "OrganizationCountMetric",
     "OrganizationMembershipMetric",
     "OrganizationOverviewMetric",
+    "OrganizationSizesMetric",
     "InactiveOrganizationsMetric",
     "UserCountMetric",
     "DatasetCompletenessMetric",
@@ -51,6 +53,7 @@ def register_metrics():
     MetricRegistry.register("organization_count", OrganizationCountMetric)
     MetricRegistry.register("organization_membership", OrganizationMembershipMetric)
     MetricRegistry.register("organization_overview", OrganizationOverviewMetric)
+    MetricRegistry.register("organization_sizes", OrganizationSizesMetric)
     MetricRegistry.register("inactive_organizations", InactiveOrganizationsMetric)
     MetricRegistry.register("user_count", UserCountMetric)
     MetricRegistry.register("dataset_completeness", DatasetCompletenessMetric)
@@ -71,6 +74,7 @@ def get_all_metrics() -> dict[str, type[MetricBase]]:
         "organization_count": OrganizationCountMetric,
         "organization_membership": OrganizationMembershipMetric,
         "organization_overview": OrganizationOverviewMetric,
+        "organization_sizes": OrganizationSizesMetric,
         "inactive_organizations": InactiveOrganizationsMetric,
         "user_count": UserCountMetric,
         "dataset_completeness": DatasetCompletenessMetric,

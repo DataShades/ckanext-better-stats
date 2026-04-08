@@ -327,3 +327,67 @@ class InactiveOrganizationsMetric(MetricBase):
             "headers": [tk._("Organization"), tk._("Created")],
             "rows": [[item["organization"], item["created"]] for item in data],
         }
+
+
+class OrganizationSizesMetric(MetricBase):
+    """Treemap of organizations showing their size by number of datasets."""
+
+    supported_visualizations: ClassVar[list[const.VisualizationType]] = [
+        const.VisualizationType.CHART,
+        const.VisualizationType.TABLE,
+    ]
+    default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.CHART
+    icon: ClassVar[str] = "fa-solid fa-cubes"
+
+    def __init__(self) -> None:
+        super().__init__(
+            name="organization_sizes",
+            title=tk._("Organization Sizes"),
+            description=tk._("Relative size of organizations by dataset count"),
+            order=13,
+            grid_size="full",
+        )
+
+    def get_data(self) -> list[dict[str, Any]]:
+        rows = (
+            model.Session.query(
+                model.Group.title,
+                model.Group.name,
+                func.count(model.Package.id).label("count"),
+            )
+            .join(model.Member, model.Group.id == model.Member.group_id)
+            .join(model.Package, model.Member.table_id == model.Package.id)
+            .filter(
+                model.Package.state == "active",
+                model.Package.type == "dataset",
+                model.Group.type == "organization",
+                model.Group.state == "active",
+                model.Member.table_name == "package",
+            )
+            .group_by(model.Group.title, model.Group.name)
+            .order_by(func.count(model.Package.id).desc())
+            .all()
+        )
+        return [
+            {
+                "organization": row.title,
+                "count": row.count,
+                "url": tk.url_for("organization.read", id=row.name),
+            }
+            for row in rows
+        ]
+
+    def get_chart_data(self) -> dict[str, Any]:
+        data = self.get_data()
+
+        return {
+            "type": "treemap",
+            "data": [{"name": item["organization"] or "Unknown", "value": item["count"]} for item in data],
+        }
+
+    def get_table_data(self) -> dict[str, Any]:
+        data = self.get_data()
+        return {
+            "headers": [tk._("Organization"), tk._("Datasets")],
+            "rows": [[{"text": item["organization"], "url": item["url"]}, item["count"]] for item in data],
+        }
