@@ -57,3 +57,24 @@ def register_metrics():
     MetricRegistry.register("memory", MemoryMetric)
     MetricRegistry.register("cpu", CPUMetric)
     MetricRegistry.register("disk_usage", DiskUsageMetric)
+
+
+def get_all_metrics() -> dict[str, type[MetricBase]]:
+    return {
+        "dataset_count": DatasetCountMetric,
+        "datasets_by_org": DatasetsByOrganizationMetric,
+        "dataset_creation_history": DatasetCreationHistoryMetric,
+        "resources_by_format": ResourcesByFormatMetric,
+        "top_tags": TopTagsMetric,
+        "datasets_without_resources": DatasetsWithoutResourcesMetric,
+        "stale_datasets": StaleDatasetsMetric,
+        "organization_count": OrganizationCountMetric,
+        "organization_membership": OrganizationMembershipMetric,
+        "organization_overview": OrganizationOverviewMetric,
+        "inactive_organizations": InactiveOrganizationsMetric,
+        "user_count": UserCountMetric,
+        "dataset_completeness": DatasetCompletenessMetric,
+        "memory": MemoryMetric,
+        "cpu": CPUMetric,
+        "disk_usage": DiskUsageMetric,
+    }

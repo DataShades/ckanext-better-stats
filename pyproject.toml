@@ -20,6 +20,11 @@ dependencies = [
     "psutil>=7.0.0",
 ]
 
+[project.optional-dependencies]
+docs = ["mkdocs", "mkdocs-material", "mkdocstrings", "mkdocstrings-python", "mkdocs-macros-plugin"]
+
+
+
 [project.urls]
 Homepage = "https://github.com/DataShades/ckanext-better-stats"
 
