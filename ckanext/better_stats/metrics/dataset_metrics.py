@@ -258,14 +258,14 @@ class TopTagsMetric(MetricBase):
         data = self.get_data()
         return {
             "tooltip": {"trigger": "axis", "axisPointer": {"type": "shadow"}},
-            "grid": {"left": 150, "right": 20, "top": 20, "bottom": 40},
+            "grid": {"left": 100, "right": 20, "top": 20, "bottom": 40},
             "xAxis": {"type": "value", "minInterval": 1, "name": tk._("Datasets")},
             "yAxis": {
                 "type": "category",
                 "data": [item["tag"] for item in data],
-                "axisLabel": {"width": 140, "overflow": "truncate", "ellipsis": "..."},
+                "axisLabel": {"width": 100, "overflow": "truncate", "ellipsis": "..."},
             },
-            "series": [{"type": "bar", "data": [item["count"] for item in data]}],
+            "series": [{"type": "bar", "data": [item["count"] for item in data], "colorBy": "data"}],
         }
 
     def get_table_data(self) -> dict[str, Any]:

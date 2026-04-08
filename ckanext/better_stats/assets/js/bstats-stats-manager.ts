@@ -1,4 +1,9 @@
-ckan.module("bstats-stats-manager", function ($) {
+declare const ckan: any;
+declare const echarts: any;
+declare const bootstrap: any;
+declare const snapdom: any;
+
+ckan.module("bstats-stats-manager", function ($: any) {
     return {
         initialize() {
             $.proxyAll(this, /_/);
@@ -9,7 +14,14 @@ ckan.module("bstats-stats-manager", function ($) {
 
 
 class BetterStatsManager {
-    constructor(container) {
+    private container: HTMLElement;
+    private charts: Record<string, any>;
+    private currentVizTypes: Record<string, string>;
+    private loadTimes: Record<string, number>;
+    private _fullscreenChart: any;
+    private _pendingFullscreen: string | null;
+
+    constructor(container: HTMLElement) {
         this.container = container;
         this.charts = {};
         this.currentVizTypes = {};
@@ -32,22 +44,22 @@ class BetterStatsManager {
     _bindEvents() {
         // Pill viz switcher
         this.container.addEventListener("click", (e) => {
-            const pill = e.target.closest(".viz-pill");
+            const pill = (e.target as Element).closest(".viz-pill") as HTMLElement | null;
             if (pill && !pill.classList.contains("active")) {
-                this.switchVisualization(pill.dataset.metric, pill.dataset.type, pill);
+                this.switchVisualization(pill.dataset.metric!, pill.dataset.type!, pill);
             }
         });
 
         // Refresh (now inside actions dropdown)
         this.container.addEventListener("click", (e) => {
-            const btn = e.target.closest(".refresh-metric");
-            if (btn) this.refreshMetric(btn.dataset.metric);
+            const btn = (e.target as Element).closest(".refresh-metric") as HTMLElement | null;
+            if (btn) this.refreshMetric(btn.dataset.metric!);
         });
 
         // Share — copy standalone link to clipboard
         this.container.addEventListener("click", (e) => {
-            const btn = e.target.closest(".share-metric");
-            if (btn) this.shareMetric(btn.dataset.metric, btn);
+            const btn = (e.target as Element).closest(".share-metric") as HTMLElement | null;
+            if (btn) this.shareMetric(btn.dataset.metric!, btn);
         });
 
         // Refresh all
@@ -62,59 +74,59 @@ class BetterStatsManager {
 
         // Export CSV / JSON
         this.container.addEventListener("click", (e) => {
-            const btn = e.target.closest(".export-btn");
+            const btn = (e.target as Element).closest(".export-btn") as HTMLElement | null;
             if (btn) {
                 e.preventDefault();
-                this.exportMetric(btn.dataset.metric, btn.dataset.format);
+                this.exportMetric(btn.dataset.metric!, btn.dataset.format!);
             }
         });
 
         // Export PNG
         this.container.addEventListener("click", (e) => {
-            const btn = e.target.closest(".export-image-btn");
+            const btn = (e.target as Element).closest(".export-image-btn") as HTMLElement | null;
             if (btn) {
                 e.preventDefault();
-                this.exportImage(btn.dataset.metric);
+                this.exportImage(btn.dataset.metric!);
             }
         });
 
         // Embed modal
         this.container.addEventListener("click", (e) => {
-            const btn = e.target.closest(".bstats-embed-btn");
+            const btn = (e.target as Element).closest(".bstats-embed-btn") as HTMLElement | null;
             if (btn) {
                 e.preventDefault();
-                this.openEmbedModal(btn.dataset.metric);
+                this.openEmbedModal(btn.dataset.metric!);
             }
         });
 
         // Copy embed code
         this.container.addEventListener("click", (e) => {
-            const btn = e.target.closest(".bstats-copy-embed");
+            const btn = (e.target as Element).closest(".bstats-copy-embed");
             if (btn) this.copyEmbedCode(e);
         });
 
         // Retry on error
         this.container.addEventListener("click", (e) => {
-            const btn = e.target.closest(".retry-btn");
-            if (btn) this.refreshMetric(btn.dataset.metric);
+            const btn = (e.target as Element).closest(".retry-btn") as HTMLElement | null;
+            if (btn) this.refreshMetric(btn.dataset.metric!);
         });
 
         // Expand → fullscreen modal; use relatedTarget so the metric name
         // is available synchronously when show.bs.modal fires.
         const fsModal = document.getElementById("bstats-fullscreen-modal");
         fsModal?.addEventListener("show.bs.modal", (e) => {
-            const trigger = e.relatedTarget;
-            if (trigger) this._pendingFullscreen = trigger.dataset.metric;
+            const trigger = (e as any).relatedTarget as HTMLElement | null;
+            if (trigger) this._pendingFullscreen = trigger.dataset.metric!;
             this._openFullscreen();
         });
         fsModal?.addEventListener("hidden.bs.modal", () => this._closeFullscreen());
 
         // Search / filter
         document.getElementById("bstats-metric-search")?.addEventListener("input", (e) => {
-            const q = e.target.value.toLowerCase();
+            const q = (e.target as HTMLInputElement).value.toLowerCase();
             let visible = 0;
-            this.container.querySelectorAll(".metric-container").forEach((c) => {
-                const name = c.dataset.metric.toLowerCase();
+            this.container.querySelectorAll<HTMLElement>(".metric-container").forEach((c) => {
+                const name = (c.dataset.metric || "").toLowerCase();
                 const title = (c.querySelector(".metric-title")?.textContent || "").toLowerCase();
                 const description = (c.dataset.description || "").toLowerCase();
                 const show = !q || name.includes(q) || title.includes(q) || description.includes(q);
@@ -127,21 +139,21 @@ class BetterStatsManager {
     }
 
     async loadAllMetrics() {
-        const containers = [...this.container.querySelectorAll(".metric-container")];
+        const containers = [...this.container.querySelectorAll<HTMLElement>(".metric-container")];
         if (!containers.length) return;
 
         const vizOverride = new URLSearchParams(window.location.search).get("viz");
 
         if (vizOverride) {
             for (const c of containers) {
-                await this.loadMetric(c.dataset.metric, vizOverride);
+                await this.loadMetric(c.dataset.metric!, vizOverride);
             }
         } else {
             await this._loadBatch(containers);
         }
     }
 
-    async loadMetric(metricName, vizType = "chart", refresh = false) {
+    async loadMetric(metricName: string, vizType = "chart", refresh = false) {
         const el = document.getElementById(`metric-${metricName}`);
         if (!el) return;
 
@@ -162,11 +174,11 @@ class BetterStatsManager {
             this.loadTimes[metricName] = Date.now();
             this._updateCacheAge(metricName);
         } catch (err) {
-            el.innerHTML = this._errorHTML(metricName, err.message);
+            el.innerHTML = this._errorHTML(metricName, (err as Error).message);
         }
     }
 
-    renderMetric(container, data, vizType) {
+    renderMetric(container: HTMLElement, data: any, vizType: string) {
         switch (vizType) {
             case "chart": this.renderChart(container, data); break;
             case "table": this.renderTable(container, data); break;
@@ -175,7 +187,7 @@ class BetterStatsManager {
         }
     }
 
-    renderChart(container, data) {
+    renderChart(container: HTMLElement, data: any) {
         const chartData = data.data;
 
         const existing = this.charts[data.name];
@@ -188,17 +200,17 @@ class BetterStatsManager {
             const wrapper = this._el("div", { className: "metric-chart-multi" });
             container.appendChild(wrapper);
 
-            this.charts[data.name] = chartData.charts.map((sub) => {
+            this.charts[data.name] = chartData.charts.map((sub: any) => {
                 const item = this._el("div", { className: "metric-chart-item" });
                 wrapper.appendChild(item);
                 return this._createChart(item, sub);
             });
         } else {
-            this.charts[data.name] = this._createChart(container, chartData, data.name);
+            this.charts[data.name] = this._createChart(container, chartData);
         }
     }
 
-    renderTable(container, data) {
+    renderTable(container: HTMLElement, data: any) {
         const tableData = data.data;
 
         const wrapper = this._el("div", { className: "metric-table-wrapper" });
@@ -206,7 +218,7 @@ class BetterStatsManager {
         const thead = this._el("thead");
         const headerRow = this._el("tr");
 
-        (tableData.headers || []).forEach((h) => {
+        (tableData.headers || []).forEach((h: string) => {
             headerRow.appendChild(this._el("th", { textContent: h }));
         });
 
@@ -214,7 +226,7 @@ class BetterStatsManager {
         table.appendChild(thead);
 
         const tbody = this._el("tbody");
-        (tableData.rows || []).forEach((row) => {
+        (tableData.rows || []).forEach((row: any[]) => {
             const tr = this._el("tr");
             row.forEach((cell) => {
                 const td = this._el("td");
@@ -236,14 +248,14 @@ class BetterStatsManager {
         container.appendChild(wrapper);
     }
 
-    renderProgress(container, data) {
+    renderProgress(container: HTMLElement, data: any) {
         const items = data.data?.items;
         if (!items?.length) {
             container.innerHTML = '<div class="alert alert-info">No data available</div>';
             return;
         }
         const wrapper = this._el("div", { className: "metric-progress" });
-        items.forEach((item) => {
+        items.forEach((item: any) => {
             const pct = Math.min(100, Math.round((item.value / item.max) * 100));
             const color = pct > 90 ? "danger" : pct > 70 ? "warning" : "success";
             wrapper.insertAdjacentHTML(
@@ -264,7 +276,7 @@ class BetterStatsManager {
         container.appendChild(wrapper);
     }
 
-    renderCard(container, data) {
+    renderCard(container: HTMLElement, data: any) {
         const cardData = data.data;
         if (!cardData) {
             container.innerHTML = '<div class="alert alert-info">Card view not available</div>';
@@ -278,33 +290,35 @@ class BetterStatsManager {
         container.appendChild(div);
     }
 
-    async switchVisualization(metricName, vizType, pill) {
+    async switchVisualization(metricName: string, vizType: string, pill: HTMLElement) {
         const allPills = this.container.querySelectorAll(`.viz-pill[data-metric="${metricName}"]`);
         allPills.forEach((p) => p.classList.remove("active"));
         pill.classList.add("active");
         await this.loadMetric(metricName, vizType);
     }
 
-    async refreshMetric(metricName) {
+    async refreshMetric(metricName: string) {
         await this.loadMetric(metricName, this.currentVizTypes[metricName] || "chart", true);
     }
 
     async refreshAllMetrics() {
-        const containers = [...this.container.querySelectorAll(".metric-container")];
+        const containers = [...this.container.querySelectorAll<HTMLElement>(".metric-container")];
         if (containers.length) await this._loadBatch(containers, true);
     }
 
-    shareMetric(metricName, btn) {
+    shareMetric(metricName: string, btn: HTMLElement) {
         const vizType = this.currentVizTypes[metricName] || "chart";
         const url = ckan.url(`/better_stats/embed/${metricName}?viz=${encodeURIComponent(vizType)}`);
         navigator.clipboard.writeText(url).then(() => {
-            const icon = btn.querySelector("i");
-            icon.className = "fa fa-check fa-fw";
-            setTimeout(() => { icon.className = "fa fa-link fa-fw"; }, 2000);
+            const icon = btn.querySelector("i") as HTMLElement | null;
+            if (icon) {
+                icon.className = "fa fa-check fa-fw";
+                setTimeout(() => { icon.className = "fa fa-link fa-fw"; }, 2000);
+            }
         });
     }
 
-    async _loadBatch(containers, refresh = false) {
+    async _loadBatch(containers: HTMLElement[], refresh = false) {
         if (refresh) {
             containers.forEach((c) => {
                 const el = document.getElementById(`metric-${c.dataset.metric}`);
@@ -320,7 +334,7 @@ class BetterStatsManager {
             const batch = await resp.json();
 
             containers.forEach((c) => {
-                const metricName = c.dataset.metric;
+                const metricName = c.dataset.metric!;
                 const el = document.getElementById(`metric-${metricName}`);
                 if (!el) return;
 
@@ -341,16 +355,16 @@ class BetterStatsManager {
         } catch (err) {
             // Batch request failed — fall back to individual loads
             for (const c of containers) {
-                await this.loadMetric(c.dataset.metric, c.dataset.defaultViz || "chart", refresh);
+                await this.loadMetric(c.dataset.metric!, c.dataset.defaultViz || "chart", refresh);
             }
         }
     }
 
-    exportMetric(metricName, format) {
+    exportMetric(metricName: string, format: string) {
         window.open(`/better_stats/export/${metricName}?format=${format}`, "_blank");
     }
 
-    async exportImage(metricName) {
+    async exportImage(metricName: string) {
         const content = document.getElementById(`metric-${metricName}`);
         if (!content) return;
         try {
@@ -365,25 +379,26 @@ class BetterStatsManager {
         }
     }
 
-    openEmbedModal(metricName) {
+    openEmbedModal(metricName: string) {
         const vizType = this.currentVizTypes[metricName] || "chart";
         const embedUrl = `${window.location.origin}/better_stats/embed/${metricName}?viz=${encodeURIComponent(vizType)}`;
         const code = `<iframe src="${embedUrl}" width="600" height="400" frameborder="0" style="border:1px solid #e2e8f0;border-radius:8px"></iframe>`;
 
-        const textarea = document.getElementById(`embedCode-${metricName}`);
+        const textarea = document.getElementById(`embedCode-${metricName}`) as HTMLTextAreaElement | null;
         if (textarea) textarea.value = code;
 
-        const preview = document.getElementById(`embedPreview-${metricName}`);
+        const preview = document.getElementById(`embedPreview-${metricName}`) as HTMLIFrameElement | null;
         if (preview) preview.src = embedUrl;
     }
 
-    copyEmbedCode(e) {
-        const targetId = e.target.closest(".bstats-copy-embed").dataset.target;
-        const textarea = document.getElementById(targetId);
+    copyEmbedCode(e: Event) {
+        const btn = (e.target as Element).closest(".bstats-copy-embed") as HTMLElement | null;
+        if (!btn) return;
+        const textarea = document.getElementById(btn.dataset.target!) as HTMLTextAreaElement | null;
         if (!textarea) return;
         textarea.select();
         navigator.clipboard.writeText(textarea.value).then(() => {
-            const icon = e.target.closest(".bstats-copy-embed").querySelector("i");
+            const icon = btn.querySelector("i") as HTMLElement | null;
             if (icon) {
                 icon.className = "fa fa-check text-success";
                 setTimeout(() => { icon.className = "fa fa-clipboard"; }, 2000);
@@ -412,12 +427,12 @@ class BetterStatsManager {
             contentEl.innerHTML = "";
 
             if (vizType === "chart") {
-                this._fullscreenChart = this._createChart(contentEl, data.data, `${metricName}-fs`);
+                this._fullscreenChart = this._createChart(contentEl, data.data);
             } else {
                 this.renderMetric(contentEl, data, vizType);
             }
         } catch (err) {
-            contentEl.innerHTML = this._errorHTML(metricName, err.message);
+            contentEl.innerHTML = this._errorHTML(metricName, (err as Error).message);
         }
     }
 
@@ -450,8 +465,8 @@ class BetterStatsManager {
         this._updateChartsTheme();
     }
 
-    _updateToggleIcon(dark) {
-        const icon = document.querySelector("#bstats-theme-toggle i");
+    _updateToggleIcon(dark: boolean) {
+        const icon = document.querySelector("#bstats-theme-toggle i") as HTMLElement | null;
         if (icon) icon.className = dark ? "fa fa-sun" : "fa fa-moon";
     }
 
@@ -471,7 +486,7 @@ class BetterStatsManager {
         }, 60000);
     }
 
-    _updateCacheAge(metricName) {
+    _updateCacheAge(metricName: string) {
         const el = document.querySelector(`.metric-cache-age[data-metric="${metricName}"]`);
         if (!el || !this.loadTimes[metricName]) return;
         const secs = Math.floor((Date.now() - this.loadTimes[metricName]) / 1000);
@@ -480,7 +495,7 @@ class BetterStatsManager {
         else el.textContent = `Updated ${Math.floor(secs / 3600)}h ago`;
     }
 
-    _createChart(container, chartData) {
+    _createChart(container: HTMLElement, chartData: any) {
         const holder = this._el("div", { className: "metric-chart" });
         container.appendChild(holder);
 
@@ -492,8 +507,8 @@ class BetterStatsManager {
         return chart;
     }
 
-    _updatePills(metricName, vizType) {
-        this.container.querySelectorAll(`.viz-pill[data-metric="${metricName}"]`).forEach((p) => {
+    _updatePills(metricName: string, vizType: string) {
+        this.container.querySelectorAll<HTMLElement>(`.viz-pill[data-metric="${metricName}"]`).forEach((p) => {
             p.classList.toggle("active", p.dataset.type === vizType);
         });
     }
@@ -506,7 +521,7 @@ class BetterStatsManager {
         );
     }
 
-    _errorHTML(metricName, message) {
+    _errorHTML(metricName: string, message: string) {
         return (
             '<div class="metric-error">' +
             '  <i class="fa fa-exclamation-triangle metric-error-icon"></i>' +
@@ -516,11 +531,11 @@ class BetterStatsManager {
         );
     }
 
-    _el(tag, props = {}) {
+    _el<K extends keyof HTMLElementTagNameMap>(tag: K, props: Partial<HTMLElementTagNameMap[K]> = {}): HTMLElementTagNameMap[K] {
         return Object.assign(document.createElement(tag), props);
     }
 
-    formatNumber(num) {
+    formatNumber(num: number) {
         if (num >= 1e6) return (num / 1e6).toFixed(1) + "M";
         if (num >= 1e3) return (num / 1e3).toFixed(1) + "K";
         return String(num);

@@ -5,7 +5,7 @@ better_stats-js:
     - js/vendor/echarts.min.js
     - js/vendor/echarts-dark.js
     - js/vendor/snapdom.min.js
-    - js/bstats-stats-manager.js
+    - js/bstats-stats-manager.min.js
   extra:
     preload:
       - base/main

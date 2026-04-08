@@ -1,0 +1,7 @@
+{
+  "compress": true,
+  "mangle": true,
+  "format": {
+    "preamble": "/* builded automatically, do not touch. Use `npm run ts-build` to build */"
+  }
+}

@@ -18,7 +18,7 @@
     "scripts": {
         "dev": "DEBUG=1 gulp watch",
         "build": "gulp build",
-        "ts-build": "tsc && npx terser ckanext/better_stats/assets/js/bstats-stats-manager.js --compress --mangle --output ckanext/better_stats/assets/js/bstats-stats-manager.js",
+        "ts-build": "tsc && npx terser ckanext/better_stats/assets/js/bstats-stats-manager.js --output ckanext/better_stats/assets/js/bstats-stats-manager.min.js --config-file terser.config.json && rm ckanext/better_stats/assets/js/bstats-stats-manager.js",
         "ts-watch": "tsc -w"
     }
 }

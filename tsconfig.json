@@ -1,0 +1,13 @@
+{
+    "compilerOptions": {
+        "target": "ES2017",
+        "module": "none",
+        "lib": ["ES2017", "DOM", "DOM.Iterable"],
+        "outDir": "ckanext/better_stats/assets/js",
+        "rootDir": "ckanext/better_stats/assets/js",
+        "strict": false,
+        "skipLibCheck": true
+    },
+    "include": ["ckanext/better_stats/assets/js/*.ts"],
+    "exclude": ["node_modules"]
+}
