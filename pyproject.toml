@@ -18,6 +18,7 @@ classifiers = [
 keywords = ["CKAN"]
 dependencies = [
     "psutil>=7.0.0",
+    "openpyxl>=3.1.2",
 ]
 
 [project.optional-dependencies]

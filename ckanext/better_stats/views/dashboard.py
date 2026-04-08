@@ -3,10 +3,13 @@ import io
 import json
 import logging
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, cast
 
 from flask import Blueprint, Response, jsonify, make_response
 from flask.views import MethodView
+from openpyxl import Workbook
+from openpyxl.styles import Font
+from openpyxl.worksheet.worksheet import Worksheet
 
 import ckan.plugins.toolkit as tk
 
@@ -211,6 +214,8 @@ class MetricExporter:
             return self._export_as_csv()
         if self.format_type == const.ExportFormat.JSON.value:
             return self._export_as_json()
+        if self.format_type == const.ExportFormat.XLSX.value:
+            return self._export_as_xlsx()
         return make_response(jsonify({"error": tk._("Unsupported format")}), 400)
 
     def _export_as_csv(self) -> Response:
@@ -236,6 +241,33 @@ class MetricExporter:
         response = make_response(json.dumps(envelope, indent=2))
         response.headers["Content-Type"] = "application/json"
         response.headers["Content-Disposition"] = f"attachment; filename={self.filename}.json"
+
+        return response
+
+    def _export_as_xlsx(self) -> Response:
+        wb = Workbook()
+        ws = cast(Worksheet, wb.active)
+        ws.title = self.metric.title[:31]  # Excel sheet name limit
+
+        headers = self.data.get("headers", [])
+        rows = self.data.get("rows", [])
+
+        if headers:
+            ws.append(headers)
+
+            for cell in ws[1]:
+                cell.font = Font(bold=True)
+
+        for row in rows:
+            ws.append([cell.get("text", "") if isinstance(cell, dict) else cell for cell in row])
+
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+
+        response = make_response(output.read())
+        response.headers["Content-Type"] = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        response.headers["Content-Disposition"] = f"attachment; filename={self.filename}.xlsx"
 
         return response
 

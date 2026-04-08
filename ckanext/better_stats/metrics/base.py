@@ -26,7 +26,7 @@ class MetricBase(ABC):
     supported_visualizations: ClassVar[list[const.VisualizationType]] = [const.VisualizationType.CHART]
     default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.CHART
     icon: ClassVar[str] = "fa-solid fa-chart-bar"
-    supported_export_formats: ClassVar[list[str]] = ["csv", "json", "image"]
+    supported_export_formats: ClassVar[list[str]] = ["csv", "json", "xlsx", "image"]
 
     def __init__(  # noqa: PLR0913
         self,

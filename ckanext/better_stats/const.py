@@ -17,6 +17,7 @@ class VisualizationType(Enum):
 class ExportFormat(Enum):
     CSV = "csv"
     JSON = "json"
+    XLSX = "xlsx"
     IMAGE = "image"
 
 
