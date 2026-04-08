@@ -23,6 +23,13 @@
                 <button class="btn btn-sm refresh-metric" data-metric="{{ metric.name }}" title="{{ _('Refresh') }}">
                     <i class="fa fa-refresh fa-fw"></i>
                 </button>
+
+                {% if not embed %}
+                    <button class="btn btn-sm share-metric" data-metric="{{ metric.name }}" title="{{ _('Copy link') }}">
+                        <i class="fa fa-link fa-fw"></i>
+                    </button>
+                {% endif %}
+
                 <div class="dropdown">
                     <button class="metric-actions-btn" data-bs-toggle="dropdown"
                             aria-expanded="false" title="{{ _('Actions') }}">

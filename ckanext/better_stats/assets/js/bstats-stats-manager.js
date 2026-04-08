@@ -44,6 +44,12 @@ class BetterStatsManager {
             if (btn) this.refreshMetric(btn.dataset.metric);
         });
 
+        // Share — copy standalone link to clipboard
+        this.container.addEventListener("click", (e) => {
+            const btn = e.target.closest(".share-metric");
+            if (btn) this.shareMetric(btn.dataset.metric, btn);
+        });
+
         // Refresh all
         document.getElementById("refresh-all")?.addEventListener("click", () => {
             this.refreshAllMetrics();
@@ -122,7 +128,17 @@ class BetterStatsManager {
 
     async loadAllMetrics() {
         const containers = [...this.container.querySelectorAll(".metric-container")];
-        if (containers.length) await this._loadBatch(containers);
+        if (!containers.length) return;
+
+        const vizOverride = new URLSearchParams(window.location.search).get("viz");
+
+        if (vizOverride) {
+            for (const c of containers) {
+                await this.loadMetric(c.dataset.metric, vizOverride);
+            }
+        } else {
+            await this._loadBatch(containers);
+        }
     }
 
     async loadMetric(metricName, vizType = "chart", refresh = false) {
@@ -276,6 +292,16 @@ class BetterStatsManager {
     async refreshAllMetrics() {
         const containers = [...this.container.querySelectorAll(".metric-container")];
         if (containers.length) await this._loadBatch(containers, true);
+    }
+
+    shareMetric(metricName, btn) {
+        const vizType = this.currentVizTypes[metricName] || "chart";
+        const url = ckan.url(`/better_stats/embed/${metricName}?viz=${encodeURIComponent(vizType)}`);
+        navigator.clipboard.writeText(url).then(() => {
+            const icon = btn.querySelector("i");
+            icon.className = "fa fa-check fa-fw";
+            setTimeout(() => { icon.className = "fa fa-link fa-fw"; }, 2000);
+        });
     }
 
     async _loadBatch(containers, refresh = false) {
@@ -461,6 +487,7 @@ class BetterStatsManager {
         const chart = echarts.init(holder, this._isDark() ? "dark" : "default");
         chart.setOption(chartData);
         chart._chartOptions = chartData;
+        window.addEventListener("resize", () => chart.resize());
 
         return chart;
     }

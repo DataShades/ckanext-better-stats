@@ -3,17 +3,37 @@
 .bstats-embed-page {
   padding: 0;
   margin: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+
+  .metric-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
 
   .metric-card {
     border: none;
     box-shadow: none;
     border-radius: 0;
     padding: 10px;
+    flex: 1;
+    min-height: 0;
 
     &:hover { box-shadow: none; }
   }
 
   .metric-header { border-bottom: 1px solid #eee; }
+
+  .metric-content {
+    max-height: none;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .metric-chart { height: 100%; }
 }
 
 .bstats-embed-footer {
