@@ -6,6 +6,8 @@ The `ckanext-better-stats` is a modular CKAN extension that provides a flexible 
 
 See the [documentation](https://datashades.github.io/ckanext-better-stats/) for more details.
 
+![dashboard image](https://datashades.github.io/ckanext-better-stats/image/dashboard.png)
+
 ## Tests
 
 To run the tests, do:

@@ -2,7 +2,7 @@ import csv
 import io
 import json
 import logging
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from flask import Blueprint, Response, jsonify, make_response
@@ -194,7 +194,9 @@ def export_metric(metric_name: str) -> Response:
     if format_type not in metric.supported_export_formats:
         return make_response(jsonify({"error": tk._("Unsupported format")}), 400)
 
-    return MetricExporter(metric, f"{metric_name}_{datetime.now(UTC).isoformat()}", format_type).export_metric()
+    return MetricExporter(
+        metric, f"{metric_name}_{datetime.now(timezone.utc).isoformat()}", format_type
+    ).export_metric()
 
 
 class MetricExporter:
@@ -227,7 +229,7 @@ class MetricExporter:
         envelope = {
             "metric": self.metric.name,
             "title": self.metric.title,
-            "generated_at": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
             "site_url": tk.config.get("ckan.site_url", ""),
             "data": self.data,
         }
