@@ -110,7 +110,8 @@ class BetterStatsManager {
             this.container.querySelectorAll(".metric-container").forEach((c) => {
                 const name = c.dataset.metric.toLowerCase();
                 const title = (c.querySelector(".metric-title")?.textContent || "").toLowerCase();
-                const show = name.includes(q) || title.includes(q);
+                const description = (c.dataset.description || "").toLowerCase();
+                const show = !q || name.includes(q) || title.includes(q) || description.includes(q);
                 c.style.display = show ? "" : "none";
                 if (show) visible++;
             });
