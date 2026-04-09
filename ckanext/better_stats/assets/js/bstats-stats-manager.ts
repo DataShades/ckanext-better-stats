@@ -190,6 +190,11 @@ class BetterStatsManager {
     renderChart(container: HTMLElement, data: any) {
         const chartData = data.data;
 
+        if (this._isChartEmpty(chartData)) {
+            container.appendChild(this._emptyEl());
+            return;
+        }
+
         const existing = this.charts[data.name];
         if (existing) {
             (Array.isArray(existing) ? existing : [existing]).forEach((c) => c.dispose());
@@ -212,6 +217,11 @@ class BetterStatsManager {
 
     renderTable(container: HTMLElement, data: any) {
         const tableData = data.data;
+
+        if (!tableData?.rows?.length) {
+            container.appendChild(this._emptyEl());
+            return;
+        }
 
         const wrapper = this._el("div", { className: "metric-table-wrapper" });
         const table = this._el("table", { className: "metric-table" });
@@ -519,6 +529,26 @@ class BetterStatsManager {
             '  <div class="placeholder col-12"></div>' +
             "</div>"
         );
+    }
+
+    _isChartEmpty(chartData: any): boolean {
+        if (!chartData) return true;
+        if (chartData.type === "multi") {
+            return !chartData.charts?.length ||
+                chartData.charts.every((c: any) => this._isChartEmpty(c));
+        }
+        const series: any[] = chartData.series || [];
+        if (!series.length) return true;
+        return series.every((s: any) => !s.data || s.data.length === 0);
+    }
+
+    _emptyEl(): HTMLElement {
+        return this._el("div", {
+            className: "metric-empty",
+            innerHTML:
+                '<i class="fa fa-inbox metric-empty-icon"></i>' +
+                "<p>No data available</p>",
+        });
     }
 
     _errorHTML(metricName: string, message: string) {

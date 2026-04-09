@@ -1,6 +1,6 @@
 [project]
 name = "ckanext-better-stats"
-version = "0.0.1"
+version = "0.1.0"
 description = "Flexible CKAN extension for defining and displaying custom metrics with support for caching, access control, and multiple output formats"
 readme = "README.md"
 authors = [
