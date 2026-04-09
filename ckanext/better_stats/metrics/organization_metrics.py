@@ -11,6 +11,106 @@ from ckanext.better_stats import const
 from ckanext.better_stats.metrics.base import MetricBase
 
 
+class OrganizationHierarchyMetric(MetricBase):
+    """Tree chart of organization parent-child relationships via ckanext-hierarchy.
+
+    This metric is only available if `ckanext-hierarchy` is installed and enabled.
+    """
+
+    supported_visualizations: ClassVar[list[const.VisualizationType]] = [
+        const.VisualizationType.CHART,
+    ]
+    default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.CHART
+    icon: ClassVar[str] = "fa-solid fa-sitemap"
+    supported_export_formats: ClassVar[list[str]] = ["image"]
+
+    def __init__(self) -> None:
+        super().__init__(
+            name="organization_hierarchy",
+            title=tk._("Organization Hierarchy"),
+            description=tk._("Tree view of organization parent-child relationships"),
+            order=14,
+            grid_size="full",
+        )
+
+    def get_data(self) -> list[dict[str, Any]]:
+        return tk.h.group_tree(type_="organization")
+
+    def _to_echarts_node(self, node: dict[str, Any]) -> dict[str, Any]:
+        name = node["name"]
+        url = tk.url_for("organization.read", id=name)
+        converted: dict[str, Any] = {
+            "name": node.get("title") or name or "Unknown",
+            "value": (f'<a href="{url}" target="_blank" style="color:inherit;">{tk._("View")} →</a>'),
+        }
+        children = node.get("children", [])
+
+        if children:
+            converted["children"] = [self._to_echarts_node(c) for c in children]
+
+        return converted
+
+    def get_chart_data(self) -> dict[str, Any]:
+        roots = self.get_data()
+
+        if not roots:
+            return {}
+
+        if len(roots) == 1:
+            tree_data = self._to_echarts_node(roots[0])
+        else:
+            tree_data = {
+                "name": tk._("Organizations"),
+                "children": [self._to_echarts_node(r) for r in roots],
+            }
+
+        return {
+            "tooltip": {
+                "trigger": "item",
+                "triggerOn": "mousemove",
+                "enterable": True,
+                "formatter": "{b}<br/>{c}",
+                "_htmlTooltip": True,
+            },
+            "series": [
+                {
+                    "type": "tree",
+                    "data": [tree_data],
+                    "top": "5%",
+                    "left": "5%",
+                    "bottom": "5%",
+                    "right": "5%",
+                    "symbolSize": 10,
+                    "lineStyle": {"width": 1},
+                    "label": {
+                        "position": "left",
+                        "verticalAlign": "middle",
+                        "align": "right",
+                        "fontSize": 13,
+                        "width": 160,
+                        "overflow": "truncate",
+                        "ellipsis": "…",
+                    },
+                    "leaves": {
+                        "label": {
+                            "position": "right",
+                            "verticalAlign": "middle",
+                            "align": "left",
+                            "width": 160,
+                            "overflow": "truncate",
+                            "ellipsis": "…",
+                        }
+                    },
+                    "emphasis": {"focus": "descendant"},
+                    "expandAndCollapse": False,
+                    "animationDuration": 350,
+                    "animationDurationUpdate": 350,
+                    "roam": True,
+                }
+            ],
+        }
+
+
 class OrganizationCountMetric(MetricBase):
     """Total number of active organizations with a monthly creation trend."""
 
@@ -59,7 +159,10 @@ class OrganizationCountMetric(MetricBase):
         )
         return {
             "tooltip": {"trigger": "axis"},
-            "xAxis": {"type": "category", "data": [row.month.strftime("%Y-%m") for row in rows]},
+            "xAxis": {
+                "type": "category",
+                "data": [row.month.strftime("%Y-%m") for row in rows],
+            },
             "yAxis": {"type": "value", "minInterval": 1},
             "series": [{"type": "line", "data": [row.count for row in rows], "smooth": True}],
         }
@@ -254,7 +357,10 @@ class OrganizationOverviewMetric(MetricBase):
         )
         return [
             {
-                "organization": {"label": row.title, "url": tk.url_for("organization.read", id=row.name)},
+                "organization": {
+                    "label": row.title,
+                    "url": tk.url_for("organization.read", id=row.name),
+                },
                 "datasets": row.datasets,
                 "resources": row.resources,
                 "members": row.members,
@@ -273,7 +379,10 @@ class OrganizationOverviewMetric(MetricBase):
             ],
             "rows": [
                 [
-                    {"text": item["organization"]["label"], "url": item["organization"]["url"]},
+                    {
+                        "text": item["organization"]["label"],
+                        "url": item["organization"]["url"],
+                    },
                     item["datasets"],
                     item["resources"],
                     item["members"],
@@ -401,7 +510,13 @@ class OrganizationSizesMetric(MetricBase):
             "series": [
                 {
                     "type": "treemap",
-                    "data": [{"name": item["organization"] or "Unknown", "value": item["count"]} for item in data],
+                    "data": [
+                        {
+                            "name": item["organization"] or "Unknown",
+                            "value": item["count"],
+                        }
+                        for item in data
+                    ],
                     "label": {"show": True, "formatter": "{b}"},
                     "itemStyle": {"borderColor": "#fff"},
                     "roam": False,
@@ -414,4 +529,4 @@ class OrganizationSizesMetric(MetricBase):
         return {
             "headers": [tk._("Organization"), tk._("Datasets")],
             "rows": [[{"text": item["organization"], "url": item["url"]}, item["count"]] for item in data],
-        }
+    }

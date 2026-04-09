@@ -1,3 +1,5 @@
+from ckan import plugins as p
+
 from ckanext.better_stats.metrics.base import MetricRegistry
 
 from .base import MetricBase
@@ -13,6 +15,7 @@ from .dataset_metrics import (
 from .organization_metrics import (
     InactiveOrganizationsMetric,
     OrganizationCountMetric,
+    OrganizationHierarchyMetric,
     OrganizationMembershipMetric,
     OrganizationOverviewMetric,
     OrganizationSizesMetric,
@@ -30,6 +33,7 @@ __all__ = [
     "DatasetsWithoutResourcesMetric",
     "StaleDatasetsMetric",
     "OrganizationCountMetric",
+    "OrganizationHierarchyMetric",
     "OrganizationMembershipMetric",
     "OrganizationOverviewMetric",
     "OrganizationSizesMetric",
@@ -61,9 +65,12 @@ def register_metrics():
     MetricRegistry.register("cpu", CPUMetric)
     MetricRegistry.register("disk_usage", DiskUsageMetric)
 
+    if p.plugin_loaded("hierarchy_display"):
+        MetricRegistry.register("organization_hierarchy", OrganizationHierarchyMetric)
+
 
 def get_all_metrics() -> dict[str, type[MetricBase]]:
-    return {
+    metrics: dict[str, type[MetricBase]] = {
         "dataset_count": DatasetCountMetric,
         "datasets_by_org": DatasetsByOrganizationMetric,
         "dataset_creation_history": DatasetCreationHistoryMetric,
@@ -81,4 +88,6 @@ def get_all_metrics() -> dict[str, type[MetricBase]]:
         "memory": MemoryMetric,
         "cpu": CPUMetric,
         "disk_usage": DiskUsageMetric,
+        "organization_hierarchy": OrganizationHierarchyMetric,
     }
+    return metrics

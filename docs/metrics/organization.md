@@ -11,3 +11,5 @@ These metrics provide insights into organization activity and structure within t
 {{ render_metric('inactive_organizations') }}
 
 {{ render_metric('organization_sizes') }}
+
+{{ render_metric('organization_hierarchy') }}
