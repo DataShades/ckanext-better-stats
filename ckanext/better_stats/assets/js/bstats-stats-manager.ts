@@ -361,7 +361,7 @@ class BetterStatsManager {
     }
 
     exportMetric(metricName: string, format: string) {
-        window.open(`/better_stats/export/${metricName}?format=${format}`, "_blank");
+        window.open(ckan.url(`/better_stats/export/${metricName}?format=${format}`, "_blank"));
     }
 
     async exportImage(metricName: string) {
@@ -381,7 +381,7 @@ class BetterStatsManager {
 
     openEmbedModal(metricName: string) {
         const vizType = this.currentVizTypes[metricName] || "chart";
-        const embedUrl = `${window.location.origin}/better_stats/embed/${metricName}?viz=${encodeURIComponent(vizType)}`;
+        const embedUrl = ckan.url(`/better_stats/embed/${metricName}?viz=${encodeURIComponent(vizType)}`);
         const code = `<iframe src="${embedUrl}" width="600" height="400" frameborder="0" style="border:1px solid #e2e8f0;border-radius:8px"></iframe>`;
 
         const textarea = document.getElementById(`embedCode-${metricName}`) as HTMLTextAreaElement | null;
