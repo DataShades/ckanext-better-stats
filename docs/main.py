@@ -24,7 +24,10 @@ def define_env(env: object) -> None:
         markdown += f"{desc}\n\n"
 
         if docstring:
-            markdown += f"```text\n{metric.__class__.__doc__}\n```\n\n"
+            markdown += "```\n"
+            for line in docstring.split("\n"):
+                markdown += f"{line.strip()}\n"
+            markdown += "```\n\n"
 
         markdown += "| | |\n"
         markdown += "|---|---|\n"

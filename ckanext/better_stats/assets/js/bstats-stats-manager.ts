@@ -499,6 +499,15 @@ class BetterStatsManager {
         const holder = this._el("div", { className: "metric-chart" });
         container.appendChild(holder);
 
+        if (chartData.tooltip?._htmlTooltip) {
+            const template = chartData.tooltip.formatter as string;
+            chartData.tooltip.formatter = (params: any) =>
+                template
+                    .replace(/\{b\}/g, params.name ?? "")
+                    .replace(/\{c\}/g, params.value ?? "");
+            delete chartData.tooltip._htmlTooltip;
+        }
+
         const chart = echarts.init(holder, this._isDark() ? "dark" : "default");
         chart.setOption(chartData);
         chart._chartOptions = chartData;
