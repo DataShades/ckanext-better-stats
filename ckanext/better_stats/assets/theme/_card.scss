@@ -1,42 +1,44 @@
 .metric-card {
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: var(--metric-card-radius);
-  padding: 1rem;
-  box-shadow: var(--metric-card-shadow);
-  transition: box-shadow 0.2s;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: var(--metric-card-radius);
+    padding: 1rem;
+    box-shadow: var(--metric-card-shadow);
+    transition: box-shadow 0.2s;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
 
-  &:hover { box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12); }
+    &:hover {
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    }
 }
 
 // Header
 .metric-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 0.75rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
 }
 
 .metric-title-group {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #1e293b;
-  min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #1e293b;
+    min-width: 0;
 }
 
 .metric-title {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.metric-control  {
+.metric-control {
     color: #94a3b8;
 
     .btn {
@@ -45,125 +47,147 @@
 }
 
 .metric-actions-btn {
-  background: none;
-  border: none;
-  color: #94a3b8;
-  padding: 0.15rem 0.4rem;
-  line-height: 1;
-  flex-shrink: 0;
-  border-radius: 4px;
+    background: none;
+    border: none;
+    color: #94a3b8;
+    padding: 0.15rem 0.4rem;
+    line-height: 1;
+    flex-shrink: 0;
+    border-radius: 4px;
 
-  &:hover { color: #334155; background: #f1f5f9; }
+    &:hover {
+        color: #334155;
+        background: #f1f5f9;
+    }
 }
 
 // Pill-style viz switcher
 .metric-viz-switcher {
-  display: flex;
-  gap: 0.375rem;
-  margin-bottom: 0.75rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid #f1f5f9;
-  flex-wrap: wrap;
+    display: flex;
+    gap: 0.375rem;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #f1f5f9;
+    flex-wrap: wrap;
 }
 
 .viz-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  padding: 0.2rem 0.65rem;
-  font-size: 0.78rem;
-  border-radius: 999px;
-  border: 1px solid #e2e8f0;
-  background: transparent;
-  color: #64748b;
-  cursor: pointer;
-  transition: background 0.15s, border-color 0.15s, color 0.15s;
-  white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.2rem 0.65rem;
+    font-size: 0.78rem;
+    border-radius: 999px;
+    border: 1px solid #e2e8f0;
+    background: transparent;
+    color: #64748b;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    white-space: nowrap;
 
-  &:hover { border-color: #94a3b8; color: #334155; }
+    &:hover {
+        border-color: #94a3b8;
+        color: #334155;
+    }
 
-  &.active {
-    background: #0d6efd;
-    border-color: #0d6efd;
-    color: #fff;
-  }
+    &.active {
+        background: #0d6efd;
+        border-color: #0d6efd;
+        color: #fff;
+    }
 }
 
 // Visualization content area
 .metric-content {
-  flex: 1;
-  min-height: 140px;
-  position: relative;
-  overflow: auto;
+    flex: 1;
+    min-height: 140px;
+    position: relative;
+    overflow: auto;
 
-  max-height: 350px;
-  overflow-y: auto;
+    max-height: 350px;
+    overflow-y: auto;
 }
 
 // Footer
 .metric-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-top: 0.625rem;
-  margin-top: 0.625rem;
-  border-top: 1px solid #f1f5f9;
-}
+    display: flex;
+    align-items: center;
+    padding-top: 0.625rem;
+    margin-top: 0.625rem;
+    border-top: 1px solid #f1f5f9;
+    gap: 1rem;
 
-.metric-cache-age {
-  font-size: 0.75rem;
-  color: #94a3b8;
-}
+    .badge {
+        color: #94a3b8;
+        border: 1px solid #f1f5f9;
+    }
 
-.metric-expand-btn {
-  font-size: 0.75rem;
-  color: #64748b;
-  text-decoration: none;
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
+    .metric-cache-age {
+        font-size: 0.75rem;
+        color: #94a3b8;
+    }
 
-  &:hover { color: #334155; }
+    .metric-expand-btn {
+        margin-left: auto;
+        font-size: 0.75rem;
+        color: #64748b;
+        text-decoration: none;
+        background: none;
+        border: none;
+        padding: 0;
+        cursor: pointer;
+
+        &:hover {
+            color: #334155;
+        }
+    }
 }
 
 // Error state
 .metric-error {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 160px;
-  gap: 0.5rem;
-  color: #64748b;
-  height: 100%;
-  min-height: calc(var(--metric-chart-height) + 10px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 160px;
+    gap: 0.5rem;
+    color: #64748b;
+    height: 100%;
+    min-height: calc(var(--metric-chart-height) + 10px);
 
-  .metric-error-icon { font-size: 2rem; color: var(--status-warn); }
+    .metric-error-icon {
+        font-size: 2rem;
+        color: var(--status-warn);
+    }
 }
 
 // Empty / no-data state
 .metric-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 160px;
-  gap: 0.5rem;
-  color: #94a3b8;
-  height: 100%;
-  min-height: calc(var(--metric-chart-height) + 10px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 160px;
+    gap: 0.5rem;
+    color: #94a3b8;
+    height: 100%;
+    min-height: calc(var(--metric-chart-height) + 10px);
 
-  .metric-empty-icon { font-size: 2rem; }
+    .metric-empty-icon {
+        font-size: 2rem;
+    }
 
-  p { margin: 0; font-size: 0.875rem; }
+    p {
+        margin: 0;
+        font-size: 0.875rem;
+    }
 }
 
 // Loading indicator (fallback)
 .loading-indicator {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  color: #94a3b8;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #94a3b8;
 }

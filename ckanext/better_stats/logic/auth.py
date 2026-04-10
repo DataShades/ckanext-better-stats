@@ -13,6 +13,10 @@ def better_stats_view_settings(context: types.Context, data_dict: types.DataDict
     return {"success": False}
 
 
+def better_stats_update_metric(context: types.Context, data_dict: types.DataDict) -> types.AuthResult:
+    return {"success": False}
+
+
 @tk.auth_allow_anonymous_access
 @tk.auth_sysadmins_check
 def better_stats_export_metric(context: types.Context, data_dict: types.DataDict) -> types.AuthResult:

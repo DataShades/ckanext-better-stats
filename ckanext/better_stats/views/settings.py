@@ -4,11 +4,9 @@ from flask import Blueprint, Response, jsonify, make_response
 from flask.views import MethodView
 
 import ckan.plugins.toolkit as tk
+from ckan import model
 
-from ckanext.better_stats import const
-from ckanext.better_stats.metrics.base import (
-    MetricRegistry,
-)
+from ckanext.better_stats.metrics.base import MetricRegistry
 from ckanext.better_stats.model import MetricConfig
 
 log = logging.getLogger(__name__)
@@ -37,7 +35,7 @@ class BetterStatsSettingsView(MethodView):
                     "enabled": cfg.enabled if cfg else True,
                     "order": cfg.order if cfg else metric.order,
                     "grid_size": cfg.grid_size if cfg else metric.grid_size,
-                    "access_level": cfg.access_level if cfg else metric.access_level,
+                    "access_level": (cfg.access_level or metric.access_level) if cfg else metric.access_level,
                     "cache_timeout": cfg.cache_timeout if cfg else metric.cache_timeout,
                 }
             )
@@ -50,71 +48,52 @@ class BetterStatsSettingsView(MethodView):
         )
 
 
-def update_metric_config(metric_name: str) -> Response:  # noqa: PLR0912, C901
+def update_metric_config(metric_name: str) -> Response:
     """AJAX: update persisted config for one metric."""
-    metric = MetricRegistry.get_metric(metric_name)
-
-    if not metric:
-        return make_response(jsonify({"error": tk._("Metric not found")}), 404)
-
     payload = tk.request.get_json(silent=True) or {}
+    payload["metric_name"] = metric_name
 
-    updates: dict = {}
-    errors: list[str] = []
+    try:
+        result = tk.get_action("better_stats_update_metric")({"user": tk.current_user.name}, payload)
+    except tk.ObjectNotFound as e:
+        return make_response(jsonify({"error": str(e)}), 404)
+    except tk.ValidationError as e:
+        return make_response(jsonify({"error": e.error_dict}), 400)
 
-    if "enabled" in payload:
-        val = payload["enabled"]
-        if not isinstance(val, bool):
-            errors.append("'enabled' must be a boolean")
+    return jsonify(result)
+
+
+def batch_update_order() -> Response:
+    """AJAX: update order for multiple metrics in one transaction."""
+    MetricRegistry._ensure_loaded()
+    payload = tk.request.get_json(silent=True) or []
+
+    if not isinstance(payload, list):
+        return make_response(jsonify({"error": "Expected a list"}), 400)
+
+    errors = []
+    for item in payload:
+        name = item.get("metric_name")
+        order = item.get("order")
+        if name not in MetricRegistry.METRICS:
+            errors.append(f"Unknown metric: {name}")
+            continue
+        if not isinstance(order, int):
+            errors.append(f"Invalid order for {name}")
+            continue
+        cfg = MetricConfig.for_metric(name)
+        if not cfg:
+            cfg = MetricConfig(metric_name=name, order=order)
+            model.Session.add(cfg)
         else:
-            updates["enabled"] = val
-
-    if "order" in payload:
-        val = payload["order"]
-        if not isinstance(val, int):
-            errors.append("'order' must be an integer")
-        else:
-            updates["order"] = val
-
-    if "grid_size" in payload:
-        val = payload["grid_size"]
-        if val not in [e.value for e in const.GridSize]:
-            errors.append(f"'grid_size' must be one of {sorted([e.value for e in const.GridSize])}")
-        else:
-            updates["grid_size"] = val
-
-    if "access_level" in payload:
-        val = payload["access_level"]
-        if val not in [e.value for e in const.AccessLevel]:
-            errors.append(f"'access_level' must be one of {sorted([e.value for e in const.AccessLevel])}")
-        else:
-            updates["access_level"] = val
-
-    if "cache_timeout" in payload:
-        val = payload["cache_timeout"]
-        if not isinstance(val, int) or val < 0:
-            errors.append("'cache_timeout' must be a non-negative integer")
-        else:
-            updates["cache_timeout"] = val
+            cfg.order = order
 
     if errors:
+        model.Session.rollback()
         return make_response(jsonify({"error": errors}), 400)
 
-    if not updates:
-        return make_response(jsonify({"error": tk._("No valid fields provided")}), 400)
-
-    cfg = MetricConfig.upsert(metric_name, **updates)
-
-    return jsonify(
-        {
-            "metric": metric_name,
-            "enabled": cfg.enabled,
-            "order": cfg.order,
-            "grid_size": cfg.grid_size,
-            "access_level": cfg.access_level,
-            "cache_timeout": cfg.cache_timeout,
-        }
-    )
+    model.Session.commit()
+    return jsonify({"updated": len(payload)})
 
 
 def clear_all_caches() -> Response:
@@ -155,4 +134,5 @@ bp.add_url_rule(
     methods=["POST"],
     view_func=clear_metric_cache,
 )
+bp.add_url_rule("/settings/batch-order", methods=["POST"], view_func=batch_update_order)
 bp.add_url_rule("/settings/reset", methods=["POST"], view_func=reset_all_configs)

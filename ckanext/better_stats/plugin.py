@@ -9,6 +9,7 @@ from ckanext.better_stats.metrics import register_metrics
 @tk.blanket.blueprints
 @tk.blanket.helpers
 @tk.blanket.auth_functions
+@tk.blanket.actions
 class BetterStatsPlugin(p.SingletonPlugin):
     p.implements(p.IConfigurer)
     p.implements(p.ISignal)

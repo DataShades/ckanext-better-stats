@@ -529,4 +529,4 @@ class OrganizationSizesMetric(MetricBase):
         return {
             "headers": [tk._("Organization"), tk._("Datasets")],
             "rows": [[{"text": item["organization"], "url": item["url"]}, item["count"]] for item in data],
-    }
+        }

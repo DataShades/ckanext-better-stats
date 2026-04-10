@@ -96,6 +96,20 @@
         {% if not embed %}
         <div class="metric-footer">
             <span class="metric-cache-age" data-metric="{{ metric.name }}">—</span>
+
+            <span class="badge border d-flex gap-1 align-items-baseline">
+                {% if metric.access_level == 'authenticated' %}
+                    <i class="fa fa-user"></i>
+                    {{ _('Authenticated') }}
+                {% elif metric.access_level == 'admin' %}
+                    <i class="fa fa-shield"></i>
+                    {{ _('Admin') }}
+                {% else %}
+                    <i class="fa fa-globe"></i>
+                    {{ _('Public') }}
+                {% endif %}
+            </span>
+
             <button class="metric-expand-btn"
                     data-metric="{{ metric.name }}"
                     data-bs-toggle="modal"

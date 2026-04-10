@@ -3,6 +3,7 @@ ckan.module("bstats-stats-settings", function ($) {
         options: {
             clearAllUrl: null,
             resetUrl: null,
+            batchOrderUrl: null,
         },
 
         initialize() {
@@ -10,6 +11,7 @@ ckan.module("bstats-stats-settings", function ($) {
 
             this._csrf = document.querySelector('meta[name="csrf-token"]')?.content || "";
             this._timers = {};
+            this._pending = 0;
 
             this._initSortable();
             this.el[0].reset();
@@ -21,7 +23,7 @@ ckan.module("bstats-stats-settings", function ($) {
         },
 
         _initSortable() {
-            Sortable.create(this.el.find("#metrics-tbody")[0], {
+            this._sortable = Sortable.create(this.el.find("#metrics-tbody")[0], {
                 handle: ".sortable-handle",
                 animation: 150,
                 onEnd: this._onReorder,
@@ -30,12 +32,19 @@ ckan.module("bstats-stats-settings", function ($) {
 
         _onReorder() {
             const rows = this.el.find("#metrics-tbody .metric-row").toArray();
-            const saves = rows.map((row, idx) =>
-                this._apiPost($(row).data("update-url"), { order: (idx + 1) * 10 })
-            );
-            Promise.all(saves)
+            const items = rows.map((row, idx) => ({
+                metric_name: $(row).data("metric"),
+                order: (idx + 1) * 10,
+            }));
+            this._setStatus(this._("Saving\u2026"));
+            this._lock();
+            this._apiPost(this.options.batchOrderUrl, items)
                 .then(() => this._setStatus(this._("Order saved") + " \u2713", true))
-                .catch(() => this._setStatus(this._("Failed to save order"), false));
+                .catch((err) => {
+                    const msg = Array.isArray(err?.error) ? err.error.join(", ") : (err?.error || "");
+                    this._setStatus(this._("Failed to save order") + (msg ? ": " + msg : ""), false);
+                })
+                .finally(() => this._unlock());
         },
 
         _onFieldChange(e) {
@@ -47,7 +56,10 @@ ckan.module("bstats-stats-settings", function ($) {
         },
 
         _saveRow(row) {
-            const payload = {};
+            const allRows = this.el.find("#metrics-tbody .metric-row").toArray();
+            const idx = allRows.indexOf(row);
+            const payload = { order: (idx + 1) * 10 };
+
             $(row).find(".metric-field").each(function () {
                 const field = this.dataset.field;
                 if (this.type === "checkbox") payload[field] = this.checked;
@@ -56,12 +68,14 @@ ckan.module("bstats-stats-settings", function ($) {
             });
 
             this._setStatus(this._("Saving\u2026"));
+            this._lock();
             this._apiPost($(row).data("update-url"), payload)
                 .then(() => this._setStatus(this._("Saved") + " \u2713", true))
                 .catch((err) => {
                     const msg = Array.isArray(err.error) ? err.error.join(", ") : err.error;
                     this._setStatus(this._("Save failed") + ": " + msg, false);
-                });
+                })
+                .finally(() => this._unlock());
         },
 
         _onClearMetricCache(e) {
@@ -107,6 +121,22 @@ ckan.module("bstats-stats-settings", function ($) {
                     $btn.prop("disabled", false);
                     this._setStatus(this._("Reset failed"), false);
                 });
+        },
+
+        _lock() {
+            if (++this._pending === 1) {
+                this.el.find(".metric-field").prop("disabled", true);
+                this.el.find(".sortable-handle").css("cursor", "not-allowed");
+                this._sortable.option("disabled", true);
+            }
+        },
+
+        _unlock() {
+            if (--this._pending === 0) {
+                this.el.find(".metric-field").prop("disabled", false);
+                this.el.find(".sortable-handle").css("cursor", "grab");
+                this._sortable.option("disabled", false);
+            }
         },
 
         _apiPost(url, body) {

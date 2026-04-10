@@ -20,7 +20,8 @@
          name="better-stats-settings-form"
          data-module="bstats-stats-settings"
          data-module-clear-all-url="{{ h.url_for('better_stats_settings.clear_all_caches') }}"
-         data-module-reset-url="{{ h.url_for('better_stats_settings.reset_all_configs') }}">
+         data-module-reset-url="{{ h.url_for('better_stats_settings.reset_all_configs') }}"
+         data-module-batch-order-url="{{ h.url_for('better_stats_settings.batch_update_order') }}">
         <div class="p-4">
 
             <div class="d-flex align-items-center justify-content-between mb-4">
