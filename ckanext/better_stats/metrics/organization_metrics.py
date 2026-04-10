@@ -39,10 +39,9 @@ class OrganizationHierarchyMetric(MetricBase):
 
     def _to_echarts_node(self, node: dict[str, Any]) -> dict[str, Any]:
         name = node["name"]
-        url = tk.url_for("organization.read", id=name)
         converted: dict[str, Any] = {
             "name": node.get("title") or name or "Unknown",
-            "value": (f'<a href="{url}" target="_blank" style="color:inherit;">{tk._("View")} →</a>'),
+            "value": (f'<a href="/organization/{name}" target="_blank" style="color:inherit;">{tk._("View")} →</a>'),
         }
         children = node.get("children", [])
 
@@ -364,7 +363,7 @@ class OrganizationOverviewMetric(MetricBase):
             {
                 "organization": {
                     "label": row.title,
-                    "url": tk.url_for("organization.read", id=row.name),
+                    "url": f"/organization/{row.name}",
                 },
                 "datasets": row.datasets,
                 "resources": row.resources,
@@ -503,7 +502,7 @@ class OrganizationSizesMetric(MetricBase):
             {
                 "organization": row.title,
                 "count": row.count,
-                "url": tk.url_for("organization.read", id=row.name),
+                "url": f"/organization/{row.name}",
             }
             for row in rows
         ]

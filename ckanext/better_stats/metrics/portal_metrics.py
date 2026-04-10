@@ -90,7 +90,7 @@ class DatasetCompletenessMetric(MetricBase):
             description=tk._("Percentage of datasets with description, tags, and resources"),
             order=90,
             access_level=const.AccessLevel.AUTHENTICATED.value,
-            col_span=6
+            col_span=6,
         )
 
     def get_data(self) -> dict[str, Any]:

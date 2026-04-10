@@ -1,15 +1,16 @@
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timedelta, timezone
 from typing import Any, ClassVar
 
-from sqlalchemy import func, select, text
-
 import ckan.plugins.toolkit as tk
-from ckan import model
 
 from ckanext.better_stats import const
 from ckanext.better_stats.metrics.base import MetricBase
+from ckanext.better_stats.search import make_connection, solr_search
+
+log = logging.getLogger(__name__)
 
 
 class DatasetCountMetric(MetricBase):
@@ -36,14 +37,11 @@ class DatasetCountMetric(MetricBase):
         )
 
     def get_data(self) -> int:
-        return (
-            model.Session.query(model.Package)
-            .filter(
-                model.Package.state == model.State.ACTIVE,
-                model.Package.type == "dataset",
-            )
-            .count()
+        result = tk.get_action("package_search")(
+            {"user": tk.current_user.name},
+            {"rows": 0, "include_private": True},
         )
+        return result["count"]
 
     def get_table_data(self) -> dict[str, Any]:
         return {
@@ -61,6 +59,7 @@ class DatasetsByOrganizationMetric(MetricBase):
     ]
     default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.CHART
     icon: ClassVar[str] = "fa-solid fa-building"
+    scope: ClassVar[const.MetricScope] = const.MetricScope.USER
 
     def __init__(self) -> None:
         super().__init__(
@@ -72,24 +71,21 @@ class DatasetsByOrganizationMetric(MetricBase):
         )
 
     def get_data(self) -> list[dict[str, Any]]:
-        rows = (
-            model.Session.query(
-                model.Group.title,
-                func.count(model.Package.id).label("count"),
-            )
-            .join(model.Member, model.Group.id == model.Member.group_id)
-            .join(model.Package, model.Member.table_id == model.Package.id)
-            .filter(
-                model.Package.state == model.State.ACTIVE,
-                model.Package.type == "dataset",
-                model.Group.type == "organization",
-                model.Member.table_name == "package",
-            )
-            .group_by(model.Group.title)
-            .order_by(text("count desc"))
-            .all()
+        result = tk.get_action("package_search")(
+            {"user": tk.current_user.name},
+            {
+                "rows": 0,
+                "include_private": True,
+                "facet.field": ["organization"],
+                "facet.limit": -1,
+            },
         )
-        return [{"organization": row.title, "count": row.count} for row in rows]
+        items = result.get("search_facets", {}).get("organization", {}).get("items", [])
+        return sorted(
+            [{"organization": item["display_name"], "count": item["count"]} for item in items],
+            key=lambda x: x["count"],
+            reverse=True,
+        )
 
     def get_chart_data(self) -> dict[str, Any]:
         data = self.get_data()
@@ -122,6 +118,7 @@ class DatasetCreationHistoryMetric(MetricBase):
     ]
     default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.CHART
     icon: ClassVar[str] = "fa-solid fa-calendar-days"
+    scope: ClassVar[const.MetricScope] = const.MetricScope.USER
 
     def __init__(self) -> None:
         super().__init__(
@@ -129,24 +126,49 @@ class DatasetCreationHistoryMetric(MetricBase):
             title=tk._("Dataset Creation History"),
             description=tk._("Number of datasets created over time"),
             order=60,
-            col_span=6
+            col_span=6,
         )
 
     def get_data(self) -> list[dict[str, Any]]:
-        rows = (
-            model.Session.query(
-                func.date_trunc("day", model.Package.metadata_created).label("day"),
-                func.count(model.Package.id).label("count"),
-            )
-            .filter(
-                model.Package.state == model.State.ACTIVE,
-                model.Package.type == "dataset",
-            )
-            .group_by("day")
-            .order_by("day")
-            .all()
+        client = make_connection()
+
+        oldest = solr_search(
+            fq=["state:active", "type:dataset"],
+            client=client,
+            rows=1,
+            sort="metadata_created asc",
+            fl="metadata_created",
         )
-        return [{"day": row.day.strftime("%d %B %Y"), "count": row.count} for row in rows]
+        if not oldest.docs:
+            return []
+
+        raw = oldest.docs[0]["metadata_created"]
+        earliest = raw.strftime("%Y-%m-%dT%H:%M:%SZ") if isinstance(raw, datetime) else str(raw)
+
+        resp = solr_search(
+            fq=["state:active", "type:dataset"],
+            client=client,
+            rows=0,
+            facet="on",
+            **{
+                "facet.range": "metadata_created",
+                "facet.range.start": earliest,
+                "facet.range.end": "NOW+1DAY/DAY",
+                "facet.range.gap": "+1DAY",
+                "facet.range.other": "none",
+            },
+        )
+
+        # SOLR returns counts as a flat list: [date, count, date, count, ...]
+        counts = resp.facets["facet_ranges"]["metadata_created"]["counts"]
+        return [
+            {
+                "day": datetime.strptime(d[:10], "%Y-%m-%d").strftime("%d %B %Y"),
+                "count": c,
+            }
+            for d, c in zip(counts[::2], counts[1::2], strict=True)
+            if c > 0
+        ]
 
     def get_chart_data(self) -> dict[str, Any]:
         data = self.get_data()
@@ -154,7 +176,13 @@ class DatasetCreationHistoryMetric(MetricBase):
             "tooltip": {"trigger": "axis"},
             "xAxis": {"type": "category", "data": [item["day"] for item in data]},
             "yAxis": {"type": "value", "minInterval": 1},
-            "series": [{"type": "line", "data": [item["count"] for item in data], "smooth": True}],
+            "series": [
+                {
+                    "type": "line",
+                    "data": [item["count"] for item in data],
+                    "smooth": True,
+                }
+            ],
         }
 
     def get_table_data(self) -> dict[str, Any]:
@@ -166,7 +194,7 @@ class DatasetCreationHistoryMetric(MetricBase):
 
 
 class ResourcesByFormatMetric(MetricBase):
-    """Distribution of resources across file formats (top 10)."""
+    """Distribution of resources across file formats."""
 
     supported_visualizations: ClassVar[list[const.VisualizationType]] = [
         const.VisualizationType.CHART,
@@ -184,18 +212,27 @@ class ResourcesByFormatMetric(MetricBase):
         )
 
     def get_data(self) -> list[dict[str, Any]]:
-        rows = (
-            model.Session.query(
-                func.coalesce(func.nullif(func.upper(model.Resource.format), ""), "Unknown").label("format"),
-                func.count(model.Resource.id).label("count"),
-            )
-            .filter(model.Resource.state == model.State.ACTIVE)
-            .group_by("format")
-            .order_by(func.count(model.Resource.id).desc())
-            .limit(10)
-            .all()
+        result = tk.get_action("package_search")(
+            {"ignore_auth": False},
+            {
+                "rows": 0,
+                "facet.field": ["res_format"],
+                "facet.limit": -1,
+                "include_private": True,
+            },
         )
-        return [{"format": row.format, "count": row.count} for row in rows]
+        items = result.get("search_facets", {}).get("res_format", {}).get("items", [])
+
+        aggregated: dict[str, int] = {}
+
+        for item in items:
+            key = item["name"].upper() if item["name"] else tk._("Unknown")
+            aggregated[key] = aggregated.get(key, 0) + item["count"]
+
+        return [
+            {"format": fmt, "count": count}
+            for fmt, count in sorted(aggregated.items(), key=lambda x: x[1], reverse=True)
+        ]
 
     def get_chart_data(self) -> dict[str, Any]:
         data = self.get_data()
@@ -220,7 +257,7 @@ class ResourcesByFormatMetric(MetricBase):
 
 
 class TopTagsMetric(MetricBase):
-    """Most frequently used tags across all active datasets (top 15)."""
+    """Most frequently used tags across all active datasets."""
 
     supported_visualizations: ClassVar[list[const.VisualizationType]] = [
         const.VisualizationType.CHART,
@@ -238,24 +275,17 @@ class TopTagsMetric(MetricBase):
         )
 
     def get_data(self) -> list[dict[str, Any]]:
-        rows = (
-            model.Session.query(
-                model.Tag.name,
-                func.count(model.PackageTag.package_id).label("count"),
-            )
-            .join(model.PackageTag, model.Tag.id == model.PackageTag.tag_id)
-            .join(model.Package, model.PackageTag.package_id == model.Package.id)
-            .filter(
-                model.Package.state == model.State.ACTIVE,
-                model.Package.type == "dataset",
-                model.PackageTag.state == model.State.ACTIVE,
-            )
-            .group_by(model.Tag.name)
-            .order_by(func.count(model.PackageTag.package_id).desc())
-            .limit(15)
-            .all()
+        result = tk.get_action("package_search")(
+            {"ignore_auth": False},
+            {
+                "rows": 0,
+                "facet.field": ["tags"],
+                "facet.limit": 15,
+                "include_private": True,
+            },
         )
-        return [{"tag": row.name, "count": row.count} for row in rows]
+        items = result.get("search_facets", {}).get("tags", {}).get("items", [])
+        return [{"tag": item["name"], "count": item["count"]} for item in items]
 
     def get_chart_data(self) -> dict[str, Any]:
         data = self.get_data()
@@ -268,7 +298,13 @@ class TopTagsMetric(MetricBase):
                 "data": [item["tag"] for item in data],
                 "axisLabel": {"width": 100, "overflow": "truncate", "ellipsis": "..."},
             },
-            "series": [{"type": "bar", "data": [item["count"] for item in data], "colorBy": "data"}],
+            "series": [
+                {
+                    "type": "bar",
+                    "data": [item["count"] for item in data],
+                    "colorBy": "data",
+                }
+            ],
         }
 
     def get_table_data(self) -> dict[str, Any]:
@@ -299,30 +335,37 @@ class DatasetsWithoutResourcesMetric(MetricBase):
         )
 
     def get_data(self) -> list[dict[str, Any]]:
-        rows = (
-            model.Session.query(model.Package.name, model.Package.title)
-            .filter(
-                model.Package.state == model.State.ACTIVE,
-                model.Package.type == "dataset",
-                ~model.Package.id.in_(
-                    select(
-                        model.Session.query(model.Resource.package_id)
-                        .filter(model.Resource.state == model.State.ACTIVE)
-                        .subquery()
-                    )
-                ),
+        packages = []
+        page_size = 1000
+        start = 0
+
+        while True:
+            result = tk.get_action("package_search")(
+                {"user": tk.current_user.name},
+                {
+                    "fq": "num_resources:0",
+                    "fl": "name,title,dataset_type",
+                    "rows": page_size,
+                    "start": start,
+                    "include_private": True,
+                },
             )
-            .order_by(model.Package.title)
-            .all()
-        )
+
+            batch = result["results"]
+            packages.extend(batch)
+
+            if start + len(batch) >= result["count"]:
+                break
+
+            start += page_size
 
         return [
             {
-                "name": row.name,
-                "title": row.title or row.name,
-                "url": tk.url_for("dataset.read", id=row.name, _external=False),
+                "name": pkg["name"],
+                "title": pkg["title"] or pkg["name"],
+                "url": f"/{pkg['dataset_type']}/{pkg['name']}",
             }
-            for row in rows
+            for pkg in packages
         ]
 
     def get_card_data(self) -> dict[str, Any]:
@@ -371,32 +414,41 @@ class StaleDatasetsMetric(MetricBase):
             access_level=const.AccessLevel.AUTHENTICATED.value,
         )
 
-    def _cutoff(self) -> datetime:
-        return datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=365)
-
     def get_data(self) -> list[dict[str, Any]]:
-        rows = (
-            model.Session.query(
-                model.Package.name,
-                model.Package.title,
-                model.Package.metadata_modified,
+        year_ago = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=365)
+        packages = []
+        page_size = 1000
+        start = 0
+
+        while True:
+            result = tk.get_action("package_search")(
+                {"user": tk.current_user.name},
+                {
+                    "fq": f"metadata_modified:[* TO {year_ago.strftime('%Y-%m-%dT%H:%M:%SZ')}]",
+                    "fl": "name,title,dataset_type,metadata_modified",
+                    "rows": page_size,
+                    "start": start,
+                    "sort": "metadata_modified asc",
+                    "include_private": True,
+                },
             )
-            .filter(
-                model.Package.state == model.State.ACTIVE,
-                model.Package.type == "dataset",
-                model.Package.metadata_modified < self._cutoff(),
-            )
-            .order_by(model.Package.metadata_modified.asc())
-            .all()
-        )
+
+            batch = result["results"]
+            packages.extend(batch)
+
+            if start + len(batch) >= result["count"]:
+                break
+
+            start += page_size
+
         return [
             {
-                "name": row.name,
-                "title": row.title or row.name,
-                "last_updated": row.metadata_modified.strftime("%d %B %Y"),
-                "url": tk.url_for("dataset.read", id=row.name, _external=False),
+                "name": pkg["name"],
+                "title": pkg["title"] or pkg["name"],
+                "last_updated": datetime.fromisoformat(pkg["metadata_modified"]).strftime("%d %B %Y"),
+                "url": f"/{pkg['dataset_type']}/{pkg['name']}",
             }
-            for row in rows
+            for pkg in packages
         ]
 
     def get_card_data(self) -> dict[str, Any]:

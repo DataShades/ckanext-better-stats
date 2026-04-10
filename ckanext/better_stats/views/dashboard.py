@@ -1,7 +1,6 @@
 import csv
 import io
 import json
-import logging
 from datetime import datetime, timezone
 from typing import Any, cast
 
@@ -20,7 +19,6 @@ from ckanext.better_stats.metrics.base import (
     before_metric_render_signal,
 )
 
-log = logging.getLogger(__name__)
 bp = Blueprint("better_stats", __name__, url_prefix="/better_stats")
 
 
@@ -46,8 +44,8 @@ def get_metrics_batch() -> Response:
     """Return visualization data for multiple metrics in one request.
 
     Query parameters:
-        names   – comma-separated list of metric names (required)
-        refresh – if truthy, invalidate cache for every requested metric
+        names   - comma-separated list of metric names (required)
+        refresh - if truthy, invalidate cache for every requested metric
     """
     raw_names = tk.request.args.get("names", "")
     names = [n.strip() for n in raw_names.split(",") if n.strip()]
