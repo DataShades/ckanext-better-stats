@@ -50,7 +50,7 @@ class MetricBase(ABC):
         col_span: int = 3,
         row_span: int = 1,
         order: int = 100,
-        cache_timeout: int = 60,
+        cache_timeout: int = 600,
         access_level: str = const.AccessLevel.PUBLIC.value,
     ) -> None:
         self.name = name
