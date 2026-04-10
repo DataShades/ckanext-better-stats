@@ -183,7 +183,7 @@ class OrganizationCountMetric(MetricBase):
             "rows": [
                 [
                     row.title or row[0],
-                    row.created.strftime("%Y-%m-%d") if row.created else "—",
+                    row.created.strftime("%d %B %Y") if row.created else "—",
                 ]
                 for row in rows
             ],
@@ -444,7 +444,7 @@ class InactiveOrganizationsMetric(MetricBase):
         return [
             {
                 "organization": row.title,
-                "created": row.created.strftime("%Y-%m-%d") if row.created else "—",
+                "created": row.created.strftime("%d %B %Y") if row.created else "—",
             }
             for row in rows
         ]

@@ -145,7 +145,7 @@ class DatasetCreationHistoryMetric(MetricBase):
             .order_by("day")
             .all()
         )
-        return [{"day": row.day.strftime("%Y-%m-%d"), "count": row.count} for row in rows]
+        return [{"day": row.day.strftime("%d %B %Y"), "count": row.count} for row in rows]
 
     def get_chart_data(self) -> dict[str, Any]:
         data = self.get_data()
@@ -337,7 +337,7 @@ class DatasetsWithoutResourcesMetric(MetricBase):
             "rows": [
                 [
                     item["title"],
-                    {"text": item["url"], "url": item["url"]},
+                    {"text": item["title"], "url": item["url"]},
                 ]
                 for item in data
             ],
@@ -392,7 +392,8 @@ class StaleDatasetsMetric(MetricBase):
             {
                 "name": row.name,
                 "title": row.title or row.name,
-                "last_updated": row.metadata_modified.strftime("%Y-%m-%d"),
+                "last_updated": row.metadata_modified.strftime("%d %B %Y"),
+                "url": tk.url_for("dataset.read", id=row.name, _external=False),
             }
             for row in rows
         ]
@@ -404,7 +405,7 @@ class StaleDatasetsMetric(MetricBase):
         data = self.get_data()
         return {
             "headers": [tk._("Dataset"), tk._("Last Updated")],
-            "rows": [[item["title"], item["last_updated"]] for item in data],
+            "rows": [[{"text": item["title"], "url": item["url"]}, item["last_updated"]] for item in data],
         }
 
     def get_export_data(self) -> dict[str, Any]:
