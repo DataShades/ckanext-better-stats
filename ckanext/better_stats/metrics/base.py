@@ -33,7 +33,8 @@ class MetricBase(ABC):
         name: str,
         title: str = "",
         description: str = "",
-        grid_size: str = "half",
+        col_span: int = 3,
+        row_span: int = 1,
         order: int = 100,
         cache_timeout: int = 60,
         access_level: str = const.AccessLevel.PUBLIC.value,
@@ -41,7 +42,8 @@ class MetricBase(ABC):
         self.name = name
         self.title = title
         self.description = description
-        self.grid_size = grid_size
+        self.col_span = col_span
+        self.row_span = row_span
         self.order = order
         self.cache_timeout = cache_timeout
         self.access_level = access_level
@@ -161,7 +163,8 @@ class MetricBase(ABC):
             "title": self.title,
             "description": self.description,
             "icon": self.icon,
-            "grid_size": self.grid_size,
+            "col_span": self.col_span,
+            "row_span": self.row_span,
             "order": self.order,
             "supported_visualizations": [v.value for v in self.supported_visualizations],
             "default_visualization": self.default_visualization.value,
@@ -232,7 +235,8 @@ class MetricRegistry:
                 return None
 
             metric.order = cast(int, cfg.order)
-            metric.grid_size = str(cfg.grid_size)
+            metric.col_span = cast(int, cfg.col_span)
+            metric.row_span = cast(int, cfg.row_span)
             metric.cache_timeout = cast(int, cfg.cache_timeout)
             metric.access_level = str(cfg.access_level or metric.access_level)
 
@@ -253,7 +257,7 @@ class MetricRegistry:
 
         Queries :class:`~ckanext.better_stats.model.MetricConfig` for each
         registered metric and applies stored overrides (``enabled``, ``order``,
-        ``grid_size``, ``cache_timeout``, ``access_level``) to the metric
+        ``col_span``, ``row_span``, ``cache_timeout``, ``access_level``) to the metric
         instance before returning.  Metrics with ``enabled=False`` are
         excluded.  Falls back to :meth:`get_all_metrics` if the DB is
         unavailable (e.g. during tests without a DB fixture).
@@ -271,7 +275,8 @@ class MetricRegistry:
                         continue
 
                     metric.order = cfg.order  # type: ignore
-                    metric.grid_size = cfg.grid_size  # type: ignore
+                    metric.col_span = cfg.col_span  # type: ignore
+                    metric.row_span = cfg.row_span  # type: ignore
                     metric.cache_timeout = cfg.cache_timeout  # type: ignore
                     metric.access_level = cfg.access_level or metric.access_level  # type: ignore
 

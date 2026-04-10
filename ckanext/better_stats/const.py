@@ -19,9 +19,3 @@ class ExportFormat(Enum):
     JSON = "json"
     XLSX = "xlsx"
     IMAGE = "image"
-
-
-class GridSize(Enum):
-    FULL = "full"
-    HALF = "half"
-    THIRD = "third"

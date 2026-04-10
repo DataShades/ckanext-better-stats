@@ -30,7 +30,7 @@ class OrganizationHierarchyMetric(MetricBase):
             title=tk._("Organization Hierarchy"),
             description=tk._("Tree view of organization parent-child relationships"),
             order=14,
-            grid_size="full",
+            col_span=6,
         )
 
     def get_data(self) -> list[dict[str, Any]]:
@@ -287,7 +287,7 @@ class OrganizationOverviewMetric(MetricBase):
             title=tk._("Organization Overview"),
             description=tk._("Datasets, resources and members per organization"),
             order=11,
-            grid_size="full",
+            col_span=6,
         )
 
     def get_data(self) -> list[dict[str, Any]]:
@@ -470,7 +470,7 @@ class OrganizationSizesMetric(MetricBase):
             title=tk._("Organization Sizes"),
             description=tk._("Relative size of organizations by dataset count"),
             order=13,
-            grid_size="full",
+            col_span=6,
         )
 
     def get_data(self) -> list[dict[str, Any]]:

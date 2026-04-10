@@ -1,24 +1,23 @@
-// 12-column CSS Grid
+// 6-column CSS Grid — col_span (1–6) and row_span (1–2) are set as
+// CSS custom properties on each .metric-container via inline style.
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(12, 1fr);
+  grid-template-columns: repeat(6, 1fr);
+  grid-auto-rows: 380px;
   gap: 1.25rem;
-  align-items: start;
+  align-items: stretch;
   margin-top: 1.25rem;
 }
 
 .metric-container {
   position: relative;
-  height: 100%;
-
-  &[data-grid-size="half"]  { grid-column: span 6; }
-  &[data-grid-size="third"] { grid-column: span 4; }
-  &[data-grid-size="full"]  { grid-column: span 12; }
+  grid-column: span var(--col-span, 3);
+  grid-row: span var(--row-span, 1);
 }
 
 @media (max-width: 768px) {
-  .stats-grid { grid-template-columns: 1fr; }
-  .metric-container { grid-column: span 12 !important; }
+  .stats-grid { grid-template-columns: 1fr; grid-auto-rows: auto; } // auto lets mobile cards size to content
+  .metric-container { grid-column: 1 / -1 !important; grid-row: span 1 !important; }
 }
 
 // Dashboard toolbar

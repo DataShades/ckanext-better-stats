@@ -292,7 +292,7 @@ class DatasetsWithoutResourcesMetric(MetricBase):
             title=tk._("Datasets Without Resources"),
             description=tk._("Datasets that have no attached resources"),
             order=6,
-            grid_size="full",
+            col_span=6,
         )
 
     def get_data(self) -> list[dict[str, Any]]:
@@ -365,7 +365,7 @@ class StaleDatasetsMetric(MetricBase):
             title=tk._("Stale Datasets"),
             description=tk._("Datasets not updated in over a year"),
             order=7,
-            grid_size="full",
+            col_span=6,
         )
 
     def _cutoff(self) -> datetime:

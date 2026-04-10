@@ -20,11 +20,8 @@ def better_stats_update_metric(
         "metric_name": [not_missing, not_empty, unicode_safe],
         "enabled": [ignore_missing, boolean_validator],
         "order": [ignore_missing, int_validator],
-        "grid_size": [
-            ignore_missing,
-            unicode_safe,
-            one_of([e.value for e in const.GridSize]),
-        ],
+        "col_span": [ignore_missing, int_validator, one_of(list(range(1, 7)))],
+        "row_span": [ignore_missing, int_validator, one_of([1, 2])],
         "access_level": [
             ignore_missing,
             unicode_safe,

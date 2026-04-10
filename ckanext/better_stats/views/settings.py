@@ -34,7 +34,8 @@ class BetterStatsSettingsView(MethodView):
                     "icon": metric.icon,
                     "enabled": cfg.enabled if cfg else True,
                     "order": cfg.order if cfg else metric.order,
-                    "grid_size": cfg.grid_size if cfg else metric.grid_size,
+                    "col_span": cfg.col_span if cfg else metric.col_span,
+                    "row_span": cfg.row_span if cfg else metric.row_span,
                     "access_level": (cfg.access_level or metric.access_level) if cfg else metric.access_level,
                     "cache_timeout": cfg.cache_timeout if cfg else metric.cache_timeout,
                 }

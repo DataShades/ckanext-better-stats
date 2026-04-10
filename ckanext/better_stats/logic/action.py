@@ -13,7 +13,7 @@ from ckanext.better_stats.model import MetricConfig
 
 log = logging.getLogger(__name__)
 
-_UPDATABLE_FIELDS = ("enabled", "order", "grid_size", "access_level", "cache_timeout")
+_UPDATABLE_FIELDS = ("enabled", "order", "col_span", "row_span", "access_level", "cache_timeout")
 
 
 @validate(schema.better_stats_update_metric)
@@ -36,7 +36,8 @@ def better_stats_update_metric(context: types.Context, data_dict: types.DataDict
         "metric": metric_name,
         "enabled": cfg.enabled,
         "order": cfg.order,
-        "grid_size": cfg.grid_size,
+        "col_span": cfg.col_span,
+        "row_span": cfg.row_span,
         "access_level": cfg.access_level,
         "cache_timeout": cfg.cache_timeout,
     }
