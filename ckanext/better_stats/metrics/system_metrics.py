@@ -26,7 +26,8 @@ class MemoryMetric(MetricBase):
             name="memory",
             title="System Memory Usage",
             description="Memory usage of the system",
-            order=1,
+            order=160,
+            col_span=2,
             access_level=const.AccessLevel.ADMIN.value,
         )
 
@@ -95,7 +96,8 @@ class CPUMetric(MetricBase):
             name="cpu",
             title="CPU Usage",
             description="Current CPU usage percentage",
-            order=2,
+            order=170,
+            col_span=2,
             cache_timeout=15,
             access_level=const.AccessLevel.ADMIN.value,
         )
@@ -151,8 +153,8 @@ class DiskUsageMetric(MetricBase):
             name="disk_usage",
             title="Disk Usage",
             description="Disk usage of each partition",
-            col_span=6,
-            order=3,
+            order=180,
+            col_span=4,
             access_level=const.AccessLevel.ADMIN.value,
         )
 

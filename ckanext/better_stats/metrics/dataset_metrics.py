@@ -31,7 +31,7 @@ class DatasetCountMetric(MetricBase):
             name="dataset_count",
             title=tk._("Total Datasets"),
             description=tk._("Total number of datasets in the system"),
-            order=1,
+            order=30,
         )
 
     def get_data(self) -> int:
@@ -66,7 +66,8 @@ class DatasetsByOrganizationMetric(MetricBase):
             name="datasets_by_org",
             title=tk._("Datasets by Organization"),
             description=tk._("Distribution of datasets across organizations"),
-            order=2,
+            order=10,
+            col_span=6,
         )
 
     def get_data(self) -> list[dict[str, Any]]:
@@ -126,7 +127,8 @@ class DatasetCreationHistoryMetric(MetricBase):
             name="dataset_creation_history",
             title=tk._("Dataset Creation History"),
             description=tk._("Number of datasets created over time"),
-            order=3,
+            order=60,
+            col_span=6
         )
 
     def get_data(self) -> list[dict[str, Any]]:
@@ -177,7 +179,7 @@ class ResourcesByFormatMetric(MetricBase):
             name="resources_by_format",
             title=tk._("Resources by Format"),
             description=tk._("Distribution of resources across file formats"),
-            order=4,
+            order=50,
         )
 
     def get_data(self) -> list[dict[str, Any]]:
@@ -231,7 +233,7 @@ class TopTagsMetric(MetricBase):
             name="top_tags",
             title=tk._("Top Tags"),
             description=tk._("Most frequently used tags across datasets"),
-            order=5,
+            order=40,
         )
 
     def get_data(self) -> list[dict[str, Any]]:
@@ -291,8 +293,8 @@ class DatasetsWithoutResourcesMetric(MetricBase):
             name="datasets_without_resources",
             title=tk._("Datasets Without Resources"),
             description=tk._("Datasets that have no attached resources"),
-            order=6,
-            col_span=6,
+            order=110,
+            access_level=const.AccessLevel.AUTHENTICATED.value,
         )
 
     def get_data(self) -> list[dict[str, Any]]:
@@ -364,8 +366,8 @@ class StaleDatasetsMetric(MetricBase):
             name="stale_datasets",
             title=tk._("Stale Datasets"),
             description=tk._("Datasets not updated in over a year"),
-            order=7,
-            col_span=6,
+            order=120,
+            access_level=const.AccessLevel.AUTHENTICATED.value,
         )
 
     def _cutoff(self) -> datetime:

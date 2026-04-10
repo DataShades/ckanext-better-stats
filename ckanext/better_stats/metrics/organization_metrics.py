@@ -29,8 +29,9 @@ class OrganizationHierarchyMetric(MetricBase):
             name="organization_hierarchy",
             title=tk._("Organization Hierarchy"),
             description=tk._("Tree view of organization parent-child relationships"),
-            order=14,
+            order=80,
             col_span=6,
+            row_span=2,
         )
 
     def get_data(self) -> list[dict[str, Any]]:
@@ -127,7 +128,7 @@ class OrganizationCountMetric(MetricBase):
             name="organization_count",
             title=tk._("Organizations"),
             description=tk._("Total number of organizations and their creation trend"),
-            order=9,
+            order=20,
         )
 
     def get_data(self) -> int:
@@ -204,7 +205,9 @@ class OrganizationMembershipMetric(MetricBase):
             name="organization_membership",
             title=tk._("Organization Membership"),
             description=tk._("Number of members per organization"),
-            order=10,
+            order=130,
+            col_span=6,
+            access_level=const.AccessLevel.ADMIN.value,
         )
 
     def get_data(self) -> list[dict[str, Any]]:
@@ -286,8 +289,10 @@ class OrganizationOverviewMetric(MetricBase):
             name="organization_overview",
             title=tk._("Organization Overview"),
             description=tk._("Datasets, resources and members per organization"),
-            order=11,
+            order=100,
             col_span=6,
+            row_span=2,
+            access_level=const.AccessLevel.AUTHENTICATED.value,
         )
 
     def get_data(self) -> list[dict[str, Any]]:
@@ -407,7 +412,8 @@ class InactiveOrganizationsMetric(MetricBase):
             name="inactive_organizations",
             title=tk._("Inactive Organizations"),
             description=tk._("Organizations with no active datasets"),
-            order=12,
+            order=150,
+            col_span=2,
             access_level=const.AccessLevel.ADMIN.value,
         )
 
@@ -469,7 +475,7 @@ class OrganizationSizesMetric(MetricBase):
             name="organization_sizes",
             title=tk._("Organization Sizes"),
             description=tk._("Relative size of organizations by dataset count"),
-            order=13,
+            order=70,
             col_span=6,
         )
 

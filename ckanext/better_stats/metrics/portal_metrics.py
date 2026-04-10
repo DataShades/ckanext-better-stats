@@ -27,7 +27,8 @@ class UserCountMetric(MetricBase):
             name="user_count",
             title=tk._("Registered Users"),
             description=tk._("Total number of registered users and registration trend"),
-            order=7,
+            order=140,
+            col_span=2,
             access_level=const.AccessLevel.ADMIN.value,
         )
 
@@ -87,8 +88,9 @@ class DatasetCompletenessMetric(MetricBase):
             name="dataset_completeness",
             title=tk._("Dataset Completeness"),
             description=tk._("Percentage of datasets with description, tags, and resources"),
-            order=8,
-            access_level=const.AccessLevel.ADMIN.value,
+            order=90,
+            access_level=const.AccessLevel.AUTHENTICATED.value,
+            col_span=6
         )
 
     def get_data(self) -> dict[str, Any]:
