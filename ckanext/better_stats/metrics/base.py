@@ -21,12 +21,26 @@ class MetricBase(ABC):
     :meth:`get_card_data`) return ``None`` by default, signalling that the
     metric does not support that particular view.  Override only the ones
     listed in :attr:`supported_visualizations`.
+
+    The :attr:`scope` class variable controls cache isolation:
+
+    * ``MetricScope.GLOBAL`` (default) — one shared cache entry for the whole
+      site.  Use this for metrics whose results are identical for every user
+      (e.g. system metrics or aggregate counts that bypass SOLR and always
+      reflect the full dataset catalogue).
+
+    * ``MetricScope.USER`` — a separate cache entry per authenticated user,
+      keyed by ``tk.current_user.id``.  Use this for metrics whose results
+      must respect CKAN's SOLR ``permission_labels``, i.e. when the data
+      shown should differ depending on which datasets the requesting user is
+      allowed to see.
     """
 
     supported_visualizations: ClassVar[list[const.VisualizationType]] = [const.VisualizationType.CHART]
     default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.CHART
     icon: ClassVar[str] = "fa-solid fa-chart-bar"
     supported_export_formats: ClassVar[list[str]] = ["csv", "json", "xlsx", "image"]
+    scope: ClassVar[const.MetricScope] = const.MetricScope.GLOBAL
 
     def __init__(  # noqa: PLR0913
         self,
@@ -50,7 +64,21 @@ class MetricBase(ABC):
 
     @property
     def cache_key(self) -> str:
-        return f"better_stats:metric:{self.name}"
+        """Return the base cache key for this metric (without viz-type suffix).
+
+        Global metrics share one key across all users::
+
+            better_stats:global:metric:<name>
+
+        User-scoped metrics are keyed by the current user's ID::
+
+            better_stats:user:<user_id>:metric:<name>
+        """
+        if self.scope is const.MetricScope.USER:
+            user_id = tk.current_user.id or "anonymous"
+            return f"better_stats:user:{user_id}:metric:{self.name}"
+
+        return f"better_stats:global:metric:{self.name}"
 
     @abstractmethod
     def get_data(self) -> dict[str, Any] | list[Any] | int | float:
@@ -141,11 +169,19 @@ class MetricBase(ABC):
     def refresh_cache(self) -> None:
         """Invalidate all cached visualization entries for this metric.
 
-        The next call to :meth:`get_viz_data` for any visualization type will
-        recompute and re-cache the data.
+        For **global** metrics the four per-viz-type keys are deleted directly.
+
+        For **user-scoped** metrics a Redis ``SCAN`` is used to delete every
+        entry matching ``better_stats:user:*:metric:<name>:*``, covering all
+        users at once.  This is the correct behaviour for admin-initiated cache
+        clears — it ensures no stale per-user entries linger after a forced
+        refresh.
         """
-        for viz in const.VisualizationType:
-            cache.cache_delete(f"{self.cache_key}:{viz.value}")
+        if self.scope is const.MetricScope.USER:
+            cache.cache_delete_pattern(f"better_stats:user:*:metric:{self.name}:*")
+        else:
+            for viz in const.VisualizationType:
+                cache.cache_delete(f"{self.cache_key}:{viz.value}")
 
     @classmethod
     def can_export(cls) -> bool:

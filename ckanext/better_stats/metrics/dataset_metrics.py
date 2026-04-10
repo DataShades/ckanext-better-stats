@@ -25,6 +25,7 @@ class DatasetCountMetric(MetricBase):
     default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.TABLE
     icon: ClassVar[str] = "fa-solid fa-database"
     supported_export_formats = ["csv", "xlsx"]
+    scope: ClassVar[const.MetricScope] = const.MetricScope.USER
 
     def __init__(self) -> None:
         super().__init__(

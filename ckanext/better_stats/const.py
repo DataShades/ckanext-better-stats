@@ -7,6 +7,11 @@ class AccessLevel(Enum):
     ADMIN = "admin"
 
 
+class MetricScope(Enum):
+    GLOBAL = "global"
+    USER = "user"
+
+
 class VisualizationType(Enum):
     CHART = "chart"
     TABLE = "table"
