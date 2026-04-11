@@ -8,10 +8,6 @@
     background: #1e293b;
     border-color: #334155;
 
-    &:hover {
-      box-shadow: 0 4px 16px rgba(0, 0, 0, .4);
-    }
-
     &-display {
       .metric-card-value {
         color: #60a5fa;
@@ -100,20 +96,15 @@
   }
 
   .bstats-search {
-    .input-group-text {
-      background: #1e293b;
-      border-color: #334155;
-      color: #64748b;
-    }
+    .bstats-search-icon { color: #64748b; }
 
-    .form-control {
+    input {
       background: #1e293b;
       border-color: #334155;
       color: #e2e8f0;
 
-      &::placeholder {
-        color: #ffffff;
-      }
+      &::placeholder { color: #64748b; }
+      &:focus { border-color: #475569; box-shadow: 0 0 0 3px rgba(255,255,255,.06); }
     }
   }
 

@@ -1,46 +1,79 @@
 {#
-metrics - list of accessible MetricBase instances to render.
+metrics - flat list of accessible MetricBase instances (kept for compat).
+groups  - list of (MetricGroup, [MetricBase]) tuples, in display order.
 #}
 
 <div class="module">
-    <div class="p-4">
+    <div class="p-3">
 
         {# ── Toolbar ── #}
         <div class="bstats-toolbar">
-            <div class="input-group bstats-search">
-                <span class="input-group-text btn btn-default">
-                    <i class="fa fa-search"></i>
-                </span>
+            <div class="bstats-search">
+                <i class="fa fa-search bstats-search-icon"></i>
                 <input type="text" id="bstats-metric-search"
-                       class="form-control border-start-0"
                        placeholder="{{ _('Filter metrics\u2026') }}">
             </div>
 
             <div class="ms-auto d-flex gap-2">
-                <button class="btn btn-default" id="bstats-theme-toggle" title="{{ _('Toggle dark mode') }}">
+                {# ── Theme toggle ── DISABLE FOR NOW, until the new CKAN theme is ready
+                <button class="btn btn-dashboard" id="bstats-theme-toggle" title="{{ _('Toggle dark mode') }}">
                     <i class="fa fa-moon"></i>
                 </button>
-                <button class="btn btn-default" id="refresh-all">
+                #}
+
+                <button class="btn btn-dashboard" id="refresh-all">
                     <i class="fa fa-refresh"></i> {{ _('Refresh All') }}
                 </button>
                 {% if h.check_access('better_stats_view_settings') %}
-                    <a href="{{ h.url_for('better_stats_settings.settings') }}" class="btn btn-default">
+                    <a href="{{ h.url_for('better_stats_settings.settings') }}" class="btn btn-dashboard">
                         <i class="fa fa-cog"></i> {{ _('Settings') }}
                     </a>
                 {% endif %}
             </div>
         </div>
 
-        {# ── Metric grid ── #}
-        <div class="stats-grid" id="stats-grid">
-            {% for metric in metrics %}
-                {% snippet 'better_stats/metric_card.html', metric=metric %}
-            {% endfor %}
+        {# ── Group filter pills ── #}
+        <div class="bstats-group-filter" id="bstats-group-filter">
+            <button class="bstats-group-pill active" data-group="all">
+                <i class="fa fa-list"></i>
+                {{ _("All") }}
+            </button>
 
-            <div class="bstats-no-results" id="bstats-no-results">
-                <i class="fa fa-search"></i>
-                <p class="mb-0">{{ _('No metrics match your search.') }}</p>
+            {% for group, _ in groups %}
+                <button class="bstats-group-pill" data-group="{{ group.name }}">
+                    {% if group.icon %}<i class="{{ group.icon }}"></i>{% endif %}
+                    {{ group.label }}
+                </button>
+            {% endfor %}
+        </div>
+
+        {# ── Group sections ── #}
+        {% for group, group_metrics in groups %}
+            <div class="bstats-group-section {% if not loop.last %}mb-2{% endif %}" data-group="{{ group.name }}" id="bstats-section-{{ group.name }}">
+
+                <div class="bstats-group-header">
+                    <button class="bstats-group-toggle" type="button"
+                            data-group="{{ group.name }}" aria-expanded="true">
+                        <i class="fa fa-chevron-down bstats-group-chevron"></i>
+                        {% if group.icon %}<i class="{{ group.icon }} ms-1 text-muted"></i>{% endif %}
+                        <span class="bstats-group-label">{{ group.label }}</span>
+                        <span class="badge badge-dashboard ms-2 bstats-group-count">{{ group_metrics|length }}</span>
+                    </button>
+                </div>
+
+                <div class="stats-grid" id="bstats-grid-{{ group.name }}">
+                    {% for metric in group_metrics %}
+                        {% snippet 'better_stats/metric_card.html', metric=metric %}
+                    {% endfor %}
+                </div>
+
             </div>
+        {% endfor %}
+
+        {# ── Global empty state ── #}
+        <div class="bstats-no-results" id="bstats-no-results" style="display:none">
+            <i class="fa fa-search"></i>
+            <p class="mb-0">{{ _('No metrics match your search.') }}</p>
         </div>
 
     </div>

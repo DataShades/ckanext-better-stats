@@ -1,0 +1,35 @@
+.bstats-dashboard .badge {
+    background: var(--bs-badge-dashboard-bg);
+    color: var(--bs-badge-dashboard-color);
+    border-radius: 100px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 14px;
+    padding: 0.25rem 0.5rem;
+
+    &.badge-dashboard {
+        background: var(--bs-badge-dashboard-bg);
+        color: var(--bs-badge-dashboard-color);
+    }
+
+    &.badge-access {
+        background: var(--bs-badge-dashboard-bg);
+        color: var(--bs-badge-dashboard-color);
+        border: unset;
+
+        &.badge-access-public {
+            background: #BD453812;
+            color: #C6898B;
+        }
+
+        &.badge-access-authenticated {
+            background: #189A3012;
+            color: #189A30;
+        }
+
+        &.badge-access-admin {
+            background: #F6C54312;
+            color: #F6C543;
+        }
+    }
+}

@@ -95,26 +95,33 @@
         {# ── Footer: cache age | expand ── #}
         {% if not embed %}
         <div class="metric-footer">
-            <span class="metric-cache-age" data-metric="{{ metric.name }}">—</span>
-
-            <span class="badge border d-flex gap-1 align-items-baseline">
+            <span
+                class="badge badge-access badge-access-{{ metric.access_level }} d-flex gap-1 align-items-baseline"
+                {% if metric.access_level == 'authenticated' %}
+                    title = "{{ _('This metric is only available to authenticated users.') }}"
+                {% elif metric.access_level == 'admin' %}
+                    title = "{{ _('This metric is only available to sysadmins.') }}"
+                {% else %}
+                    title = "{{ _('This metric is publicly available.') }}"
+                {% endif %}
+                data-bs-toggle="tooltip"
+                data-bs-placement="top">
                 {% if metric.access_level == 'authenticated' %}
                     <i class="fa fa-user"></i>
-                    {{ _('Authenticated') }}
                 {% elif metric.access_level == 'admin' %}
-                    <i class="fa fa-shield"></i>
-                    {{ _('Admin') }}
+                    <i class="fa fa-user-shield"></i>
                 {% else %}
-                    <i class="fa fa-globe"></i>
-                    {{ _('Public') }}
+                    <i class="fa fa-user-secret"></i>
                 {% endif %}
             </span>
+
+            <span class="metric-cache-age" data-metric="{{ metric.name }}">{{ _("Updating...") }}</span>
 
             <button class="metric-expand-btn"
                     data-metric="{{ metric.name }}"
                     data-bs-toggle="modal"
                     data-bs-target="#bstats-fullscreen-modal">
-                <i class="fa fa-expand me-1"></i>{{ _('Expand') }}
+                <i class="fa fa-expand me-2"></i>{{ _('Expand') }}
             </button>
         </div>
         {% endif %}

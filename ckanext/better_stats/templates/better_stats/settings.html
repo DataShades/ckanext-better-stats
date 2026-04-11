@@ -1,4 +1,4 @@
-{% extends "page.html" %}
+{% extends "better_stats/page.html" %}
 
 {% block title %}{{ _("Settings") }} — {{ _("Better Stats") }}{% endblock %}
 
@@ -22,11 +22,11 @@
          data-module-clear-all-url="{{ h.url_for('better_stats_settings.clear_all_caches') }}"
          data-module-reset-url="{{ h.url_for('better_stats_settings.reset_all_configs') }}"
          data-module-batch-order-url="{{ h.url_for('better_stats_settings.batch_update_order') }}">
-        <div class="p-4">
+        <div class="p-3">
 
             <div class="d-flex align-items-center justify-content-between mb-4">
                 <h1 class="h3 mb-0">{{ _("Better Stats — Settings") }}</h1>
-                <a href="{{ h.url_for('better_stats.dashboard') }}" class="btn btn-default">
+                <a href="{{ h.url_for('better_stats.dashboard') }}" class="btn btn-dashboard">
                     <i class="fa fa-arrow-left"></i> {{ _("Back to Dashboard") }}
                 </a>
             </div>
@@ -35,11 +35,11 @@
             <div class="mb-3 d-flex align-items-center gap-3 flex-wrap">
                 <span class="text-muted small align-self-center" id="autosave-status"></span>
 
-                <button type="button" class="btn btn-outline-danger btn-sm ms-auto" id="btn-reset-all">
+                <button type="button" class="btn btn-dashboard btn-sm ms-auto" id="btn-reset-all">
                     <i class="fa fa-undo"></i> {{ _("Reset All to Defaults") }}
                 </button>
 
-                <button type="button" class="btn btn-outline-danger btn-sm" id="btn-clear-all-caches">
+                <button type="button" class="btn btn-dashboard btn-sm" id="btn-clear-all-caches">
                     <i class="fa fa-trash"></i> {{ _("Clear All Caches") }}
                 </button>
             </div>

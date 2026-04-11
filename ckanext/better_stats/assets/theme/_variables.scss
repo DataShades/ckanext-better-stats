@@ -1,5 +1,20 @@
 :root {
-  --metric-card-radius: 12px;
-  --metric-card-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --metric-card-radius: 0.5rem;
   --metric-chart-height: 100%;
+
+  --bs-border-color: #DADEE2;
+
+  --bs-btn-dashboard-bg: #FFFFFF;
+  --bs-btn-dashboard-border-color: #DADEE2;
+  --bs-btn-dashboard-color: #212529;
+  --bs-btn-dashboard-hover-bg: #f1f5f9;
+  --bs-btn-dashboard-hover-border-color: #DADEE2;
+  --bs-btn-dashboard-hover-color: #212529;
+  --bs-btn-dashboard-icon-color: #596A73;
+
+  --bs-badge-dashboard-bg: #DADEE280;
+  --bs-badge-dashboard-color: var(--bs-btn-dashboard-color);
+
+  --bs-badge-dashboard-bg: #DADEE280;
+  --bs-badge-dashboard-color: var(--bs-btn-dashboard-color);
 }

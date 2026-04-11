@@ -6,7 +6,7 @@
                 aria-expanded="true"
                 aria-controls="{{ group_id }}-body">
             {% if group.icon %}<i class="{{ group.icon }} me-2 text-muted"></i>{% endif %}
-            {{ _(group.label) }}
+            {{ group.label }}
             <span class="badge bg-secondary ms-2 fw-normal">{{ group_rows|length }}</span>
         </button>
     </h2>

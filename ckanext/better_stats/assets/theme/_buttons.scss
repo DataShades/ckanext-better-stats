@@ -1,0 +1,21 @@
+.btn.btn-dashboard {
+    background: var(--bs-btn-dashboard-bg);
+    border-color: var(--bs-border-color);
+    color: var(--bs-btn-dashboard-color);
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    line-height: 100%;
+    font-weight: 500;
+    box-shadow: unset;
+    padding: 10px 12px;
+
+    i {
+        color: var(--bs-btn-dashboard-icon-color);
+    }
+
+    &:hover {
+        background: var(--bs-btn-dashboard-hover-bg);
+        border-color: var(--bs-btn-dashboard-hover-border-color);
+        color: var(--bs-btn-dashboard-hover-color);
+    }
+}

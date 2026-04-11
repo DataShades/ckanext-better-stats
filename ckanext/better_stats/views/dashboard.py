@@ -33,9 +33,18 @@ class BetterStatsDashboardView(MethodView):
 
         accessible_metrics = [metric for metric in metrics if tk.h.check_user_can_access_metric(metric)]
 
+        groups_rows: dict[str, list] = {}
+        groups_meta: dict[str, Any] = {}
+        for metric in accessible_metrics:
+            g = metric.group
+            groups_rows.setdefault(g.name, []).append(metric)
+            groups_meta[g.name] = g
+
+        groups = [(groups_meta[name], group_metrics) for name, group_metrics in groups_rows.items()]
+
         return tk.render(
             "better_stats/dashboard.html",
-            extra_vars={"accessible_metrics": accessible_metrics},
+            extra_vars={"accessible_metrics": accessible_metrics, "groups": groups},
         )
 
 

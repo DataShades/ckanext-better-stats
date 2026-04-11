@@ -20,6 +20,7 @@ class BetterStatsManager {
     private loadTimes: Record<string, number>;
     private _fullscreenChart: any;
     private _pendingFullscreen: string | null;
+    private _activeGroup: string;
 
     constructor(container: HTMLElement) {
         this.container = container;
@@ -28,6 +29,7 @@ class BetterStatsManager {
         this.loadTimes = {};
         this._fullscreenChart = null;
         this._pendingFullscreen = null;
+        this._activeGroup = "all";
         this.init();
     }
 
@@ -122,20 +124,77 @@ class BetterStatsManager {
         fsModal?.addEventListener("hidden.bs.modal", () => this._closeFullscreen());
 
         // Search / filter
-        document.getElementById("bstats-metric-search")?.addEventListener("input", (e) => {
-            const q = (e.target as HTMLInputElement).value.toLowerCase();
-            let visible = 0;
-            this.container.querySelectorAll<HTMLElement>(".metric-container").forEach((c) => {
+        document.getElementById("bstats-metric-search")?.addEventListener("input", () => {
+            this._updateVisibility();
+        });
+
+        // Group filter pills
+        document.getElementById("bstats-group-filter")?.addEventListener("click", (e) => {
+            const pill = (e.target as Element).closest(".bstats-group-pill") as HTMLElement | null;
+            if (pill) this._filterByGroup(pill.dataset.group!);
+        });
+
+        // Group section collapse / expand (header toggle or collapse button)
+        this.container.addEventListener("click", (e) => {
+            const toggle = (e.target as Element).closest(
+                ".bstats-group-toggle"
+            ) as HTMLElement | null;
+            if (toggle) this._toggleSection(toggle.dataset.group!);
+        });
+    }
+
+    _filterByGroup(groupName: string) {
+        this._activeGroup = groupName;
+        document.querySelectorAll<HTMLElement>(".bstats-group-pill").forEach((p) => {
+            p.classList.toggle("active", p.dataset.group === groupName);
+        });
+        const searchInput = document.getElementById("bstats-metric-search") as HTMLInputElement | null;
+        if (searchInput) searchInput.value = "";
+        this._updateVisibility();
+    }
+
+    _toggleSection(groupName: string) {
+        const grid = document.getElementById(`bstats-grid-${groupName}`);
+        const toggleBtn = this.container.querySelector<HTMLElement>(
+            `.bstats-group-toggle[data-group="${groupName}"]`
+        );
+        if (!grid || !toggleBtn) return;
+
+        const isCollapsed = grid.classList.toggle("is-collapsed");
+        toggleBtn.setAttribute("aria-expanded", String(!isCollapsed));
+        toggleBtn.querySelector(".bstats-group-chevron")?.classList.toggle("is-collapsed", isCollapsed);
+    }
+
+    _updateVisibility() {
+        const searchInput = document.getElementById("bstats-metric-search") as HTMLInputElement | null;
+        const q = searchInput?.value.toLowerCase() || "";
+        let anyVisible = false;
+
+        this.container.querySelectorAll<HTMLElement>(".bstats-group-section").forEach((section) => {
+            const groupName = section.dataset.group!;
+            const groupMatch = this._activeGroup === "all" || this._activeGroup === groupName;
+
+            if (!groupMatch) {
+                section.style.display = "none";
+                return;
+            }
+
+            let sectionVisible = 0;
+            section.querySelectorAll<HTMLElement>(".metric-container").forEach((c) => {
                 const name = (c.dataset.metric || "").toLowerCase();
                 const title = (c.querySelector(".metric-title")?.textContent || "").toLowerCase();
                 const description = (c.dataset.description || "").toLowerCase();
                 const show = !q || name.includes(q) || title.includes(q) || description.includes(q);
                 c.style.display = show ? "" : "none";
-                if (show) visible++;
+                if (show) sectionVisible++;
             });
-            const noResults = document.getElementById("bstats-no-results");
-            if (noResults) noResults.style.display = visible === 0 ? "block" : "none";
+
+            section.style.display = sectionVisible > 0 ? "" : "none";
+            if (sectionVisible > 0) anyVisible = true;
         });
+
+        const noResults = document.getElementById("bstats-no-results");
+        if (noResults) noResults.style.display = anyVisible ? "none" : "block";
     }
 
     async loadAllMetrics() {
@@ -500,7 +559,7 @@ class BetterStatsManager {
         const el = document.querySelector(`.metric-cache-age[data-metric="${metricName}"]`);
         if (!el || !this.loadTimes[metricName]) return;
         const secs = Math.floor((Date.now() - this.loadTimes[metricName]) / 1000);
-        if (secs < 10) el.textContent = "Just updated";
+        if (secs < 10) el.textContent = "Updated Just now";
         else if (secs < 3600) el.textContent = `Updated ${Math.floor(secs / 60) || 1}m ago`;
         else el.textContent = `Updated ${Math.floor(secs / 3600)}h ago`;
     }

@@ -3,15 +3,10 @@
     border: 1px solid #e2e8f0;
     border-radius: var(--metric-card-radius);
     padding: 1rem;
-    box-shadow: var(--metric-card-shadow);
     transition: box-shadow 0.2s;
     height: 100%;
     display: flex;
     flex-direction: column;
-
-    &:hover {
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-    }
 }
 
 // Header
@@ -111,23 +106,16 @@
     align-items: center;
     padding-top: 0.625rem;
     margin-top: 0.625rem;
-    border-top: 1px solid #f1f5f9;
     gap: 1rem;
-
-    .badge {
-        color: #94a3b8;
-        border: 1px solid #f1f5f9;
-    }
+    font-size: 0.875rem;
 
     .metric-cache-age {
-        font-size: 0.75rem;
-        color: #94a3b8;
+        color: #59656E;
     }
 
     .metric-expand-btn {
         margin-left: auto;
-        font-size: 0.75rem;
-        color: #64748b;
+        color: #59656E;
         text-decoration: none;
         background: none;
         border: none;
