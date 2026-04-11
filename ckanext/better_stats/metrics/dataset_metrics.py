@@ -27,6 +27,7 @@ class DatasetCountMetric(MetricBase):
     icon: ClassVar[str] = "fa-solid fa-database"
     supported_export_formats = ["csv", "xlsx"]
     scope: ClassVar[const.MetricScope] = const.MetricScope.USER
+    group: ClassVar[const.MetricGroup] = const.DATASETS_GROUP
 
     def __init__(self) -> None:
         super().__init__(
@@ -60,6 +61,7 @@ class DatasetsByOrganizationMetric(MetricBase):
     default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.CHART
     icon: ClassVar[str] = "fa-solid fa-building"
     scope: ClassVar[const.MetricScope] = const.MetricScope.USER
+    group: ClassVar[const.MetricGroup] = const.DATASETS_GROUP
 
     def __init__(self) -> None:
         super().__init__(
@@ -119,6 +121,7 @@ class DatasetCreationHistoryMetric(MetricBase):
     default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.CHART
     icon: ClassVar[str] = "fa-solid fa-calendar-days"
     scope: ClassVar[const.MetricScope] = const.MetricScope.USER
+    group: ClassVar[const.MetricGroup] = const.DATASETS_GROUP
 
     def __init__(self) -> None:
         super().__init__(
@@ -202,6 +205,7 @@ class ResourcesByFormatMetric(MetricBase):
     ]
     default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.CHART
     icon: ClassVar[str] = "fa-solid fa-file-code"
+    group: ClassVar[const.MetricGroup] = const.DATASETS_GROUP
 
     def __init__(self) -> None:
         super().__init__(
@@ -265,6 +269,7 @@ class TopTagsMetric(MetricBase):
     ]
     default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.CHART
     icon: ClassVar[str] = "fa-solid fa-tags"
+    group: ClassVar[const.MetricGroup] = const.DATASETS_GROUP
 
     def __init__(self) -> None:
         super().__init__(
@@ -324,6 +329,7 @@ class DatasetsWithoutResourcesMetric(MetricBase):
     ]
     default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.TABLE
     icon: ClassVar[str] = "fa-solid fa-file-circle-xmark"
+    group: ClassVar[const.MetricGroup] = const.DATASETS_GROUP
 
     def __init__(self) -> None:
         super().__init__(
@@ -404,6 +410,7 @@ class StaleDatasetsMetric(MetricBase):
     ]
     default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.TABLE
     icon: ClassVar[str] = "fa-solid fa-hourglass-end"
+    group: ClassVar[const.MetricGroup] = const.DATASETS_GROUP
 
     def __init__(self) -> None:
         super().__init__(

@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 
 from flask import Blueprint, Response, jsonify, make_response
 from flask.views import MethodView
@@ -32,6 +33,7 @@ class BetterStatsSettingsView(MethodView):
                     "name": metric.name,
                     "title": metric.title,
                     "icon": metric.icon,
+                    "group": metric.group,
                     "enabled": cfg.enabled if cfg else True,
                     "order": cfg.order if cfg else metric.order,
                     "col_span": cfg.col_span if cfg else metric.col_span,
@@ -43,10 +45,17 @@ class BetterStatsSettingsView(MethodView):
 
         rows.sort(key=lambda r: r["order"])
 
-        return tk.render(
-            "better_stats/settings.html",
-            extra_vars={"rows": rows},
-        )
+        groups_rows: dict[str, list] = {}
+        groups_meta: dict[str, Any] = {}
+
+        for row in rows:
+            group = row["group"]
+            groups_rows.setdefault(group.name, []).append(row)
+            groups_meta[group.name] = group
+
+        groups = [(groups_meta[name], group_rows) for name, group_rows in groups_rows.items()]
+
+        return tk.render("better_stats/settings.html", extra_vars={"groups": groups})
 
 
 def update_metric_config(metric_name: str) -> Response:

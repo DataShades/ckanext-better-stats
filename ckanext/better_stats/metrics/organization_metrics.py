@@ -23,6 +23,7 @@ class OrganizationHierarchyMetric(MetricBase):
     default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.CHART
     icon: ClassVar[str] = "fa-solid fa-sitemap"
     supported_export_formats: ClassVar[list[str]] = ["image"]
+    group: ClassVar[const.MetricGroup] = const.ORGANIZATIONS_GROUP
 
     def __init__(self) -> None:
         super().__init__(
@@ -121,6 +122,7 @@ class OrganizationCountMetric(MetricBase):
     ]
     default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.CARD
     icon: ClassVar[str] = "fa-solid fa-sitemap"
+    group: ClassVar[const.MetricGroup] = const.ORGANIZATIONS_GROUP
 
     def __init__(self) -> None:
         super().__init__(
@@ -198,6 +200,7 @@ class OrganizationMembershipMetric(MetricBase):
     ]
     default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.CHART
     icon: ClassVar[str] = "fa-solid fa-user-group"
+    group: ClassVar[const.MetricGroup] = const.ORGANIZATIONS_GROUP
 
     def __init__(self) -> None:
         super().__init__(
@@ -282,6 +285,7 @@ class OrganizationOverviewMetric(MetricBase):
     ]
     default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.TABLE
     icon: ClassVar[str] = "fa-solid fa-table-list"
+    group: ClassVar[const.MetricGroup] = const.ORGANIZATIONS_GROUP
 
     def __init__(self) -> None:
         super().__init__(
@@ -405,6 +409,7 @@ class InactiveOrganizationsMetric(MetricBase):
     ]
     default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.TABLE
     icon: ClassVar[str] = "fa-solid fa-building-circle-xmark"
+    group: ClassVar[const.MetricGroup] = const.ORGANIZATIONS_GROUP
 
     def __init__(self) -> None:
         super().__init__(
@@ -468,6 +473,7 @@ class OrganizationSizesMetric(MetricBase):
     ]
     default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.CHART
     icon: ClassVar[str] = "fa-solid fa-cubes"
+    group: ClassVar[const.MetricGroup] = const.ORGANIZATIONS_GROUP
 
     def __init__(self) -> None:
         super().__init__(

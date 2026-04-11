@@ -20,6 +20,7 @@ class MemoryMetric(MetricBase):
     ]
     default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.PROGRESS
     icon: ClassVar[str] = "fa-solid fa-memory"
+    group: ClassVar[const.MetricGroup] = const.OVERVIEW_GROUP
 
     def __init__(self) -> None:
         super().__init__(
@@ -90,6 +91,7 @@ class CPUMetric(MetricBase):
     ]
     default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.PROGRESS
     icon: ClassVar[str] = "fa-solid fa-microchip"
+    group: ClassVar[const.MetricGroup] = const.OVERVIEW_GROUP
 
     def __init__(self) -> None:
         super().__init__(
@@ -147,6 +149,7 @@ class DiskUsageMetric(MetricBase):
     ]
     default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.PROGRESS
     icon: ClassVar[str] = "fa-solid fa-hard-drive"
+    group: ClassVar[const.MetricGroup] = const.OVERVIEW_GROUP
 
     def __init__(self) -> None:
         super().__init__(

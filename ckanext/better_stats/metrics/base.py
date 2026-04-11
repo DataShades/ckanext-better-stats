@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Callable
-from typing import Any, ClassVar, cast
+from typing import Any, ClassVar
 
 import ckan.plugins.toolkit as tk
 
@@ -41,6 +41,7 @@ class MetricBase(ABC):
     icon: ClassVar[str] = "fa-solid fa-chart-bar"
     supported_export_formats: ClassVar[list[str]] = ["csv", "json", "xlsx", "image"]
     scope: ClassVar[const.MetricScope] = const.MetricScope.GLOBAL
+    group: ClassVar[const.MetricGroup] = const.GENERAL_GROUP
 
     def __init__(  # noqa: PLR0913
         self,
@@ -199,6 +200,7 @@ class MetricBase(ABC):
             "title": self.title,
             "description": self.description,
             "icon": self.icon,
+            "group": {"name": self.group.name, "label": self.group.label, "icon": self.group.icon},
             "col_span": self.col_span,
             "row_span": self.row_span,
             "order": self.order,
@@ -270,11 +272,11 @@ class MetricRegistry:
             if not cfg.enabled:
                 return None
 
-            metric.order = cast(int, cfg.order)
-            metric.col_span = cast(int, cfg.col_span)
-            metric.row_span = cast(int, cfg.row_span)
-            metric.cache_timeout = cast(int, cfg.cache_timeout)
-            metric.access_level = str(cfg.access_level or metric.access_level)
+            metric.order = cfg.order
+            metric.col_span = cfg.col_span
+            metric.row_span = cfg.row_span
+            metric.cache_timeout = cfg.cache_timeout
+            metric.access_level = cfg.access_level or metric.access_level
 
         return metric
 

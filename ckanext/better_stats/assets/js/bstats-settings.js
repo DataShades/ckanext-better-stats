@@ -18,22 +18,27 @@ ckan.module("bstats-stats-settings", function ($) {
 
             this.el.find("#btn-clear-all-caches").on("click", this._onClearAll);
             this.el.find("#btn-reset-all").on("click", this._onResetAll);
-            this.el.find("#metrics-tbody").on("change", ".metric-field", this._onFieldChange);
-            this.el.find("#metrics-tbody").on("click", ".btn-clear-cache", this._onClearMetricCache);
+            this.el.on("change", ".metric-field", this._onFieldChange);
+            this.el.on("click", ".btn-clear-cache", this._onClearMetricCache);
         },
 
         _initSortable() {
-            this._sortable = Sortable.create(this.el.find("#metrics-tbody")[0], {
-                handle: ".sortable-handle",
-                animation: 150,
-                onEnd: this._onReorder,
+            this._sortables = [];
+            this.el.find("[data-group-tbody]").each((_, tbody) => {
+                this._sortables.push(
+                    Sortable.create(tbody, {
+                        handle: ".sortable-handle",
+                        animation: 150,
+                        onEnd: this._onReorder,
+                    })
+                );
             });
         },
 
-        _onReorder() {
-            const rows = this.el.find("#metrics-tbody .metric-row").toArray();
+        _onReorder(evt) {
+            const rows = Array.from(evt.to.querySelectorAll(".metric-row"));
             const items = rows.map((row, idx) => ({
-                metric_name: $(row).data("metric"),
+                metric_name: row.dataset.metric,
                 order: (idx + 1) * 10,
             }));
             this._setStatus(this._("Saving\u2026"));
@@ -56,7 +61,8 @@ ckan.module("bstats-stats-settings", function ($) {
         },
 
         _saveRow(row) {
-            const allRows = this.el.find("#metrics-tbody .metric-row").toArray();
+            const tbody = row.closest("[data-group-tbody]");
+            const allRows = Array.from(tbody.querySelectorAll(".metric-row"));
             const idx = allRows.indexOf(row);
             const payload = { order: (idx + 1) * 10 };
 
@@ -127,7 +133,7 @@ ckan.module("bstats-stats-settings", function ($) {
             if (++this._pending === 1) {
                 this.el.find(".metric-field").prop("disabled", true);
                 this.el.find(".sortable-handle").css("cursor", "not-allowed");
-                this._sortable.option("disabled", true);
+                this._sortables.forEach((s) => s.option("disabled", true));
             }
         },
 
@@ -135,7 +141,7 @@ ckan.module("bstats-stats-settings", function ($) {
             if (--this._pending === 0) {
                 this.el.find(".metric-field").prop("disabled", false);
                 this.el.find(".sortable-handle").css("cursor", "grab");
-                this._sortable.option("disabled", false);
+                this._sortables.forEach((s) => s.option("disabled", false));
             }
         },
 

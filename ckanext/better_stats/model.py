@@ -1,9 +1,11 @@
 import uuid
 from datetime import datetime, timezone
+from typing import Any
 
-from sqlalchemy import Boolean, Column, DateTime, Integer, String
+import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.mutable import MutableDict
+from sqlalchemy.orm import Mapped
 
 import ckan.plugins.toolkit as tk
 from ckan import model
@@ -14,19 +16,33 @@ def _current_datetime():
 
 
 class MetricConfig(tk.BaseModel):
-    __tablename__ = "better_stats_metric_config"
+    __table__ = sa.Table(
+        "better_stats_metric_config",
+        tk.BaseModel.metadata,
+        sa.Column("id", sa.String, primary_key=True, default=lambda: str(uuid.uuid4())),
+        sa.Column("metric_name", sa.String, nullable=False, index=True),
+        sa.Column("enabled", sa.Boolean, default=True, nullable=False),
+        sa.Column("order", sa.Integer, default=100),
+        sa.Column("col_span", sa.Integer, default=3),
+        sa.Column("row_span", sa.Integer, default=1),
+        sa.Column("access_level", sa.String(20)),
+        sa.Column("cache_timeout", sa.Integer, default=3600),
+        sa.Column("extras", MutableDict.as_mutable(JSONB), default={}),
+        sa.Column("created", sa.DateTime, default=_current_datetime),
+        sa.Column("modified", sa.DateTime, default=_current_datetime, onupdate=_current_datetime),
+    )
 
-    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    metric_name = Column(String(100), unique=True, nullable=False, index=True)
-    enabled = Column(Boolean, default=True, nullable=False)
-    order = Column(Integer, default=100)
-    col_span = Column(Integer, default=3)
-    row_span = Column(Integer, default=1)
-    access_level = Column(String(20))
-    cache_timeout = Column(Integer, default=3600)
-    extras = Column(MutableDict.as_mutable(JSONB), default={})
-    created = Column(DateTime, default=_current_datetime)
-    modified = Column(DateTime, default=_current_datetime, onupdate=_current_datetime)
+    id: Mapped[str]
+    metric_name: Mapped[str]
+    enabled: Mapped[bool]
+    order: Mapped[int]
+    col_span: Mapped[int]
+    row_span: Mapped[int]
+    access_level: Mapped[str]
+    cache_timeout: Mapped[int]
+    extras: Mapped[dict[str, Any]]
+    created: Mapped[datetime]
+    modified: Mapped[datetime]
 
     @classmethod
     def for_metric(cls, metric_name: str) -> "MetricConfig | None":

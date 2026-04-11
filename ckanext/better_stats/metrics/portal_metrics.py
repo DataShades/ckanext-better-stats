@@ -21,6 +21,7 @@ class UserCountMetric(MetricBase):
     ]
     default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.CARD
     icon: ClassVar[str] = "fa-solid fa-users"
+    group: ClassVar[const.MetricGroup] = const.OVERVIEW_GROUP
 
     def __init__(self) -> None:
         super().__init__(
@@ -82,6 +83,7 @@ class DatasetCompletenessMetric(MetricBase):
     ]
     default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.PROGRESS
     icon: ClassVar[str] = "fa-solid fa-circle-check"
+    group: ClassVar[const.MetricGroup] = const.OVERVIEW_GROUP
 
     def __init__(self) -> None:
         super().__init__(

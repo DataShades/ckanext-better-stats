@@ -31,113 +31,25 @@
                 </a>
             </div>
 
-            {# ── Global cache controls ── #}
-            <div class="card mb-4">
-                <div class="card-body d-flex align-items-center gap-3 flex-wrap">
-                    <span class="fw-semibold">{{ _("Cache") }}</span>
-                    <button type="button" class="btn btn-outline-danger ms-auto" id="btn-clear-all-caches">
-                        <i class="fa fa-trash"></i> {{ _("Clear All Caches") }}
-                    </button>
-                </div>
-            </div>
+            {# ── Actions ── #}
+            <div class="mb-3 d-flex align-items-center gap-3 flex-wrap">
+                <span class="text-muted small align-self-center" id="autosave-status"></span>
 
-            {# ── Metrics table ── #}
-            <div class="card">
-                <div class="card-body p-0">
-                    <table class="table table-hover align-middle mb-0 table-header" id="metrics-table">
-                        <thead class="table-light">
-                            <tr>
-                                <th style="width:2rem"></th>
-                                <th>{{ _("Metric") }}</th>
-                                <th style="width:6rem">{{ _("Enabled") }}</th>
-                                <th style="width:6rem">{{ _("Columns") }}</th>
-                                <th style="width:6rem">{{ _("Rows") }}</th>
-                                <th style="width:10rem">{{ _("Access") }}</th>
-                                <th style="width:8rem">{{ _("Cache TTL") }}</th>
-                                <th style="width:7rem"></th>
-                            </tr>
-                        </thead>
-                        <tbody id="metrics-tbody" class="border-top-0">
-                            {% for row in rows %}
-                            <tr class="metric-row"
-                                data-metric="{{ row.name }}"
-                                data-update-url="{{ h.url_for('better_stats_settings.update_metric_config', metric_name=row.name) }}"
-                                data-cache-url="{{ h.url_for('better_stats_settings.clear_metric_cache', metric_name=row.name) }}">
-
-                                <td class="sortable-handle text-muted" style="cursor:grab" title="{{ _('Drag to reorder') }}">
-                                    <i class="fa fa-bars"></i>
-                                </td>
-
-                                <td>
-                                    <i class="{{ row.icon }} me-1 text-muted"></i>
-                                    <span class="fw-medium">{{ row.title }}</span>
-                                    <small class="text-muted ms-1">({{ row.name }})</small>
-                                </td>
-
-                                <td>
-                                    <div class="form-check form-switch mb-0">
-                                        <input class="form-check-input metric-field"
-                                            type="checkbox"
-                                            data-field="enabled"
-                                            {% if row.enabled %}checked{% endif %}>
-                                    </div>
-                                </td>
-
-                                <td>
-                                    <select class="form-select form-select-sm metric-field" data-field="col_span">
-                                        <option value="1" {% if row.col_span == 1 %}selected{% endif %}>1</option>
-                                        <option value="2" {% if row.col_span == 2 %}selected{% endif %}>2</option>
-                                        <option value="3" {% if row.col_span == 3 %}selected{% endif %}>3 ({{ _("half") }})</option>
-                                        <option value="4" {% if row.col_span == 4 %}selected{% endif %}>4</option>
-                                        <option value="5" {% if row.col_span == 5 %}selected{% endif %}>5</option>
-                                        <option value="6" {% if row.col_span == 6 %}selected{% endif %}>6 ({{ _("full") }})</option>
-                                    </select>
-                                </td>
-                                <td>
-                                    <select class="form-select form-select-sm metric-field" data-field="row_span">
-                                        <option value="1" {% if row.row_span == 1 %}selected{% endif %}>1</option>
-                                        <option value="2" {% if row.row_span == 2 %}selected{% endif %}>2 ({{ _("tall") }})</option>
-                                    </select>
-                                </td>
-
-                                <td>
-                                    <select class="form-select form-select-sm metric-field" data-field="access_level">
-                                        <option value="public" {% if row.access_level == 'public' %}selected{% endif %}>{{ _("Public") }}</option>
-                                        <option value="authenticated" {% if row.access_level == 'authenticated' %}selected{% endif %}>{{ _("Authenticated") }}</option>
-                                        <option value="admin" {% if row.access_level == 'admin' %}selected{% endif %}>{{ _("Admin") }}</option>
-                                    </select>
-                                </td>
-
-                                <td>
-                                    <input type="number"
-                                        class="form-control form-control-sm metric-field"
-                                        data-field="cache_timeout"
-                                        value="{{ row.cache_timeout }}"
-                                        min="0" step="1"
-                                        style="width:6rem">
-                                </td>
-
-                                <td class="text-end">
-                                    <button type="button" class="btn btn-sm btn-outline-secondary btn-clear-cache"
-                                        title="{{ _('Clear cache for this metric') }}">
-                                        <i class="fa fa-refresh"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            {# ── Footer actions ── #}
-            <div class="d-flex justify-content-between mt-3">
-                <button type="button" class="btn btn-outline-danger btn-sm" id="btn-reset-all">
+                <button type="button" class="btn btn-outline-danger btn-sm ms-auto" id="btn-reset-all">
                     <i class="fa fa-undo"></i> {{ _("Reset All to Defaults") }}
                 </button>
-                <span class="text-muted small align-self-center" id="autosave-status"></span>
+
+                <button type="button" class="btn btn-outline-danger btn-sm" id="btn-clear-all-caches">
+                    <i class="fa fa-trash"></i> {{ _("Clear All Caches") }}
+                </button>
             </div>
 
+            {# ── Metrics accordion ── #}
+            <div class="accordion bstats-settings-accordion" id="metrics-accordion">
+                {% for group, group_rows in groups %}
+                    {% snippet "better_stats/settings_group.html", group=group, group_rows=group_rows, group_id="bstats-group-" ~ group.name %}
+                {% endfor %}
+            </div>
         </div>
     </form>
     {% endblock %}
