@@ -1,4 +1,6 @@
 [data-bstats-theme="dark"] {
+  --bs-color: #e2e8f0;
+
   .module {
     background: #0f172a;
     border-color: #1e293b;
@@ -82,12 +84,6 @@
     }
   }
 
-  .metric-skeleton {
-    .placeholder {
-      background-color: #2d3748;
-    }
-  }
-
   .metric-error,
   .metric-empty,
   .bstats-no-results,
@@ -96,14 +92,14 @@
   }
 
   .bstats-search {
-    .bstats-search-icon { color: #64748b; }
+    .bstats-search-icon { color: #e2e8f0; }
 
-    input {
+    #bstats-metric-search {
       background: #1e293b;
       border-color: #334155;
       color: #e2e8f0;
 
-      &::placeholder { color: #64748b; }
+      &::placeholder { color: #e2e8f0; }
       &:focus { border-color: #475569; box-shadow: 0 0 0 3px rgba(255,255,255,.06); }
     }
   }

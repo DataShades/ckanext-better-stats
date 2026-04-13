@@ -1,7 +1,5 @@
-declare const ckan: any;
 declare const echarts: any;
 declare const bootstrap: any;
-declare const snapdom: any;
 
 ckan.module("bstats-stats-manager", function ($: any) {
     return {
@@ -22,7 +20,6 @@ class BetterStatsManager {
     private _fullscreenChart: any;
     private _pendingFullscreen: string | null;
     private _pendingFullscreenContentId: string | null;
-    private _activeGroup: string;
 
     constructor(container: HTMLElement) {
         this.container = container;
@@ -33,13 +30,11 @@ class BetterStatsManager {
         this._fullscreenChart = null;
         this._pendingFullscreen = null;
         this._pendingFullscreenContentId = null;
-        this._activeGroup = "all";
         this.init();
     }
 
     init() {
         this._bindEvents();
-        this._initTheme();
         this._startCacheAgeTimer();
         this.loadAllMetrics();
         this.container.querySelectorAll("[data-bs-toggle='tooltip']").forEach(
@@ -82,45 +77,8 @@ class BetterStatsManager {
             this.refreshAllMetrics();
         });
 
-        // Dark mode toggle
-        document.getElementById("bstats-theme-toggle")?.addEventListener("click", () => {
-            this._toggleTheme();
-        });
-
-        // Export CSV / JSON
-        this.container.addEventListener("click", (e) => {
-            const btn = (e.target as Element).closest(".export-btn") as HTMLElement | null;
-            if (btn) {
-                e.preventDefault();
-                this.exportMetric(btn.dataset.metric!, btn.dataset.format!);
-            }
-        });
-
-        // Export PNG
-        this.container.addEventListener("click", (e) => {
-            const btn = (e.target as Element).closest(".export-image-btn") as HTMLElement | null;
-            if (btn) {
-                e.preventDefault();
-                this.exportImage(btn.dataset.metric!);
-            }
-        });
-
-        // Embed modal
-        this.container.addEventListener("click", (e) => {
-            const btn = (e.target as Element).closest(".bstats-embed-btn") as HTMLElement | null;
-            if (btn) {
-                e.preventDefault();
-                const card = btn.closest<HTMLElement>(".metric-container");
-                const contentId = card?.dataset.contentId ?? btn.dataset.metric!;
-                this.openEmbedModal(btn.dataset.metric!, contentId);
-            }
-        });
-
-        // Copy embed code
-        this.container.addEventListener("click", (e) => {
-            const btn = (e.target as Element).closest(".bstats-copy-embed");
-            if (btn) this.copyEmbedCode(e);
-        });
+        // Theme changes from bstats-theme module
+        ckan.pubsub.subscribe("bstats:theme-changed", () => this._updateChartsTheme());
 
         // Retry on error
         this.container.addEventListener("click", (e) => {
@@ -149,79 +107,6 @@ class BetterStatsManager {
         fsModal?.addEventListener("shown.bs.modal", () => this._openFullscreen());
         fsModal?.addEventListener("hidden.bs.modal", () => this._closeFullscreen());
 
-        // Search / filter
-        document.getElementById("bstats-metric-search")?.addEventListener("input", () => {
-            this._updateVisibility();
-        });
-
-        // Group filter pills
-        document.getElementById("bstats-group-filter")?.addEventListener("click", (e) => {
-            const pill = (e.target as Element).closest(".bstats-group-pill") as HTMLElement | null;
-            if (pill) this._filterByGroup(pill.dataset.group!);
-        });
-
-        // Group section collapse / expand
-        this.container.addEventListener("click", (e) => {
-            const toggle = (e.target as Element).closest(".bstats-group-toggle") as HTMLElement | null;
-            if (toggle) this._toggleSection(toggle.dataset.group!);
-        });
-    }
-
-    _filterByGroup(groupName: string) {
-        this._activeGroup = groupName;
-        document.querySelectorAll<HTMLElement>(".bstats-group-pill").forEach((p) => {
-            p.classList.toggle("active", p.dataset.group === groupName);
-        });
-        const searchInput = document.getElementById("bstats-metric-search") as HTMLInputElement | null;
-        if (searchInput) searchInput.value = "";
-        this._updateVisibility();
-    }
-
-    _toggleSection(groupName: string) {
-        const grid = document.getElementById(`bstats-grid-${groupName}`);
-        const toggleBtn = this.container.querySelector<HTMLElement>(
-            `.bstats-group-toggle[data-group="${groupName}"]`
-        );
-        if (!grid || !toggleBtn) return;
-
-        const isCollapsed = grid.classList.toggle("is-collapsed");
-        toggleBtn.setAttribute("aria-expanded", String(!isCollapsed));
-        toggleBtn.querySelector(".bstats-group-chevron")?.classList.toggle("is-collapsed", isCollapsed);
-    }
-
-    _updateVisibility() {
-        const searchInput = document.getElementById("bstats-metric-search") as HTMLInputElement | null;
-        const q = searchInput?.value.toLowerCase() || "";
-        let anyVisible = false;
-
-        this.container.querySelectorAll<HTMLElement>(".bstats-group-section").forEach((section) => {
-            const groupName = section.dataset.group!;
-            const groupMatch = this._activeGroup === "all" || this._activeGroup === groupName;
-
-            if (!groupMatch) {
-                section.style.display = "none";
-                return;
-            }
-
-            let sectionVisible = 0;
-            section.querySelectorAll<HTMLElement>(".metric-container").forEach((c) => {
-                const name = (c.dataset.metric || "").toLowerCase();
-                const title = (c.querySelector(".metric-title")?.textContent || "").toLowerCase();
-                const description = (c.dataset.description || "").toLowerCase();
-                const show = !q || name.includes(q) || title.includes(q) || description.includes(q);
-                c.style.display = show ? "" : "none";
-                if (show) sectionVisible++;
-            });
-
-            // Always keep favorites section visible (even with empty/anon state)
-            const isFavSection = groupName === "favorites";
-            const showSection = isFavSection || sectionVisible > 0;
-            section.style.display = showSection ? "" : "none";
-            if (showSection) anyVisible = true;
-        });
-
-        const noResults = document.getElementById("bstats-no-results");
-        if (noResults) noResults.style.display = anyVisible ? "none" : "block";
     }
 
     async loadAllMetrics() {
@@ -490,56 +375,6 @@ class BetterStatsManager {
         }
     }
 
-    exportMetric(metricName: string, format: string) {
-        window.open(ckan.url(`/better_stats/export/${metricName}?format=${format}`, "_blank"));
-    }
-
-    async exportImage(metricName: string) {
-        // Export from the first non-fav instance
-        const card = this.container.querySelector<HTMLElement>(
-            `.metric-container[data-metric="${metricName}"]:not([data-content-id^="fav-"])`
-        ) ?? this.container.querySelector<HTMLElement>(`.metric-container[data-metric="${metricName}"]`);
-        const contentId = card?.dataset.contentId ?? metricName;
-        const content = document.getElementById(`metric-${contentId}`);
-        if (!content) return;
-        try {
-            const result = await snapdom(content, { scale: 2 });
-            await result.download({
-                format: "png",
-                filename: `metric-${metricName}-${new Date().toISOString()}.png`,
-                backgroundColor: "#ffffff",
-            });
-        } catch (err) {
-            console.error("PNG export failed:", err);
-        }
-    }
-
-    openEmbedModal(metricName: string, contentId = metricName) {
-        const vizType = this.currentVizTypes[contentId] || this.defaultViz;
-        const embedUrl = ckan.url(`/better_stats/embed/${metricName}?viz=${encodeURIComponent(vizType)}`);
-        const code = `<iframe src="${embedUrl}" width="600" height="400" frameborder="0" style="border:1px solid #e2e8f0;border-radius:8px"></iframe>`;
-
-        const textarea = document.getElementById(`embedCode-${metricName}`) as HTMLTextAreaElement | null;
-        if (textarea) textarea.value = code;
-
-        const preview = document.getElementById(`embedPreview-${metricName}`) as HTMLIFrameElement | null;
-        if (preview) preview.src = embedUrl;
-    }
-
-    copyEmbedCode(e: Event) {
-        const btn = (e.target as Element).closest(".bstats-copy-embed") as HTMLElement | null;
-        if (!btn) return;
-        const textarea = document.getElementById(btn.dataset.target!) as HTMLTextAreaElement | null;
-        if (!textarea) return;
-        textarea.select();
-        navigator.clipboard.writeText(textarea.value).then(() => {
-            const icon = btn.querySelector("i") as HTMLElement | null;
-            if (icon) {
-                icon.className = "fa fa-check text-success";
-                setTimeout(() => { icon.className = "fa fa-clipboard"; }, 2000);
-            }
-        }).catch(() => document.execCommand("copy"));
-    }
 
     // ── Favorites ──────────────────────────────────────────────────────────────
 
@@ -677,26 +512,6 @@ class BetterStatsManager {
 
     _isDark() {
         return this.container.dataset.bstatsTheme === "dark";
-    }
-
-    _initTheme() {
-        if (localStorage.getItem("bstats-theme") === "dark") {
-            this.container.dataset.bstatsTheme = "dark";
-            this._updateToggleIcon(true);
-        }
-    }
-
-    _toggleTheme() {
-        const dark = !this._isDark();
-        this.container.dataset.bstatsTheme = dark ? "dark" : "";
-        localStorage.setItem("bstats-theme", dark ? "dark" : "");
-        this._updateToggleIcon(dark);
-        this._updateChartsTheme();
-    }
-
-    _updateToggleIcon(dark: boolean) {
-        const icon = document.querySelector("#bstats-theme-toggle i") as HTMLElement | null;
-        if (icon) icon.className = dark ? "fa fa-sun" : "fa fa-moon";
     }
 
     _updateChartsTheme() {

@@ -17,11 +17,9 @@ user_favorites - set of favorited metric names (empty set for anonymous users).
             </div>
 
             <div class="ms-auto d-flex gap-2">
-                {# ── Theme toggle ── DISABLE FOR NOW, until the new CKAN theme is ready
                 <button class="btn btn-dashboard" id="bstats-theme-toggle" title="{{ _('Toggle dark mode') }}">
                     <i class="fa fa-moon"></i>
                 </button>
-                #}
 
                 <button class="btn btn-dashboard" id="refresh-all">
                     <i class="fa fa-refresh"></i> {{ _('Refresh All') }}
@@ -63,7 +61,7 @@ user_favorites - set of favorited metric names (empty set for anonymous users).
                     </button>
                 </div>
 
-                <div class="stats-grid" id="bstats-grid-{{ group.name }}">
+                <div class="stats-grid {% if group.name == 'favorites' and not group_metrics %}is-collapsed{% endif %}" id="bstats-grid-{{ group.name }}">
                     {% if group.name == 'favorites' %}
                         {# Favorites section: special empty / anon states #}
                         {% if current_user.is_anonymous %}

@@ -4,10 +4,10 @@
         "module": "none",
         "lib": ["ES2017", "DOM", "DOM.Iterable"],
         "outDir": "ckanext/better_stats/assets/js",
-        "rootDir": "ckanext/better_stats/assets/js",
+        "rootDir": "ckanext/better_stats/assets/ts",
         "strict": false,
         "skipLibCheck": true
     },
-    "include": ["ckanext/better_stats/assets/js/*.ts"],
+    "include": ["ckanext/better_stats/assets/ts/*.ts"],
     "exclude": ["node_modules"]
 }

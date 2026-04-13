@@ -1,4 +1,4 @@
-{% extends "better_stats/page.html" %}
+{% extends "page.html" %}
 
 {% import 'macros/form.html' as form %}
 
@@ -14,7 +14,7 @@
 {% block secondary %}{% endblock %}
 
 {% block primary %}
-    <div class="primary col p-0" role="main" data-module="bstats-stats-manager">
+    <div class="primary col p-0 bstats-dashboard" role="main" data-module="bstats-stats-manager bstats-export bstats-theme bstats-filter bstats-embed">
         {% block primary_content %}
             {% snippet 'better_stats/dashboard_content.html', metrics=accessible_metrics, groups=groups, user_favorites=user_favorites %}
         {% endblock %}

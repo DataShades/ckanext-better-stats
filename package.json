@@ -18,7 +18,7 @@
     "scripts": {
         "dev": "DEBUG=1 gulp watch",
         "build": "gulp build",
-        "ts-build": "tsc && npx terser ckanext/better_stats/assets/js/bstats-stats-manager.js --output ckanext/better_stats/assets/js/bstats-stats-manager.min.js --config-file terser.config.json && rm ckanext/better_stats/assets/js/bstats-stats-manager.js",
+        "ts-build": "tsc && cat ckanext/better_stats/assets/js/bstats-stats-manager.js ckanext/better_stats/assets/js/bstats-export.js ckanext/better_stats/assets/js/bstats-theme.js ckanext/better_stats/assets/js/bstats-filter.js ckanext/better_stats/assets/js/bstats-embed.js > ckanext/better_stats/assets/js/bstats-bundle.js && npx terser ckanext/better_stats/assets/js/bstats-bundle.js --output ckanext/better_stats/assets/js/bstats.min.js --config-file terser.config.json && rm ckanext/better_stats/assets/js/bstats-stats-manager.js ckanext/better_stats/assets/js/bstats-export.js ckanext/better_stats/assets/js/bstats-theme.js ckanext/better_stats/assets/js/bstats-filter.js ckanext/better_stats/assets/js/bstats-embed.js ckanext/better_stats/assets/js/bstats-bundle.js",
         "ts-watch": "tsc -w"
     }
 }
