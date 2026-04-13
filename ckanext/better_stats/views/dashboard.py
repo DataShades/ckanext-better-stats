@@ -18,6 +18,7 @@ from ckanext.better_stats.metrics.base import (
     MetricRegistry,
     before_metric_render_signal,
 )
+from ckanext.better_stats.model import UserFavorite
 
 bp = Blueprint("better_stats", __name__, url_prefix="/better_stats")
 
@@ -33,6 +34,7 @@ class BetterStatsDashboardView(MethodView):
 
         accessible_metrics = [metric for metric in metrics if tk.h.check_user_can_access_metric(metric)]
 
+        # Build per-group buckets (preserve insertion order)
         groups_rows: dict[str, list] = {}
         groups_meta: dict[str, Any] = {}
         for metric in accessible_metrics:
@@ -42,9 +44,21 @@ class BetterStatsDashboardView(MethodView):
 
         groups = [(groups_meta[name], group_metrics) for name, group_metrics in groups_rows.items()]
 
+        # Load authenticated user's favorites; always prepend the favorites group
+        user_favorites = (
+            UserFavorite.metric_names_for_user(tk.current_user.id) if not tk.current_user.is_anonymous else set()
+        )
+
+        fav_metrics = [m for m in accessible_metrics if m.name in user_favorites]
+        groups = [(const.FAVORITES_GROUP, fav_metrics)] + groups
+
         return tk.render(
             "better_stats/dashboard.html",
-            extra_vars={"accessible_metrics": accessible_metrics, "groups": groups},
+            extra_vars={
+                "accessible_metrics": accessible_metrics,
+                "groups": groups,
+                "user_favorites": user_favorites,
+            },
         )
 
 
@@ -277,6 +291,43 @@ class MetricExporter:
         response.headers["Content-Disposition"] = f"attachment; filename={self.filename}.xlsx"
 
         return response
+
+
+@bp.route("/favorites/toggle/<metric_name>", methods=["POST"])
+def toggle_favorite(metric_name: str) -> Response:
+    """Toggle a metric in the current user's favorites. Returns JSON."""
+    if tk.current_user.is_anonymous:
+        return make_response(jsonify({"error": tk._("Not authenticated")}), 401)
+
+    user_id = tk.current_user.id
+    existing = UserFavorite.get(user_id, metric_name)
+
+    if existing:
+        existing.remove()
+        return jsonify({"is_favorite": False, "metric_name": metric_name})
+
+    metric = MetricRegistry.get_metric(metric_name)
+
+    if not metric or not tk.h.check_user_can_access_metric(metric):
+        return make_response(jsonify({"error": tk._("Metric not found or not accessible")}), 404)
+
+    UserFavorite.add(user_id, metric_name)
+
+    return jsonify(
+        {
+            "is_favorite": True,
+            "metric_name": metric_name,
+            "card_html": tk.render(
+                "better_stats/metric_card.html",
+                extra_vars={
+                    "metric": metric,
+                    "embed": False,
+                    "is_favorite": True,
+                    "content_id_prefix": "fav-",
+                },
+            ),
+        }
+    )
 
 
 bp.add_url_rule("/dashboard", view_func=BetterStatsDashboardView.as_view("dashboard"))

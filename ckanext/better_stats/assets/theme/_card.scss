@@ -41,6 +41,16 @@
     }
 }
 
+#bstats-grid-favorites {
+    .favorite-btn .fa-star {
+        color: #f59e0b;
+    }
+}
+
+.favorite-btn .fav-active {
+    color: #f59e0b;
+}
+
 .metric-actions-btn {
     background: none;
     border: none;

@@ -18,8 +18,10 @@ class BetterStatsManager {
     private charts: Record<string, any>;
     private currentVizTypes: Record<string, string>;
     private loadTimes: Record<string, number>;
+    private defaultViz: string;
     private _fullscreenChart: any;
     private _pendingFullscreen: string | null;
+    private _pendingFullscreenContentId: string | null;
     private _activeGroup: string;
 
     constructor(container: HTMLElement) {
@@ -27,8 +29,10 @@ class BetterStatsManager {
         this.charts = {};
         this.currentVizTypes = {};
         this.loadTimes = {};
+        this.defaultViz = "chart";
         this._fullscreenChart = null;
         this._pendingFullscreen = null;
+        this._pendingFullscreenContentId = null;
         this._activeGroup = "all";
         this.init();
     }
@@ -52,16 +56,25 @@ class BetterStatsManager {
             }
         });
 
-        // Refresh (now inside actions dropdown)
+        // Refresh button — pass the card container so the right instance is refreshed
         this.container.addEventListener("click", (e) => {
             const btn = (e.target as Element).closest(".refresh-metric") as HTMLElement | null;
-            if (btn) this.refreshMetric(btn.dataset.metric!);
+            if (btn) {
+                const card = btn.closest<HTMLElement>(".metric-container") ?? undefined;
+                this.refreshMetric(btn.dataset.metric!, card);
+            }
         });
 
         // Share — copy standalone link to clipboard
         this.container.addEventListener("click", (e) => {
             const btn = (e.target as Element).closest(".share-metric") as HTMLElement | null;
             if (btn) this.shareMetric(btn.dataset.metric!, btn);
+        });
+
+        // Favorite toggle
+        this.container.addEventListener("click", (e) => {
+            const btn = (e.target as Element).closest(".favorite-btn") as HTMLElement | null;
+            if (btn) this._toggleFavorite(btn.dataset.metric!, btn);
         });
 
         // Refresh all
@@ -97,7 +110,9 @@ class BetterStatsManager {
             const btn = (e.target as Element).closest(".bstats-embed-btn") as HTMLElement | null;
             if (btn) {
                 e.preventDefault();
-                this.openEmbedModal(btn.dataset.metric!);
+                const card = btn.closest<HTMLElement>(".metric-container");
+                const contentId = card?.dataset.contentId ?? btn.dataset.metric!;
+                this.openEmbedModal(btn.dataset.metric!, contentId);
             }
         });
 
@@ -113,14 +128,25 @@ class BetterStatsManager {
             if (btn) this.refreshMetric(btn.dataset.metric!);
         });
 
-        // Expand → fullscreen modal; use relatedTarget so the metric name
-        // is available synchronously when show.bs.modal fires.
+        // Expand → fullscreen modal
         const fsModal = document.getElementById("bstats-fullscreen-modal");
         fsModal?.addEventListener("show.bs.modal", (e) => {
             const trigger = (e as any).relatedTarget as HTMLElement | null;
-            if (trigger) this._pendingFullscreen = trigger.dataset.metric!;
-            this._openFullscreen();
+
+            if (trigger) {
+                this._pendingFullscreen = trigger.dataset.metric!;
+                const card = trigger.closest<HTMLElement>(".metric-container");
+                this._pendingFullscreenContentId = card?.dataset.contentId ?? trigger.dataset.metric!;
+            }
+
+            // Show skeleton immediately while the modal animates open
+            const contentEl = document.getElementById("bstats-fullscreen-content");
+            if (contentEl) contentEl.innerHTML = this._skeletonHTML();
         });
+
+        // Initialise the chart only after the modal is fully visible so ECharts
+        // measures the correct container dimensions.
+        fsModal?.addEventListener("shown.bs.modal", () => this._openFullscreen());
         fsModal?.addEventListener("hidden.bs.modal", () => this._closeFullscreen());
 
         // Search / filter
@@ -134,11 +160,9 @@ class BetterStatsManager {
             if (pill) this._filterByGroup(pill.dataset.group!);
         });
 
-        // Group section collapse / expand (header toggle or collapse button)
+        // Group section collapse / expand
         this.container.addEventListener("click", (e) => {
-            const toggle = (e.target as Element).closest(
-                ".bstats-group-toggle"
-            ) as HTMLElement | null;
+            const toggle = (e.target as Element).closest(".bstats-group-toggle") as HTMLElement | null;
             if (toggle) this._toggleSection(toggle.dataset.group!);
         });
     }
@@ -189,8 +213,11 @@ class BetterStatsManager {
                 if (show) sectionVisible++;
             });
 
-            section.style.display = sectionVisible > 0 ? "" : "none";
-            if (sectionVisible > 0) anyVisible = true;
+            // Always keep favorites section visible (even with empty/anon state)
+            const isFavSection = groupName === "favorites";
+            const showSection = isFavSection || sectionVisible > 0;
+            section.style.display = showSection ? "" : "none";
+            if (showSection) anyVisible = true;
         });
 
         const noResults = document.getElementById("bstats-no-results");
@@ -205,15 +232,20 @@ class BetterStatsManager {
 
         if (vizOverride) {
             for (const c of containers) {
-                await this.loadMetric(c.dataset.metric!, vizOverride);
+                await this.loadMetric(c.dataset.metric!, vizOverride, false, c);
             }
         } else {
             await this._loadBatch(containers);
         }
     }
 
-    async loadMetric(metricName: string, vizType = "chart", refresh = false) {
-        const el = document.getElementById(`metric-${metricName}`);
+    // Load a single metric into a specific container (or auto-detect the first matching container).
+    async loadMetric(metricName: string, vizType = this.defaultViz, refresh = false, container?: HTMLElement) {
+        const c = container
+            ?? this.container.querySelector<HTMLElement>(`.metric-container[data-content-id="${metricName}"]`)
+            ?? this.container.querySelector<HTMLElement>(`.metric-container[data-metric="${metricName}"]`);
+        const contentId = c?.dataset.contentId ?? metricName;
+        const el = document.getElementById(`metric-${contentId}`);
         if (!el) return;
 
         el.innerHTML = this._skeletonHTML();
@@ -227,9 +259,9 @@ class BetterStatsManager {
 
             const servedType = data.type || vizType;
             el.innerHTML = "";
-            this.renderMetric(el, data, servedType);
-            this.currentVizTypes[metricName] = servedType;
-            this._updatePills(metricName, servedType);
+            this.renderMetric(el, data, servedType, contentId);
+            this.currentVizTypes[contentId] = servedType;
+            this._updatePills(metricName, servedType, c ?? undefined);
             this.loadTimes[metricName] = Date.now();
             this._updateCacheAge(metricName);
         } catch (err) {
@@ -237,16 +269,18 @@ class BetterStatsManager {
         }
     }
 
-    renderMetric(container: HTMLElement, data: any, vizType: string) {
+    renderMetric(container: HTMLElement, data: any, vizType: string, contentId?: string) {
+        const id = contentId ?? data.name;
         switch (vizType) {
-            case "chart": this.renderChart(container, data); break;
+            case "chart": this.renderChart(container, data, id); break;
             case "table": this.renderTable(container, data); break;
             case "card": this.renderCard(container, data); break;
             case "progress": this.renderProgress(container, data); break;
         }
     }
 
-    renderChart(container: HTMLElement, data: any) {
+    renderChart(container: HTMLElement, data: any, contentId?: string) {
+        const id = contentId ?? data.name;
         const chartData = data.data;
 
         if (this._isChartEmpty(chartData)) {
@@ -254,23 +288,23 @@ class BetterStatsManager {
             return;
         }
 
-        const existing = this.charts[data.name];
+        const existing = this.charts[id];
         if (existing) {
             (Array.isArray(existing) ? existing : [existing]).forEach((c) => c.dispose());
-            delete this.charts[data.name];
+            delete this.charts[id];
         }
 
         if (chartData.type === "multi") {
             const wrapper = this._el("div", { className: "metric-chart-multi" });
             container.appendChild(wrapper);
 
-            this.charts[data.name] = chartData.charts.map((sub: any) => {
+            this.charts[id] = chartData.charts.map((sub: any) => {
                 const item = this._el("div", { className: "metric-chart-item" });
                 wrapper.appendChild(item);
                 return this._createChart(item, sub);
             });
         } else {
-            this.charts[data.name] = this._createChart(container, chartData);
+            this.charts[id] = this._createChart(container, chartData);
         }
     }
 
@@ -360,14 +394,18 @@ class BetterStatsManager {
     }
 
     async switchVisualization(metricName: string, vizType: string, pill: HTMLElement) {
-        const allPills = this.container.querySelectorAll(`.viz-pill[data-metric="${metricName}"]`);
-        allPills.forEach((p) => p.classList.remove("active"));
+        const card = pill.closest<HTMLElement>(".metric-container");
+        // Update pills only within this specific card
+        card?.querySelectorAll<HTMLElement>(`.viz-pill[data-metric="${metricName}"]`).forEach((p) =>
+            p.classList.remove("active")
+        );
         pill.classList.add("active");
-        await this.loadMetric(metricName, vizType);
+        await this.loadMetric(metricName, vizType, false, card ?? undefined);
     }
 
-    async refreshMetric(metricName: string) {
-        await this.loadMetric(metricName, this.currentVizTypes[metricName] || "chart", true);
+    async refreshMetric(metricName: string, container?: HTMLElement) {
+        const contentId = container?.dataset.contentId ?? metricName;
+        await this.loadMetric(metricName, this.currentVizTypes[contentId] || this.defaultViz, true, container);
     }
 
     async refreshAllMetrics() {
@@ -376,7 +414,9 @@ class BetterStatsManager {
     }
 
     shareMetric(metricName: string, btn: HTMLElement) {
-        const vizType = this.currentVizTypes[metricName] || "chart";
+        const card = btn.closest<HTMLElement>(".metric-container");
+        const contentId = card?.dataset.contentId ?? metricName;
+        const vizType = this.currentVizTypes[contentId] || this.defaultViz;
         const url = ckan.url(`/better_stats/embed/${metricName}?viz=${encodeURIComponent(vizType)}`);
         navigator.clipboard.writeText(url).then(() => {
             const icon = btn.querySelector("i") as HTMLElement | null;
@@ -388,43 +428,64 @@ class BetterStatsManager {
     }
 
     async _loadBatch(containers: HTMLElement[], refresh = false) {
+        // Deduplicate by metric name; track all containers per name
+        const nameToContainers = new Map<string, HTMLElement[]>();
+        containers.forEach((c) => {
+            const name = c.dataset.metric!;
+            const bucket = nameToContainers.get(name) ?? [];
+            bucket.push(c);
+            nameToContainers.set(name, bucket);
+        });
+
+        const uniqueNames = [...nameToContainers.keys()];
+
         if (refresh) {
             containers.forEach((c) => {
-                const el = document.getElementById(`metric-${c.dataset.metric}`);
+                const contentId = c.dataset.contentId ?? c.dataset.metric!;
+                const el = document.getElementById(`metric-${contentId}`);
                 if (el) el.innerHTML = this._skeletonHTML();
             });
         }
 
-        const names = containers.map((c) => c.dataset.metric).join(",");
-        const url = ckan.url(`/better_stats/metrics?names=${encodeURIComponent(names)}${refresh ? "&refresh=true" : ""}`);
+        const url = ckan.url(
+            `/better_stats/metrics?names=${encodeURIComponent(uniqueNames.join(","))}${refresh ? "&refresh=true" : ""}`
+        );
 
         try {
             const resp = await fetch(url);
             const batch = await resp.json();
 
-            containers.forEach((c) => {
-                const metricName = c.dataset.metric!;
-                const el = document.getElementById(`metric-${metricName}`);
-                if (!el) return;
-
+            for (const [metricName, metricContainers] of nameToContainers) {
                 const data = batch.metrics?.[metricName];
-                if (!data) {
-                    el.innerHTML = this._errorHTML(metricName, batch.errors?.[metricName] || "Not available");
-                    return;
+                const errorMsg = batch.errors?.[metricName];
+
+                for (const c of metricContainers) {
+                    const contentId = c.dataset.contentId ?? metricName;
+                    const el = document.getElementById(`metric-${contentId}`);
+                    if (!el) continue;
+
+                    if (!data) {
+                        el.innerHTML = this._errorHTML(metricName, errorMsg || "Not available");
+                        continue;
+                    }
+
+                    el.innerHTML = "";
+                    this.renderMetric(el, data, data.type, contentId);
+                    this.currentVizTypes[contentId] = data.type;
+                    this._updatePills(metricName, data.type, c);
                 }
 
-                el.innerHTML = "";
-                const vizType = data.type;
-                this.renderMetric(el, data, vizType);
-                this.currentVizTypes[metricName] = vizType;
-                this._updatePills(metricName, vizType);
-                this.loadTimes[metricName] = Date.now();
-                this._updateCacheAge(metricName);
-            });
+                if (data) {
+                    this.loadTimes[metricName] = Date.now();
+                    this._updateCacheAge(metricName);
+                }
+            }
         } catch (err) {
-            // Batch request failed — fall back to individual loads
-            for (const c of containers) {
-                await this.loadMetric(c.dataset.metric!, c.dataset.defaultViz || "chart", refresh);
+            // Batch failed — fall back to individual loads
+            for (const [name, cs] of nameToContainers) {
+                for (const c of cs) {
+                    await this.loadMetric(name, c.dataset.defaultViz || this.defaultViz, refresh, c);
+                }
             }
         }
     }
@@ -434,7 +495,12 @@ class BetterStatsManager {
     }
 
     async exportImage(metricName: string) {
-        const content = document.getElementById(`metric-${metricName}`);
+        // Export from the first non-fav instance
+        const card = this.container.querySelector<HTMLElement>(
+            `.metric-container[data-metric="${metricName}"]:not([data-content-id^="fav-"])`
+        ) ?? this.container.querySelector<HTMLElement>(`.metric-container[data-metric="${metricName}"]`);
+        const contentId = card?.dataset.contentId ?? metricName;
+        const content = document.getElementById(`metric-${contentId}`);
         if (!content) return;
         try {
             const result = await snapdom(content, { scale: 2 });
@@ -448,8 +514,8 @@ class BetterStatsManager {
         }
     }
 
-    openEmbedModal(metricName: string) {
-        const vizType = this.currentVizTypes[metricName] || "chart";
+    openEmbedModal(metricName: string, contentId = metricName) {
+        const vizType = this.currentVizTypes[contentId] || this.defaultViz;
         const embedUrl = ckan.url(`/better_stats/embed/${metricName}?viz=${encodeURIComponent(vizType)}`);
         const code = `<iframe src="${embedUrl}" width="600" height="400" frameborder="0" style="border:1px solid #e2e8f0;border-radius:8px"></iframe>`;
 
@@ -475,6 +541,100 @@ class BetterStatsManager {
         }).catch(() => document.execCommand("copy"));
     }
 
+    // ── Favorites ──────────────────────────────────────────────────────────────
+
+    _getCsrfToken(): string | null {
+        const fieldName = document.querySelector<HTMLMetaElement>('meta[name="csrf_field_name"]')?.content;
+        if (!fieldName) return null;
+        return document.querySelector<HTMLMetaElement>(`meta[name="${fieldName}"]`)?.content ?? null;
+    }
+
+    async _toggleFavorite(metricName: string, btn: HTMLElement) {
+        const csrfToken = this._getCsrfToken();
+        const headers: Record<string, string> = { "Content-Type": "application/json" };
+        if (csrfToken) headers["X-CSRFToken"] = csrfToken;
+
+        try {
+            const resp = await fetch(ckan.url(`/better_stats/favorites/toggle/${metricName}`), {
+                method: "POST",
+                headers,
+            });
+            const data = await resp.json();
+            if (data.error) return;
+
+            this._setStarState(metricName, data.is_favorite);
+
+            if (data.is_favorite && data.card_html) {
+                this._addFavCard(data.card_html, metricName);
+            } else if (!data.is_favorite) {
+                this._removeFavCard(metricName);
+            }
+        } catch (err) {
+            console.error("Failed to toggle favorite:", err);
+        }
+    }
+
+    _setStarState(metricName: string, isFavorite: boolean) {
+        this.container.querySelectorAll<HTMLElement>(`.favorite-btn[data-metric="${metricName}"]`).forEach((btn) => {
+            const icon = btn.querySelector("i");
+            if (icon) icon.className = isFavorite ? "fa-solid fa-star fav-active" : "fa-regular fa-star";
+            btn.dataset.favorited = isFavorite ? "true" : "false";
+            btn.title = isFavorite ? "Remove from favorites" : "Add to favorites";
+        });
+    }
+
+    _addFavCard(cardHtml: string, metricName: string) {
+        const grid = document.getElementById("bstats-grid-favorites");
+        if (!grid) return;
+
+        grid.querySelector(".bstats-fav-empty")?.remove();
+
+        const tmp = this._el("div", { innerHTML: cardHtml });
+        const newCard = tmp.firstElementChild as HTMLElement | null;
+        if (!newCard) return;
+        grid.appendChild(newCard);
+
+        newCard.querySelectorAll("[data-bs-toggle='tooltip']").forEach((el) => new bootstrap.Tooltip(el));
+
+        const vizType = this.currentVizTypes[metricName] || this.defaultViz;
+        this.loadMetric(metricName, vizType, false, newCard);
+        this._updateFavCount(grid);
+    }
+
+    _removeFavCard(metricName: string) {
+        const grid = document.getElementById("bstats-grid-favorites");
+        if (!grid) return;
+
+        const card = grid.querySelector<HTMLElement>(`.metric-container[data-metric="${metricName}"]`);
+        if (!card) return;
+
+        const contentId = card.dataset.contentId ?? `fav-${metricName}`;
+        const chart = this.charts[contentId];
+        if (chart) {
+            (Array.isArray(chart) ? chart : [chart]).forEach((c) => c.dispose());
+            delete this.charts[contentId];
+        }
+        card.remove();
+        this._updateFavCount(grid);
+
+        if (!grid.querySelector(".metric-container")) {
+            grid.insertAdjacentHTML(
+                "beforeend",
+                `<div class="bstats-fav-empty col-span-full">` +
+                `<p class="mb-0">No favorites yet \u2014 click the <i class="fa-regular fa-star"></i> on any metric to add it here.</p>` +
+                `</div>`
+            );
+        }
+    }
+
+    _updateFavCount(grid: HTMLElement) {
+        const count = grid.querySelectorAll(".metric-container").length;
+        const badge = this.container.querySelector(
+            `.bstats-group-toggle[data-group="favorites"] .bstats-group-count`
+        );
+        if (badge) badge.textContent = String(count);
+    }
+
     async _openFullscreen() {
         const metricName = this._pendingFullscreen;
         if (!metricName) return;
@@ -483,9 +643,8 @@ class BetterStatsManager {
         const contentEl = document.getElementById("bstats-fullscreen-content");
         if (!contentEl) return;
 
-        contentEl.innerHTML = this._skeletonHTML();
-
-        const vizType = this.currentVizTypes[metricName] || "chart";
+        const contentId = this._pendingFullscreenContentId ?? metricName;
+        const vizType = this.currentVizTypes[contentId] || this.defaultViz;
 
         try {
             const resp = await fetch(ckan.url(`/better_stats/metric/${metricName}?type=${vizType}`));
@@ -513,6 +672,7 @@ class BetterStatsManager {
         const contentEl = document.getElementById("bstats-fullscreen-content");
         if (contentEl) contentEl.innerHTML = "";
         this._pendingFullscreen = null;
+        this._pendingFullscreenContentId = null;
     }
 
     _isDark() {
@@ -556,12 +716,14 @@ class BetterStatsManager {
     }
 
     _updateCacheAge(metricName: string) {
-        const el = document.querySelector(`.metric-cache-age[data-metric="${metricName}"]`);
-        if (!el || !this.loadTimes[metricName]) return;
+        const elements = this.container.querySelectorAll(`.metric-cache-age[data-metric="${metricName}"]`);
+        if (!elements.length || !this.loadTimes[metricName]) return;
         const secs = Math.floor((Date.now() - this.loadTimes[metricName]) / 1000);
-        if (secs < 10) el.textContent = "Updated Just now";
-        else if (secs < 3600) el.textContent = `Updated ${Math.floor(secs / 60) || 1}m ago`;
-        else el.textContent = `Updated ${Math.floor(secs / 3600)}h ago`;
+        const text =
+            secs < 10 ? "Updated Just now" :
+            secs < 3600 ? `Updated ${Math.floor(secs / 60) || 1}m ago` :
+            `Updated ${Math.floor(secs / 3600)}h ago`;
+        elements.forEach((el) => { el.textContent = text; });
     }
 
     _createChart(container: HTMLElement, chartData: any) {
@@ -585,8 +747,9 @@ class BetterStatsManager {
         return chart;
     }
 
-    _updatePills(metricName: string, vizType: string) {
-        this.container.querySelectorAll<HTMLElement>(`.viz-pill[data-metric="${metricName}"]`).forEach((p) => {
+    _updatePills(metricName: string, vizType: string, card?: HTMLElement) {
+        const scope: HTMLElement = card ?? this.container;
+        scope.querySelectorAll<HTMLElement>(`.viz-pill[data-metric="${metricName}"]`).forEach((p) => {
             p.classList.toggle("active", p.dataset.type === vizType);
         });
     }

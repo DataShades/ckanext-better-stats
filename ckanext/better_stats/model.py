@@ -29,7 +29,12 @@ class MetricConfig(tk.BaseModel):
         sa.Column("cache_timeout", sa.Integer, default=3600),
         sa.Column("extras", MutableDict.as_mutable(JSONB), default={}),
         sa.Column("created", sa.DateTime, default=_current_datetime),
-        sa.Column("modified", sa.DateTime, default=_current_datetime, onupdate=_current_datetime),
+        sa.Column(
+            "modified",
+            sa.DateTime,
+            default=_current_datetime,
+            onupdate=_current_datetime,
+        ),
     )
 
     id: Mapped[str]
@@ -66,4 +71,41 @@ class MetricConfig(tk.BaseModel):
     @classmethod
     def clear_all(cls) -> None:
         model.Session.query(cls).delete()
+        model.Session.commit()
+
+
+class UserFavorite(tk.BaseModel):
+    __table__ = sa.Table(
+        "better_stats_user_favorite",
+        tk.BaseModel.metadata,
+        sa.Column("id", sa.String, primary_key=True, default=lambda: str(uuid.uuid4())),
+        sa.Column("user_id", sa.String, nullable=False),
+        sa.Column("metric_name", sa.String, nullable=False),
+        sa.Column("created", sa.DateTime, default=_current_datetime),
+        sa.UniqueConstraint("user_id", "metric_name", name="uq_bstats_user_favorite"),
+    )
+
+    id: Mapped[str]
+    user_id: Mapped[str]
+    metric_name: Mapped[str]
+    created: Mapped[datetime]
+
+    @classmethod
+    def metric_names_for_user(cls, user_id: str) -> "set[str]":
+        rows = model.Session.query(cls.metric_name).filter_by(user_id=user_id).all()
+        return {r.metric_name for r in rows}
+
+    @classmethod
+    def get(cls, user_id: str, metric_name: str) -> "UserFavorite | None":
+        return model.Session.query(cls).filter_by(user_id=user_id, metric_name=metric_name).first()
+
+    @classmethod
+    def add(cls, user_id: str, metric_name: str) -> "UserFavorite":
+        fav = cls(user_id=user_id, metric_name=metric_name)
+        model.Session.add(fav)
+        model.Session.commit()
+        return fav
+
+    def remove(self) -> None:
+        model.Session.delete(self)
         model.Session.commit()

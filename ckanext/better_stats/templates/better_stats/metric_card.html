@@ -1,7 +1,10 @@
 {% from "better_stats/embed_modal.html" import embed_modal %}
+{% set content_id = (content_id_prefix if content_id_prefix is defined else "") + metric.name %}
+{% set is_favorite = is_favorite if is_favorite is defined else false %}
 
 <div class="metric-container"
      data-metric="{{ metric.name }}"
+     data-content-id="{{ content_id }}"
      data-order="{{ metric.order }}"
      data-default-viz="{{ metric.default_visualization.value }}"
      data-description="{{ metric.description }}"
@@ -20,6 +23,14 @@
             </span>
 
             <div class="metric-control d-flex align-items-center">
+                {% if not embed and not current_user.is_anonymous %}
+                    <button class="btn btn-sm favorite-btn"
+                            data-metric="{{ metric.name }}"
+                            title="{{ _('Add to favorites') if not is_favorite else _('Remove from favorites') }}">
+                        <i class="{{ 'fa fa-star fav-active' if is_favorite else 'fa-regular fa-star' }} fa-fw"></i>
+                    </button>
+                {% endif %}
+
                 <button class="btn btn-sm refresh-metric" data-metric="{{ metric.name }}" title="{{ _('Refresh') }}">
                     <i class="fa fa-refresh fa-fw"></i>
                 </button>
@@ -86,7 +97,7 @@
         {% endif %}
 
         {# ── Visualization content (skeleton shown until JS loads data) ── #}
-        <div class="metric-content" id="metric-{{ metric.name }}">
+        <div class="metric-content" id="metric-{{ content_id }}">
             <div class="metric-skeleton">
                 <div class="placeholder col-12"></div>
             </div>

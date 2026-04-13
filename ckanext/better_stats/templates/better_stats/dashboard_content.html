@@ -1,6 +1,8 @@
 {#
 metrics - flat list of accessible MetricBase instances (kept for compat).
 groups  - list of (MetricGroup, [MetricBase]) tuples, in display order.
+         The first entry is always the favorites group.
+user_favorites - set of favorited metric names (empty set for anonymous users).
 #}
 
 <div class="module">
@@ -62,9 +64,34 @@ groups  - list of (MetricGroup, [MetricBase]) tuples, in display order.
                 </div>
 
                 <div class="stats-grid" id="bstats-grid-{{ group.name }}">
-                    {% for metric in group_metrics %}
-                        {% snippet 'better_stats/metric_card.html', metric=metric %}
-                    {% endfor %}
+                    {% if group.name == 'favorites' %}
+                        {# Favorites section: special empty / anon states #}
+                        {% if current_user.is_anonymous %}
+                            <div class="bstats-fav-empty col-span-full">
+                                <i class="fa-regular fa-star"></i>
+                                <p class="mb-0">
+                                    <a href="{{ h.url_for('user.login', came_from=request.full_path) }}">{{ _('Log in') }}</a>
+                                    {{ _('to add metrics to your favorites.') }}
+                                </p>
+                            </div>
+                        {% elif not group_metrics %}
+                            <div class="bstats-fav-empty col-span-full">
+                                <p class="mb-0">
+                                    {{ _('No favorites yet — click the') }}
+                                    <i class="fa-regular fa-star"></i>
+                                    {{ _('on any metric to add it here.') }}
+                                </p>
+                            </div>
+                        {% else %}
+                            {% for metric in group_metrics %}
+                                {% snippet 'better_stats/metric_card.html', metric=metric, is_favorite=true, content_id_prefix="fav-" %}
+                            {% endfor %}
+                        {% endif %}
+                    {% else %}
+                        {% for metric in group_metrics %}
+                            {% snippet 'better_stats/metric_card.html', metric=metric, is_favorite=(metric.name in user_favorites) %}
+                        {% endfor %}
+                    {% endif %}
                 </div>
 
             </div>
