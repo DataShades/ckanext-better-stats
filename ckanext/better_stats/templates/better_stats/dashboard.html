@@ -14,7 +14,7 @@
 {% block secondary %}{% endblock %}
 
 {% block primary %}
-    <div class="primary col p-0 bstats-dashboard" role="main" data-module="bstats-stats-manager bstats-export bstats-theme bstats-filter bstats-embed">
+    <div class="primary col p-0 bstats-dashboard" role="main" data-module="bstats-stats-manager bstats-export bstats-theme bstats-filter bstats-embed bstats-expand bstats-favorite">
         {% block primary_content %}
             {% snippet 'better_stats/dashboard_content.html', metrics=accessible_metrics, groups=groups, user_favorites=user_favorites %}
         {% endblock %}

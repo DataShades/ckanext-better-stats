@@ -1,3 +1,5 @@
+declare const Sortable: any;
+
 ckan.module("bstats-stats-settings", function ($) {
     return {
         options: {
@@ -9,7 +11,7 @@ ckan.module("bstats-stats-settings", function ($) {
         initialize() {
             $.proxyAll(this, /_/);
 
-            this._csrf = document.querySelector('meta[name="csrf-token"]')?.content || "";
+            this._csrf = document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content || "";
             this._timers = {};
             this._pending = 0;
 
@@ -36,7 +38,7 @@ ckan.module("bstats-stats-settings", function ($) {
         },
 
         _onReorder(evt) {
-            const rows = Array.from(evt.to.querySelectorAll(".metric-row"));
+            const rows = Array.from(evt.to.querySelectorAll(".metric-row")) as HTMLElement[];
             const items = rows.map((row, idx) => ({
                 metric_name: row.dataset.metric,
                 order: (idx + 1) * 10,

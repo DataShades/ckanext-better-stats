@@ -17,9 +17,6 @@ class BetterStatsManager {
     private currentVizTypes: Record<string, string>;
     private loadTimes: Record<string, number>;
     private defaultViz: string;
-    private _fullscreenChart: any;
-    private _pendingFullscreen: string | null;
-    private _pendingFullscreenContentId: string | null;
 
     constructor(container: HTMLElement) {
         this.container = container;
@@ -27,9 +24,6 @@ class BetterStatsManager {
         this.currentVizTypes = {};
         this.loadTimes = {};
         this.defaultViz = "chart";
-        this._fullscreenChart = null;
-        this._pendingFullscreen = null;
-        this._pendingFullscreenContentId = null;
         this.init();
     }
 
@@ -40,6 +34,7 @@ class BetterStatsManager {
         this.container.querySelectorAll("[data-bs-toggle='tooltip']").forEach(
             (el) => new bootstrap.Tooltip(el)
         );
+        ckan.pubsub.publish("bstats:manager-ready", this);
     }
 
     _bindEvents() {
@@ -66,47 +61,16 @@ class BetterStatsManager {
             if (btn) this.shareMetric(btn.dataset.metric!, btn);
         });
 
-        // Favorite toggle
-        this.container.addEventListener("click", (e) => {
-            const btn = (e.target as Element).closest(".favorite-btn") as HTMLElement | null;
-            if (btn) this._toggleFavorite(btn.dataset.metric!, btn);
-        });
-
         // Refresh all
         document.getElementById("refresh-all")?.addEventListener("click", () => {
             this.refreshAllMetrics();
         });
-
-        // Theme changes from bstats-theme module
-        ckan.pubsub.subscribe("bstats:theme-changed", () => this._updateChartsTheme());
 
         // Retry on error
         this.container.addEventListener("click", (e) => {
             const btn = (e.target as Element).closest(".retry-btn") as HTMLElement | null;
             if (btn) this.refreshMetric(btn.dataset.metric!);
         });
-
-        // Expand → fullscreen modal
-        const fsModal = document.getElementById("bstats-fullscreen-modal");
-        fsModal?.addEventListener("show.bs.modal", (e) => {
-            const trigger = (e as any).relatedTarget as HTMLElement | null;
-
-            if (trigger) {
-                this._pendingFullscreen = trigger.dataset.metric!;
-                const card = trigger.closest<HTMLElement>(".metric-container");
-                this._pendingFullscreenContentId = card?.dataset.contentId ?? trigger.dataset.metric!;
-            }
-
-            // Show skeleton immediately while the modal animates open
-            const contentEl = document.getElementById("bstats-fullscreen-content");
-            if (contentEl) contentEl.innerHTML = this._skeletonHTML();
-        });
-
-        // Initialise the chart only after the modal is fully visible so ECharts
-        // measures the correct container dimensions.
-        fsModal?.addEventListener("shown.bs.modal", () => this._openFullscreen());
-        fsModal?.addEventListener("hidden.bs.modal", () => this._closeFullscreen());
-
     }
 
     async loadAllMetrics() {
@@ -375,153 +339,8 @@ class BetterStatsManager {
         }
     }
 
-
-    // ── Favorites ──────────────────────────────────────────────────────────────
-
-    _getCsrfToken(): string | null {
-        const fieldName = document.querySelector<HTMLMetaElement>('meta[name="csrf_field_name"]')?.content;
-        if (!fieldName) return null;
-        return document.querySelector<HTMLMetaElement>(`meta[name="${fieldName}"]`)?.content ?? null;
-    }
-
-    async _toggleFavorite(metricName: string, btn: HTMLElement) {
-        const csrfToken = this._getCsrfToken();
-        const headers: Record<string, string> = { "Content-Type": "application/json" };
-        if (csrfToken) headers["X-CSRFToken"] = csrfToken;
-
-        try {
-            const resp = await fetch(ckan.url(`/better_stats/favorites/toggle/${metricName}`), {
-                method: "POST",
-                headers,
-            });
-            const data = await resp.json();
-            if (data.error) return;
-
-            this._setStarState(metricName, data.is_favorite);
-
-            if (data.is_favorite && data.card_html) {
-                this._addFavCard(data.card_html, metricName);
-            } else if (!data.is_favorite) {
-                this._removeFavCard(metricName);
-            }
-        } catch (err) {
-            console.error("Failed to toggle favorite:", err);
-        }
-    }
-
-    _setStarState(metricName: string, isFavorite: boolean) {
-        this.container.querySelectorAll<HTMLElement>(`.favorite-btn[data-metric="${metricName}"]`).forEach((btn) => {
-            const icon = btn.querySelector("i");
-            if (icon) icon.className = isFavorite ? "fa-solid fa-star fav-active" : "fa-regular fa-star";
-            btn.dataset.favorited = isFavorite ? "true" : "false";
-            btn.title = isFavorite ? "Remove from favorites" : "Add to favorites";
-        });
-    }
-
-    _addFavCard(cardHtml: string, metricName: string) {
-        const grid = document.getElementById("bstats-grid-favorites");
-        if (!grid) return;
-
-        grid.querySelector(".bstats-fav-empty")?.remove();
-
-        const tmp = this._el("div", { innerHTML: cardHtml });
-        const newCard = tmp.firstElementChild as HTMLElement | null;
-        if (!newCard) return;
-        grid.appendChild(newCard);
-
-        newCard.querySelectorAll("[data-bs-toggle='tooltip']").forEach((el) => new bootstrap.Tooltip(el));
-
-        const vizType = this.currentVizTypes[metricName] || this.defaultViz;
-        this.loadMetric(metricName, vizType, false, newCard);
-        this._updateFavCount(grid);
-    }
-
-    _removeFavCard(metricName: string) {
-        const grid = document.getElementById("bstats-grid-favorites");
-        if (!grid) return;
-
-        const card = grid.querySelector<HTMLElement>(`.metric-container[data-metric="${metricName}"]`);
-        if (!card) return;
-
-        const contentId = card.dataset.contentId ?? `fav-${metricName}`;
-        const chart = this.charts[contentId];
-        if (chart) {
-            (Array.isArray(chart) ? chart : [chart]).forEach((c) => c.dispose());
-            delete this.charts[contentId];
-        }
-        card.remove();
-        this._updateFavCount(grid);
-
-        if (!grid.querySelector(".metric-container")) {
-            grid.insertAdjacentHTML(
-                "beforeend",
-                `<div class="bstats-fav-empty col-span-full">` +
-                `<p class="mb-0">No favorites yet \u2014 click the <i class="fa-regular fa-star"></i> on any metric to add it here.</p>` +
-                `</div>`
-            );
-        }
-    }
-
-    _updateFavCount(grid: HTMLElement) {
-        const count = grid.querySelectorAll(".metric-container").length;
-        const badge = this.container.querySelector(
-            `.bstats-group-toggle[data-group="favorites"] .bstats-group-count`
-        );
-        if (badge) badge.textContent = String(count);
-    }
-
-    async _openFullscreen() {
-        const metricName = this._pendingFullscreen;
-        if (!metricName) return;
-
-        const titleEl = document.getElementById("bstats-fullscreen-title");
-        const contentEl = document.getElementById("bstats-fullscreen-content");
-        if (!contentEl) return;
-
-        const contentId = this._pendingFullscreenContentId ?? metricName;
-        const vizType = this.currentVizTypes[contentId] || this.defaultViz;
-
-        try {
-            const resp = await fetch(ckan.url(`/better_stats/metric/${metricName}?type=${vizType}`));
-            const data = await resp.json();
-            if (data.error) throw new Error(data.error);
-
-            if (titleEl) titleEl.textContent = data.title;
-            contentEl.innerHTML = "";
-
-            if (vizType === "chart") {
-                this._fullscreenChart = this._createChart(contentEl, data.data);
-            } else {
-                this.renderMetric(contentEl, data, vizType);
-            }
-        } catch (err) {
-            contentEl.innerHTML = this._errorHTML(metricName, (err as Error).message);
-        }
-    }
-
-    _closeFullscreen() {
-        if (this._fullscreenChart) {
-            this._fullscreenChart.dispose();
-            this._fullscreenChart = null;
-        }
-        const contentEl = document.getElementById("bstats-fullscreen-content");
-        if (contentEl) contentEl.innerHTML = "";
-        this._pendingFullscreen = null;
-        this._pendingFullscreenContentId = null;
-    }
-
     _isDark() {
         return this.container.dataset.bstatsTheme === "dark";
-    }
-
-    _updateChartsTheme() {
-        const dark = this._isDark();
-        Object.values(this.charts).forEach((entry) => {
-            (Array.isArray(entry) ? entry : [entry]).forEach((chart) => {
-                chart.setTheme(dark ? "dark" : {});
-                chart.setOption(chart._chartOptions || {});
-            });
-        });
     }
 
     _startCacheAgeTimer() {

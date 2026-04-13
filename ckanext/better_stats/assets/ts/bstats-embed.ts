@@ -3,7 +3,12 @@ ckan.module("bstats-embed", function ($: any) {
         initialize() {
             $.proxyAll(this, /_/);
 
+            this.manager = null;
             const container = this.el[0] as HTMLElement;
+
+            ckan.pubsub.subscribe("bstats:manager-ready", (manager: any) => {
+                this.manager = manager;
+            });
 
             // Embed modal — stamp the current viz onto the trigger button so the
             // embed module can read it from relatedTarget in show.bs.modal.
@@ -12,7 +17,7 @@ ckan.module("bstats-embed", function ($: any) {
                 if (btn) {
                     const card = btn.closest<HTMLElement>(".metric-container");
                     const contentId = card?.dataset.contentId ?? btn.dataset.metric!;
-                    btn.dataset.embedViz = this.currentVizTypes[contentId] || this.defaultViz;
+                    btn.dataset.embedViz = this.manager.currentVizTypes[contentId] || this.defaultViz;
                 }
             });
 

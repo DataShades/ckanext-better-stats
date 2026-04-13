@@ -11,6 +11,7 @@
     },
     "devDependencies": {
         "@types/jquery": "^3.5.29",
+        "esbuild": "^0.28.0",
         "gulp-clean-css": "^4.3.0",
         "gulp-header": "^2.0.12",
         "terser": "^5.44.0"
@@ -18,7 +19,7 @@
     "scripts": {
         "dev": "DEBUG=1 gulp watch",
         "build": "gulp build",
-        "ts-build": "tsc && cat ckanext/better_stats/assets/js/bstats-stats-manager.js ckanext/better_stats/assets/js/bstats-export.js ckanext/better_stats/assets/js/bstats-theme.js ckanext/better_stats/assets/js/bstats-filter.js ckanext/better_stats/assets/js/bstats-embed.js > ckanext/better_stats/assets/js/bstats-bundle.js && npx terser ckanext/better_stats/assets/js/bstats-bundle.js --output ckanext/better_stats/assets/js/bstats.min.js --config-file terser.config.json && rm ckanext/better_stats/assets/js/bstats-stats-manager.js ckanext/better_stats/assets/js/bstats-export.js ckanext/better_stats/assets/js/bstats-theme.js ckanext/better_stats/assets/js/bstats-filter.js ckanext/better_stats/assets/js/bstats-embed.js ckanext/better_stats/assets/js/bstats-bundle.js",
+        "ts-build": "tsc && esbuild ckanext/better_stats/assets/ts/bstats-entry.ts --bundle --minify --outfile=ckanext/better_stats/assets/js/bstats.min.js && rm ckanext/better_stats/assets/js/bstats-*.js",
         "ts-watch": "tsc -w"
     }
 }
