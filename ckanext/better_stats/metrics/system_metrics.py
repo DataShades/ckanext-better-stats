@@ -157,7 +157,7 @@ class DiskUsageMetric(MetricBase):
             title="Disk Usage",
             description="Disk usage of each partition",
             order=180,
-            col_span=4,
+            col_span=6,
             access_level=const.AccessLevel.ADMIN.value,
         )
 

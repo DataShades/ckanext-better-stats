@@ -209,6 +209,7 @@ class OrganizationMembershipMetric(MetricBase):
             description=tk._("Number of members per organization"),
             order=130,
             col_span=6,
+            row_span=2,
             access_level=const.AccessLevel.ADMIN.value,
         )
 
@@ -294,7 +295,6 @@ class OrganizationOverviewMetric(MetricBase):
             description=tk._("Datasets, resources and members per organization"),
             order=150,
             col_span=6,
-            row_span=2,
             access_level=const.AccessLevel.AUTHENTICATED.value,
         )
 
@@ -417,7 +417,7 @@ class InactiveOrganizationsMetric(MetricBase):
             title=tk._("Inactive Organizations"),
             description=tk._("Organizations with no active datasets"),
             order=20,
-            col_span=2,
+            col_span=3,
             access_level=const.AccessLevel.ADMIN.value,
         )
 

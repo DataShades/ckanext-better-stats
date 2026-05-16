@@ -70,6 +70,7 @@ class DatasetsByOrganizationMetric(MetricBase):
             description=tk._("Distribution of datasets across organizations"),
             order=10,
             col_span=6,
+            row_span=2
         )
 
     def get_data(self) -> list[dict[str, Any]]:
@@ -212,6 +213,7 @@ class ResourcesByFormatMetric(MetricBase):
             name="resources_by_format",
             title=tk._("Resources by Format"),
             description=tk._("Distribution of resources across file formats"),
+            col_span=6,
             order=50,
         )
 
