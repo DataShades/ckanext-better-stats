@@ -97,6 +97,8 @@ class BetterStatsManager {
         const el = document.getElementById(`metric-${contentId}`);
         if (!el) return;
 
+        this._disposeChartById(contentId);
+
         el.innerHTML = this._skeletonHTML();
 
         try {
@@ -137,11 +139,7 @@ class BetterStatsManager {
             return;
         }
 
-        const existing = this.charts[id];
-        if (existing) {
-            (Array.isArray(existing) ? existing : [existing]).forEach((c) => this._disposeChart(c));
-            delete this.charts[id];
-        }
+        this._disposeChartById(id);
 
         if (chartData.type === "multi") {
             const wrapper = this._el("div", { className: "metric-chart-multi" });
@@ -387,6 +385,13 @@ class BetterStatsManager {
     _disposeChart(chart: any) {
         chart?._bstatsResizeObserver?.disconnect();
         chart?.dispose();
+    }
+
+    _disposeChartById(id: string) {
+        const existing = this.charts[id];
+        if (!existing) return;
+        (Array.isArray(existing) ? existing : [existing]).forEach((c) => this._disposeChart(c));
+        delete this.charts[id];
     }
 
     _updatePills(metricName: string, vizType: string, card?: HTMLElement) {

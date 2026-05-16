@@ -83,11 +83,7 @@ ckan.module("bstats-favorite", function ($: any) {
             if (!card) return;
 
             const contentId = card.dataset.contentId ?? `fav-${metricName}`;
-            const chart = this.manager.charts[contentId];
-            if (chart) {
-                (Array.isArray(chart) ? chart : [chart]).forEach((c) => this.manager._disposeChart(c));
-                delete this.manager.charts[contentId];
-            }
+            this.manager._disposeChartById(contentId);
             card.remove();
             this._updateFavCount(grid);
 
