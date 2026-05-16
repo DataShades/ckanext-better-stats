@@ -210,7 +210,13 @@ def export_metric(metric_name: str) -> Response:
     if not metric:
         return make_response(jsonify({"error": tk._("Metric not found")}), 404)
 
-    if not tk.h.check_user_can_access_metric(metric) or not metric.can_export():
+    try:
+        tk.check_access(
+            "better_stats_export_metric",
+            {"user": tk.current_user.name},
+            {"metric_name": metric.name},
+        )
+    except tk.NotAuthorized:
         return make_response(jsonify({"error": tk._("Export not available")}), 403)
 
     format_type = tk.request.args.get("format", const.ExportFormat.CSV.value)

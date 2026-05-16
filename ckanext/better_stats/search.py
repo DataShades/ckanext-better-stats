@@ -7,13 +7,6 @@ from ckan.lib.plugins import get_permission_labels
 from ckan.lib.search.common import make_connection
 
 
-def get_permission_fq() -> str:
-    """Prepare permission labels fq for a SOLR query."""
-    user = None if tk.current_user.is_anonymous else tk.current_user
-    labels = get_permission_labels().get_user_dataset_labels(user)
-    return f"permission_labels:({' OR '.join(labels)})"
-
-
 def solr_search(fq: str | list[str] = "", client: Any = None, **params: Any) -> Any:
     """Run a SOLR query with the current user's permission labels applied.
 
@@ -37,7 +30,9 @@ def solr_search(fq: str | list[str] = "", client: Any = None, **params: Any) -> 
     :param params: Keyword arguments forwarded verbatim to ``solr.search()``.
     :returns: The raw pysolr ``Results`` object.
     """
-    permission_fq = get_permission_fq()
+    user = None if tk.current_user.is_anonymous else tk.current_user
+    labels = get_permission_labels().get_user_dataset_labels(user)
+    permission_fq = f"permission_labels:({' OR '.join(labels)})"
 
     if isinstance(fq, list):
         all_fq = [permission_fq, *fq]

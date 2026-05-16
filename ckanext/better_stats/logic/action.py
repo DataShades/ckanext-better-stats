@@ -22,6 +22,8 @@ def better_stats_update_metric(context: types.Context, data_dict: types.DataDict
 
     metric_name = data_dict["metric_name"]
 
+    MetricRegistry._ensure_loaded()
+
     if metric_name not in MetricRegistry.METRICS:
         raise tk.ObjectNotFound(tk._("Metric not found: {}").format(metric_name))
 

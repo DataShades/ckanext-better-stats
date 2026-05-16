@@ -12,7 +12,7 @@ def check_user_can_access_metric(metric: metrics.MetricBase) -> bool:
     if metric.access_level == const.AccessLevel.AUTHENTICATED.value:
         return tk.current_user.is_authenticated
     if metric.access_level == const.AccessLevel.ADMIN.value:
-        return not tk.current_user.is_anonymous and tk.current_user.sysadmin  # type: ignore
+        return not tk.current_user.is_anonymous and tk.current_user.sysadmin
 
     return False
 

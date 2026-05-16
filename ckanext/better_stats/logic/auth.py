@@ -2,6 +2,7 @@ import ckan.plugins.toolkit as tk
 from ckan import model, types
 
 from ckanext.better_stats import const
+from ckanext.better_stats.metrics import MetricRegistry
 
 
 @tk.auth_allow_anonymous_access
@@ -10,26 +11,28 @@ def better_stats_view_dashboard(context: types.Context, data_dict: types.DataDic
 
 
 def better_stats_view_settings(context: types.Context, data_dict: types.DataDict) -> types.AuthResult:
-    return {"success": False}
+    return {"success": False, "msg": tk._("Only sysadmins can view metric settings")}
 
 
 def better_stats_update_metric(context: types.Context, data_dict: types.DataDict) -> types.AuthResult:
-    return {"success": False}
+    return {"success": False, "msg": tk._("Only sysadmins can update metric settings")}
 
 
 @tk.auth_allow_anonymous_access
 @tk.auth_sysadmins_check
 def better_stats_export_metric(context: types.Context, data_dict: types.DataDict) -> types.AuthResult:
-    """Allow export if the user can view the metric.
+    """Check if the current user can export the specified metric.
 
-    Sysadmins always pass.  For everyone else the caller must supply
-    ``data_dict["metric"]`` — a :class:`~ckanext.better_stats.metrics.base.MetricBase`
-    instance — so that the access level can be checked.
+    Parameters:
+        metric_name: The name of the metric to export.
     """
-    metric = data_dict.get("metric")
+    metric = MetricRegistry.get_metric(data_dict.get("metric_name", ""))
 
     if metric is None:
         return {"success": False, "msg": tk._("Metric not specified")}
+
+    if not metric.can_export():
+        return {"success": False, "msg": tk._("This metric cannot be exported")}
 
     access_level = getattr(metric, "access_level", const.AccessLevel.PUBLIC.value)
 
@@ -48,4 +51,7 @@ def better_stats_export_metric(context: types.Context, data_dict: types.DataDict
         return {"success": True}
 
     # access_level == const.AccessLevel.ADMIN.value can be passed only by sysadmins
-    return {"success": user.sysadmin}
+    return {
+        "success": user.sysadmin,
+        "msg": tk._("Must be a sysadmin to export this metric") if not user.sysadmin else "",
+    }
