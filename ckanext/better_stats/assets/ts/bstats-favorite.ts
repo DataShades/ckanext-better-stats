@@ -3,6 +3,9 @@ ckan.module("bstats-favorite", function ($: any) {
         initialize() {
             $.proxyAll(this, /_/);
 
+            var csrf_field = $('meta[name=csrf_field_name]').attr('content');
+            this._csrf = $('meta[name='+ csrf_field +']').attr('content');
+
             this.manager = null;
             this.container = this.el[0] as HTMLElement;
 
@@ -18,7 +21,10 @@ ckan.module("bstats-favorite", function ($: any) {
         },
 
         async _toggleFavorite(metricName: string, btn: HTMLElement) {
-            const headers: Record<string, string> = { "Content-Type": "application/json" };
+            const headers: Record<string, string> = {
+                "Content-Type": "application/json",
+                "X-CSRFToken": this._csrf,
+            };
 
             try {
                 const resp = await fetch(ckan.url(`/better_stats/favorites/toggle/${metricName}`), {
@@ -64,7 +70,7 @@ ckan.module("bstats-favorite", function ($: any) {
 
             newCard.querySelectorAll("[data-bs-toggle='tooltip']").forEach((el) => new bootstrap.Tooltip(el));
 
-            const vizType = this.manager.currentVizTypes[metricName] || this.defaultViz;
+            const vizType = this.manager.currentVizTypes[metricName] || this.manager.defaultViz;
             this.manager.loadMetric(metricName, vizType, false, newCard);
             this._updateFavCount(grid);
         },

@@ -12,7 +12,7 @@ See the [documentation](https://datashades.github.io/ckanext-better-stats/) for 
 
 To run the tests, do:
 ```sh
-pytest --ckan-ini=test.ini
+pytest --ckan-ini=test_config//test.ini
 ```
 
 ## License

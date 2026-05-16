@@ -17,7 +17,7 @@ ckan.module("bstats-embed", function ($: any) {
                 if (btn) {
                     const card = btn.closest<HTMLElement>(".metric-container");
                     const contentId = card?.dataset.contentId ?? btn.dataset.metric!;
-                    btn.dataset.embedViz = this.manager.currentVizTypes[contentId] || this.defaultViz;
+                    btn.dataset.embedViz = this.manager.currentVizTypes[contentId] || this.manager.defaultViz;
                 }
             });
 
