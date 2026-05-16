@@ -142,10 +142,12 @@ class MetricBase(ABC):
         """
         key = f"{self.cache_key}:{viz_type.value}"
 
-        if cached := cache.cache_get(key):
+        cached = cache.cache_get(key)
+        if cached is not None:
             return cached
 
-        if data := self._compute_viz_data(viz_type):
+        data = self._compute_viz_data(viz_type)
+        if data is not None:
             cache.cache_set(key, data, self.cache_timeout)
 
         return data
