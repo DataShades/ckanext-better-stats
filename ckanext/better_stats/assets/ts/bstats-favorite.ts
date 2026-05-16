@@ -85,7 +85,7 @@ ckan.module("bstats-favorite", function ($: any) {
             const contentId = card.dataset.contentId ?? `fav-${metricName}`;
             const chart = this.manager.charts[contentId];
             if (chart) {
-                (Array.isArray(chart) ? chart : [chart]).forEach((c) => c.dispose());
+                (Array.isArray(chart) ? chart : [chart]).forEach((c) => this.manager._disposeChart(c));
                 delete this.manager.charts[contentId];
             }
             card.remove();

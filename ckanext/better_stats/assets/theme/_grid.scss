@@ -13,6 +13,7 @@
     position: relative;
     grid-column: span var(--col-span, 3);
     grid-row: span var(--row-span, 1);
+    min-width: 0;
 }
 
 @media (max-width: 768px) {

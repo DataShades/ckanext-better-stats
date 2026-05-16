@@ -139,7 +139,7 @@ class BetterStatsManager {
 
         const existing = this.charts[id];
         if (existing) {
-            (Array.isArray(existing) ? existing : [existing]).forEach((c) => c.dispose());
+            (Array.isArray(existing) ? existing : [existing]).forEach((c) => this._disposeChart(c));
             delete this.charts[id];
         }
 
@@ -376,9 +376,17 @@ class BetterStatsManager {
         const chart = echarts.init(holder, this._isDark() ? "dark" : "default");
         chart.setOption(chartData);
         chart._chartOptions = chartData;
-        window.addEventListener("resize", () => chart.resize());
+
+        const observer = new ResizeObserver(() => chart.resize());
+        observer.observe(holder);
+        chart._bstatsResizeObserver = observer;
 
         return chart;
+    }
+
+    _disposeChart(chart: any) {
+        chart?._bstatsResizeObserver?.disconnect();
+        chart?.dispose();
     }
 
     _updatePills(metricName: string, vizType: string, card?: HTMLElement) {
