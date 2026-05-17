@@ -39,10 +39,10 @@ class OrganizationHierarchyMetric(MetricBase):
         return tk.h.group_tree(type_="organization")
 
     def _to_echarts_node(self, node: dict[str, Any]) -> dict[str, Any]:
-        name = node["name"]
+        slug = node["name"]
         converted: dict[str, Any] = {
-            "name": node.get("title") or name or "Unknown",
-            "value": (f'<a href="/organization/{name}" target="_blank" style="color:inherit;">{tk._("View")} →</a>'),
+            "name": node.get("title") or slug or "Unknown",
+            "slug": slug,
         }
         children = node.get("children", [])
 
@@ -70,7 +70,11 @@ class OrganizationHierarchyMetric(MetricBase):
                 "trigger": "item",
                 "triggerOn": "mousemove",
                 "enterable": True,
-                "formatter": "{b}<br/>{c}",
+                "formatter": (
+                    '{b}<br/>'
+                    '<a href="/organization/{slug}" target="_blank" style="color:inherit;">'
+                    f"{tk._('View')} →</a>"
+                ),
                 "_htmlTooltip": True,
             },
             "series": [

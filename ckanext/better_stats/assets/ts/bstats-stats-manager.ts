@@ -365,9 +365,13 @@ class BetterStatsManager {
         if (chartData.tooltip?._htmlTooltip) {
             const template = chartData.tooltip.formatter as string;
             chartData.tooltip.formatter = (params: any) =>
-                template
-                    .replace(/\{b\}/g, params.name ?? "")
-                    .replace(/\{c\}/g, params.value ?? "");
+                template.replace(/\{(\w+)\}/g, (_match, key) => {
+                    const value =
+                        key === "b" ? params.name :
+                        key === "c" ? params.value :
+                        params.data?.[key];
+                    return this._escapeHtml(value ?? "");
+                });
             delete chartData.tooltip._htmlTooltip;
         }
 
@@ -441,6 +445,15 @@ class BetterStatsManager {
 
     _el<K extends keyof HTMLElementTagNameMap>(tag: K, props: Partial<HTMLElementTagNameMap[K]> = {}): HTMLElementTagNameMap[K] {
         return Object.assign(document.createElement(tag), props);
+    }
+
+    _escapeHtml(value: unknown): string {
+        return String(value ?? "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
     }
 
     formatNumber(num: number) {
