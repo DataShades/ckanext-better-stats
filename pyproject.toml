@@ -45,6 +45,11 @@ filterwarnings = [
 ]
 addopts = "--ckan-ini test_config/test.ini"
 
+[tool.coverage.run]
+omit = [
+    "ckanext/better_stats/tests/*",
+]
+
 [tool.ruff]
 target-version = "py310"
 line-length = 120

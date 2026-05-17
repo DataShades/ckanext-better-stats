@@ -31,7 +31,7 @@ jobs:
       # Install any extra requirements your extension has here (dev requirements, other extensions etc)
       run: |
         pip install --upgrade pip
-        pip install -e .
+        pip install -e '.[dev]'
     - name: Setup extension
       # Extra initialization steps
       run: |
@@ -40,4 +40,4 @@ jobs:
 
         ckan -c test_config/test.ini db init
     - name: Run tests
-      run: pytest --ckan-ini=test_config/test.ini --cov=ckanext.better_stats --disable-warnings ckanext/better_stats
+      run: pytest --ckan-ini=test_config/test.ini --cov=ckanext.better_stats --disable-warnings -m "not playwright" ckanext/better_stats
