@@ -34,9 +34,7 @@ class TestMetricRegistry:
 
         assert MetricRegistry.get_metric("dummy") is not None
 
-        call_action(
-            "better_stats_update_metric", metric_name=metric.name, enabled=False
-        )
+        call_action("better_stats_update_metric", metric_name=metric.name, enabled=False)
         assert MetricRegistry.get_metric("dummy") is None
 
     def test_get_enabled_metrics(self, metric_factory: Any, fresh_registry) -> None:
@@ -48,9 +46,7 @@ class TestMetricRegistry:
     def test_get_enabled_metrics_excludes_disabled(self, metric_factory: Any) -> None:
         metric = metric_factory(name="dummy")
 
-        call_action(
-            "better_stats_update_metric", metric_name=metric.name, enabled=False
-        )
+        call_action("better_stats_update_metric", metric_name=metric.name, enabled=False)
 
         names = [m.name for m in MetricRegistry.get_enabled_metrics()]
         assert metric.name not in names
@@ -159,10 +155,7 @@ class TestMetricBase:
 
         with mock.patch("ckan.plugins.toolkit.current_user") as mock_user:
             mock_user.id = "user-123"
-            assert (
-                metric.cache_key
-                == f"better_stats:user:{mock_user.id}:metric:{metric.name}"
-            )
+            assert metric.cache_key == f"better_stats:user:{mock_user.id}:metric:{metric.name}"
 
     def test_get_viz_data_caches_result(self, metric_factory: Any) -> None:
         metric = metric_factory()
@@ -194,9 +187,7 @@ class TestMetricBase:
 
         with mock.patch("ckanext.better_stats.metrics.base.cache") as mock_cache:
             metric.refresh_cache()
-            mock_cache.cache_delete_pattern.assert_called_once_with(
-                f"better_stats:user:*:metric:{metric.name}:*"
-            )
+            mock_cache.cache_delete_pattern.assert_called_once_with(f"better_stats:user:*:metric:{metric.name}:*")
 
     def test_get_cached_data_with_refresh(self, metric_factory: Any) -> None:
         metric = metric_factory()

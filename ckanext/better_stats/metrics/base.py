@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from typing import Any, ClassVar
@@ -8,6 +9,8 @@ import ckan.plugins.toolkit as tk
 
 from ckanext.better_stats import cache, const
 from ckanext.better_stats.model import MetricConfig
+
+log = logging.getLogger(__name__)
 
 
 class MetricBase(ABC):
@@ -202,7 +205,11 @@ class MetricBase(ABC):
             "title": self.title,
             "description": self.description,
             "icon": self.icon,
-            "group": {"name": self.group.name, "label": self.group.label, "icon": self.group.icon},
+            "group": {
+                "name": self.group.name,
+                "label": self.group.label,
+                "icon": self.group.icon,
+            },
             "col_span": self.col_span,
             "row_span": self.row_span,
             "order": self.order,
@@ -245,6 +252,7 @@ class MetricRegistry:
     def _ensure_loaded(cls) -> None:
         """Fire the registration signal exactly once per process lifetime."""
         if not cls._loaded:
+            log.info("Better Stats: registering metrics")
             cls._loaded = True
             register_metrics_signal.send()
 
@@ -299,32 +307,32 @@ class MetricRegistry:
         registered metric and applies stored overrides (``enabled``, ``order``,
         ``col_span``, ``row_span``, ``cache_timeout``, ``access_level``) to the metric
         instance before returning.  Metrics with ``enabled=False`` are
-        excluded.  Falls back to :meth:`get_all_metrics` if the DB is
-        unavailable (e.g. during tests without a DB fixture).
+        excluded.
         """
         cls._ensure_loaded()
 
-        try:
-            results: list[MetricBase] = []
-            for name, factory in cls.METRICS.items():
-                metric = factory()
-                cfg = MetricConfig.for_metric(name)
+        results: list[MetricBase] = []
 
-                if cfg is not None:
-                    if not cfg.enabled:
-                        continue
+        for name, factory in cls.METRICS.items():
+            metric = factory()
+            cfg = MetricConfig.for_metric(name)
 
-                    metric.order = cfg.order  # type: ignore
-                    metric.col_span = cfg.col_span  # type: ignore
-                    metric.row_span = cfg.row_span  # type: ignore
-                    metric.cache_timeout = cfg.cache_timeout  # type: ignore
-                    metric.access_level = cfg.access_level or metric.access_level  # type: ignore
-
+            if cfg is None:
                 results.append(metric)
+                continue
 
-            return sorted(results, key=lambda m: m.order)
-        except Exception:  # noqa: BLE001
-            return cls.get_all_metrics()
+            if not cfg.enabled:
+                continue
+
+            metric.order = cfg.order
+            metric.col_span = cfg.col_span
+            metric.row_span = cfg.row_span
+            metric.cache_timeout = cfg.cache_timeout
+            metric.access_level = cfg.access_level or metric.access_level
+
+            results.append(metric)
+
+        return sorted(results, key=lambda m: m.order)
 
     @classmethod
     def reset(cls) -> None:

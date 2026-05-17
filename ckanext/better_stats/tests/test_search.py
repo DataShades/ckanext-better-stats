@@ -49,9 +49,11 @@ def test_solr_search_no_extra_fq(fake_perm_labels: mock.MagicMock) -> None:
 
 def test_solr_search_creates_default_client(fake_perm_labels: mock.MagicMock) -> None:
     fake_client = mock.MagicMock()
-    with mock.patch("ckanext.better_stats.search.make_connection", return_value=fake_client) as mk:
-        with mock.patch("ckanext.better_stats.search.tk.current_user") as mock_user:
-            mock_user.is_anonymous = True
-            search.solr_search()
+    with (
+        mock.patch("ckanext.better_stats.search.make_connection", return_value=fake_client) as mk,
+        mock.patch("ckanext.better_stats.search.tk.current_user") as mock_user,
+    ):
+        mock_user.is_anonymous = True
+        search.solr_search()
     mk.assert_called_once()
     fake_client.search.assert_called_once()

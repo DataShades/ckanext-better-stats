@@ -56,9 +56,7 @@ class SysadminFactory(factories.SysadminWithToken):
 def metric_factory() -> Callable[[], MetricBase]:
     """Factory for creating metric objects for testing purposes."""
 
-    def _factory(
-        class_attrs: dict[str, Any] | None = None, **kwargs: Any
-    ) -> MetricBase:
+    def _factory(class_attrs: dict[str, Any] | None = None, **kwargs: Any) -> MetricBase:
         """Factory for creating metric objects for testing purposes."""
         name = kwargs.get("name", fake.word())
         access_level = kwargs.get("access_level", const.AccessLevel.PUBLIC.value)

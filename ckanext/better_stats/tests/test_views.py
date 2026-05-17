@@ -39,6 +39,7 @@ class AdminMetric(MetricBase):
     def get_data(self) -> int:
         return 10
 
+
 @pytest.fixture
 def public_metric_only(fresh_registry: Any) -> Any:
     MetricRegistry._loaded = True
@@ -60,9 +61,7 @@ class TestMetricExporter:
 
     def test_csv_export(self, app: Any) -> None:
         with app.flask_app.test_request_context("/x"):
-            response = MetricExporter(
-                self._metric(), "out", const.ExportFormat.CSV.value
-            ).export_metric()
+            response = MetricExporter(self._metric(), "out", const.ExportFormat.CSV.value).export_metric()
         assert response.headers["Content-Type"] == "text/csv"
         assert "out.csv" in response.headers["Content-Disposition"]
 
@@ -72,9 +71,7 @@ class TestMetricExporter:
 
     def test_json_export(self, app: Any) -> None:
         with app.flask_app.test_request_context("/x"):
-            response = MetricExporter(
-                self._metric(), "out", const.ExportFormat.JSON.value
-            ).export_metric()
+            response = MetricExporter(self._metric(), "out", const.ExportFormat.JSON.value).export_metric()
         assert response.headers["Content-Type"] == "application/json"
         envelope = json.loads(response.get_data(as_text=True))
         assert envelope["metric"] == "public_metric"
@@ -83,12 +80,8 @@ class TestMetricExporter:
 
     def test_xlsx_export(self, app: Any) -> None:
         with app.flask_app.test_request_context("/x"):
-            response = MetricExporter(
-                self._metric(), "out", const.ExportFormat.XLSX.value
-            ).export_metric()
-        assert response.headers["Content-Type"].startswith(
-            "application/vnd.openxmlformats-officedocument"
-        )
+            response = MetricExporter(self._metric(), "out", const.ExportFormat.XLSX.value).export_metric()
+        assert response.headers["Content-Type"].startswith("application/vnd.openxmlformats-officedocument")
         wb = load_workbook(io.BytesIO(response.get_data()))
         ws = wb.active
         assert ws is not None
@@ -104,9 +97,7 @@ class TestMetricExporter:
                 }
 
         with app.flask_app.test_request_context("/x"):
-            response = MetricExporter(
-                TableWithLinks(), "out", const.ExportFormat.XLSX.value
-            ).export_metric()
+            response = MetricExporter(TableWithLinks(), "out", const.ExportFormat.XLSX.value).export_metric()
         wb = load_workbook(io.BytesIO(response.get_data()))
         ws = wb.active
         assert ws is not None
@@ -135,16 +126,12 @@ class TestDashboardEndpoints:
         assert body["name"] == "public_metric"
         assert body["data"]["headers"] == ["A", "B"]
 
-    def test_get_metric_data_invalid_viz_falls_back(
-        self, app: Any, public_metric_only: Any
-    ) -> None:
+    def test_get_metric_data_invalid_viz_falls_back(self, app: Any, public_metric_only: Any) -> None:
         response = app.get("/better_stats/metric/public_metric?type=bogus")
         body = json.loads(response.body)
         assert body["type"] == const.VisualizationType.TABLE.value
 
-    def test_get_metric_data_unsupported_viz_falls_back(
-        self, app: Any, public_metric_only: Any
-    ) -> None:
+    def test_get_metric_data_unsupported_viz_falls_back(self, app: Any, public_metric_only: Any) -> None:
         response = app.get("/better_stats/metric/public_metric?type=chart")
         body = json.loads(response.body)
         assert body["type"] == const.VisualizationType.TABLE.value
@@ -157,9 +144,7 @@ class TestDashboardEndpoints:
         response = app.get("/better_stats/metrics", status=400)
         assert response.status_code == 400
 
-    def test_get_metrics_batch_returns_results_and_errors(
-        self, app: Any, public_metric_only: Any
-    ) -> None:
+    def test_get_metrics_batch_returns_results_and_errors(self, app: Any, public_metric_only: Any) -> None:
         response = app.get("/better_stats/metrics?names=public_metric,missing")
         body = json.loads(response.body)
         assert "public_metric" in body["metrics"]
@@ -169,9 +154,7 @@ class TestDashboardEndpoints:
         response = app.get("/better_stats/export/missing", status=404)
         assert response.status_code == 404
 
-    def test_export_metric_unsupported_format(
-        self, app: Any, public_metric_only: Any
-    ) -> None:
+    def test_export_metric_unsupported_format(self, app: Any, public_metric_only: Any) -> None:
         response = app.get("/better_stats/export/public_metric?format=pdf", status=400)
         assert response.status_code == 400
 
@@ -202,9 +185,7 @@ class TestDashboardEndpoints:
         response = app.post("/better_stats/favorites/toggle/public_metric", status=401)
         assert response.status_code == 401
 
-    def test_toggle_favorite_unknown_metric(
-        self, app: Any, sysadmin: dict[str, Any]
-    ) -> None:
+    def test_toggle_favorite_unknown_metric(self, app: Any, sysadmin: dict[str, Any]) -> None:
         response = app.post(
             "/better_stats/favorites/toggle/missing",
             headers={"Authorization": sysadmin["token"]},
@@ -220,17 +201,13 @@ class TestDashboardEndpoints:
     ) -> None:
         headers = {"Authorization": sysadmin["token"]}
 
-        response = app.post(
-            "/better_stats/favorites/toggle/public_metric", headers=headers
-        )
+        response = app.post("/better_stats/favorites/toggle/public_metric", headers=headers)
         assert response.status_code == 200
         body = json.loads(response.body)
         assert body["is_favorite"] is True
         assert UserFavorite.get(sysadmin["id"], "public_metric") is not None
 
-        response = app.post(
-            "/better_stats/favorites/toggle/public_metric", headers=headers
-        )
+        response = app.post("/better_stats/favorites/toggle/public_metric", headers=headers)
         body = json.loads(response.body)
         assert body["is_favorite"] is False
         assert UserFavorite.get(sysadmin["id"], "public_metric") is None
@@ -250,18 +227,14 @@ class TestSettingsEndpoints:
         )
         assert response.status_code == 403
 
-    def test_settings_sysadmin_allowed(
-        self, app: Any, sysadmin: dict[str, Any]
-    ) -> None:
+    def test_settings_sysadmin_allowed(self, app: Any, sysadmin: dict[str, Any]) -> None:
         response = app.get(
             "/better_stats/settings",
             headers={"Authorization": sysadmin["token"]},
         )
         assert response.status_code == 200
 
-    def test_clear_metric_cache_unknown(
-        self, app: Any, sysadmin: dict[str, Any]
-    ) -> None:
+    def test_clear_metric_cache_unknown(self, app: Any, sysadmin: dict[str, Any]) -> None:
         response = app.post(
             "/better_stats/settings/cache/clear/missing",
             headers={"Authorization": sysadmin["token"]},
@@ -269,9 +242,7 @@ class TestSettingsEndpoints:
         )
         assert response.status_code == 404
 
-    def test_clear_metric_cache(
-        self, app: Any, sysadmin: dict[str, Any], public_metric_only: Any
-    ) -> None:
+    def test_clear_metric_cache(self, app: Any, sysadmin: dict[str, Any], public_metric_only: Any) -> None:
         with mock.patch("ckanext.better_stats.metrics.base.cache"):
             response = app.post(
                 "/better_stats/settings/cache/clear/public_metric",
@@ -280,9 +251,7 @@ class TestSettingsEndpoints:
         assert response.status_code == 200
         assert json.loads(response.body)["cleared"] == "public_metric"
 
-    def test_clear_all_caches(
-        self, app: Any, sysadmin: dict[str, Any], public_metric_only: Any
-    ) -> None:
+    def test_clear_all_caches(self, app: Any, sysadmin: dict[str, Any], public_metric_only: Any) -> None:
         with mock.patch("ckanext.better_stats.metrics.base.cache"):
             response = app.post(
                 "/better_stats/settings/cache/clear",
@@ -312,9 +281,7 @@ class TestSettingsEndpoints:
         )
         assert response.status_code == 400
 
-    def test_update_metric_config_not_found(
-        self, app: Any, sysadmin: dict[str, Any]
-    ) -> None:
+    def test_update_metric_config_not_found(self, app: Any, sysadmin: dict[str, Any]) -> None:
         response = app.post(
             "/better_stats/settings/metric/missing",
             data=json.dumps({"col_span": 2}),
@@ -324,9 +291,7 @@ class TestSettingsEndpoints:
         )
         assert response.status_code == 404
 
-    def test_update_metric_config_success(
-        self, app: Any, sysadmin: dict[str, Any], public_metric_only: Any
-    ) -> None:
+    def test_update_metric_config_success(self, app: Any, sysadmin: dict[str, Any], public_metric_only: Any) -> None:
         response = app.post(
             "/better_stats/settings/metric/public_metric",
             data=json.dumps({"col_span": 4, "enabled": False}),
@@ -337,9 +302,7 @@ class TestSettingsEndpoints:
         assert body["col_span"] == 4
         assert body["enabled"] is False
 
-    def test_batch_update_order_invalid_payload(
-        self, app: Any, sysadmin: dict[str, Any]
-    ) -> None:
+    def test_batch_update_order_invalid_payload(self, app: Any, sysadmin: dict[str, Any]) -> None:
         response = app.post(
             "/better_stats/settings/batch-order",
             data=json.dumps({"not": "a list"}),
@@ -373,9 +336,7 @@ class TestSettingsEndpoints:
         )
         assert response.status_code == 400
 
-    def test_batch_update_order_success(
-        self, app: Any, sysadmin: dict[str, Any], public_metric_only: Any
-    ) -> None:
+    def test_batch_update_order_success(self, app: Any, sysadmin: dict[str, Any], public_metric_only: Any) -> None:
         response = app.post(
             "/better_stats/settings/batch-order",
             data=json.dumps([{"metric_name": "public_metric", "order": 999}]),
