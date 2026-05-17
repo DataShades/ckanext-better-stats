@@ -39,5 +39,6 @@ jobs:
         sed -i -e 's/use = config:.*/use = config:\/srv\/app\/src\/ckan\/test-core.ini/' test_config/test.ini
 
         ckan -c test_config/test.ini db init
+        ckan -c test_config/test.ini db upgrade -p better_stats
     - name: Run tests
       run: pytest --ckan-ini=test_config/test.ini --cov=ckanext.better_stats --disable-warnings -m "not playwright" ckanext/better_stats
