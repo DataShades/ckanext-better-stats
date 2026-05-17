@@ -1,3 +1,5 @@
+from collections.abc import Callable
+
 from ckan import plugins as p
 
 from ckanext.better_stats.metrics.base import MetricRegistry
@@ -69,25 +71,18 @@ def register_metrics():
         MetricRegistry.register("organization_hierarchy", OrganizationHierarchyMetric)
 
 
-def get_all_metrics() -> dict[str, type[MetricBase]]:
-    metrics: dict[str, type[MetricBase]] = {
-        "dataset_count": DatasetCountMetric,
-        "datasets_by_org": DatasetsByOrganizationMetric,
-        "dataset_creation_history": DatasetCreationHistoryMetric,
-        "resources_by_format": ResourcesByFormatMetric,
-        "top_tags": TopTagsMetric,
-        "datasets_without_resources": DatasetsWithoutResourcesMetric,
-        "stale_datasets": StaleDatasetsMetric,
-        "organization_count": OrganizationCountMetric,
-        "organization_membership": OrganizationMembershipMetric,
-        "organization_overview": OrganizationOverviewMetric,
-        "organization_sizes": OrganizationSizesMetric,
-        "inactive_organizations": InactiveOrganizationsMetric,
-        "user_count": UserCountMetric,
-        "dataset_completeness": DatasetCompletenessMetric,
-        "memory": MemoryMetric,
-        "cpu": CPUMetric,
-        "disk_usage": DiskUsageMetric,
-        "organization_hierarchy": OrganizationHierarchyMetric,
-    }
+def get_all_metrics() -> dict[str, Callable[[], MetricBase]]:
+    """Return every registered metric as ``{name: factory}``.
+
+    Sourced from :class:`MetricRegistry` so the dispatch table has a single
+    source of truth. Calls :func:`register_metrics` directly to populate the
+    registry for callers outside the CKAN plugin lifecycle (e.g. mkdocs).
+
+    The hierarchy metric is included unconditionally in the returned mapping
+    so documentation builds can render it even when ``hierarchy_display``
+    isn't loaded; the global registry itself stays gated.
+    """
+    register_metrics()
+    metrics = dict(MetricRegistry.METRICS)
+    metrics.setdefault("organization_hierarchy", OrganizationHierarchyMetric)
     return metrics
