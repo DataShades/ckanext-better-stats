@@ -43,7 +43,7 @@ class TestOrganizationMetrics:
         assert data["datasets"] == 1
         assert data["members"] == 1
         assert data["resources"] == 0
-        assert data["organization"] == {"label": org["title"], "url": f"/organization/{org['name']}"}
+        assert data["organization"] == {"text": org["title"], "url": f"/organization/{org['name']}"}
 
         assert isinstance(metric.get_data(), list)
         assert metric.get_table_data()["headers"]

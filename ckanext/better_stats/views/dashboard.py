@@ -249,7 +249,10 @@ class MetricExporter:
         output = io.StringIO()
         writer = csv.writer(output, quoting=csv.QUOTE_ALL)
         writer.writerow(self.data.get("headers", []))
-        writer.writerows(self.data.get("rows", []))
+        writer.writerows(
+            [cell.get("text", "") if isinstance(cell, dict) else cell for cell in row]
+            for row in self.data.get("rows", [])
+        )
 
         response = make_response(output.getvalue())
         response.headers["Content-Type"] = "text/csv"

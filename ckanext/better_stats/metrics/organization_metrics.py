@@ -366,7 +366,7 @@ class OrganizationOverviewMetric(MetricBase):
         return [
             {
                 "organization": {
-                    "label": row.title,
+                    "text": row.title,
                     "url": f"/organization/{row.name}",
                 },
                 "datasets": row.datasets,
@@ -387,10 +387,7 @@ class OrganizationOverviewMetric(MetricBase):
             ],
             "rows": [
                 [
-                    {
-                        "text": item["organization"]["label"],
-                        "url": item["organization"]["url"],
-                    },
+                    item["organization"],
                     item["datasets"],
                     item["resources"],
                     item["members"],
