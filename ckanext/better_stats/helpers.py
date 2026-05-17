@@ -1,20 +1,6 @@
 import ckan.plugins.toolkit as tk
 
-from ckanext.better_stats import const, metrics
-
 BYTE_MULTIPLIER = 1024.0
-
-
-def check_user_can_access_metric(metric: metrics.MetricBase) -> bool:
-    """Check if current user can access metric."""
-    if metric.access_level == const.AccessLevel.PUBLIC.value:
-        return True
-    if metric.access_level == const.AccessLevel.AUTHENTICATED.value:
-        return tk.current_user.is_authenticated
-    if metric.access_level == const.AccessLevel.ADMIN.value:
-        return not tk.current_user.is_anonymous and tk.current_user.sysadmin  # type: ignore
-
-    return False
 
 
 def bs_get_viz_icon(viz_type: str) -> str:

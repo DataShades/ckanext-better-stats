@@ -161,6 +161,115 @@ class TestUpdateMetricAuth:
 
 
 @pytest.mark.usefixtures("with_plugins")
+class TestReadMetricAuth:
+    @pytest.mark.parametrize(
+        ("access_level", "expected"),
+        [
+            (const.AccessLevel.PUBLIC.value, True),
+            (const.AccessLevel.AUTHENTICATED.value, False),
+            (const.AccessLevel.ADMIN.value, False),
+        ],
+    )
+    def test_anonymous_user_read(
+        self,
+        metric_factory: Callable[..., MetricBase],
+        access_level: str,
+        expected: bool,
+    ):
+        """Anonymous users can only read public metrics."""
+        metric = metric_factory(name="x", access_level=access_level)
+
+        if expected:
+            assert (
+                call_auth(
+                    "better_stats_read_metric",
+                    context={"user": None},
+                    metric_name=metric.name,
+                )
+                is True
+            )
+            return
+
+        with pytest.raises(tk.NotAuthorized, match="Must be logged in to read this metric"):
+            call_auth(
+                "better_stats_read_metric",
+                context={"user": None},
+                metric_name=metric.name,
+            )
+
+    @pytest.mark.parametrize(
+        ("access_level", "expected"),
+        [
+            (const.AccessLevel.PUBLIC.value, True),
+            (const.AccessLevel.AUTHENTICATED.value, True),
+            (const.AccessLevel.ADMIN.value, False),
+        ],
+    )
+    def test_authenticated_user_read(
+        self,
+        user: dict[str, Any],
+        metric_factory: Callable[..., MetricBase],
+        access_level: str,
+        expected: bool,
+    ):
+        """Authenticated users can read public and authenticated metrics, but not admin ones."""
+        metric = metric_factory(name="x", access_level=access_level)
+
+        if expected:
+            assert (
+                call_auth(
+                    "better_stats_read_metric",
+                    context={"user": user["name"]},
+                    metric_name=metric.name,
+                )
+                is True
+            )
+            return
+
+        with pytest.raises(tk.NotAuthorized, match="Must be a sysadmin to read this metric"):
+            call_auth(
+                "better_stats_read_metric",
+                context={"user": user["name"]},
+                metric_name=metric.name,
+            )
+
+    @pytest.mark.parametrize(
+        "access_level",
+        [
+            const.AccessLevel.PUBLIC.value,
+            const.AccessLevel.AUTHENTICATED.value,
+            const.AccessLevel.ADMIN.value,
+        ],
+    )
+    def test_sysadmin_user_read(
+        self,
+        sysadmin: dict[str, Any],
+        metric_factory: Callable[..., MetricBase],
+        access_level: str,
+    ):
+        """Sysadmins can read any metric regardless of access level."""
+        metric = metric_factory(name="x", access_level=access_level)
+
+        assert (
+            call_auth(
+                "better_stats_read_metric",
+                context={"user": sysadmin["name"]},
+                metric_name=metric.name,
+            )
+            is True
+        )
+
+    def test_unknown_metric_read(self, user: dict[str, Any]):
+        """Reading an unknown metric is rejected."""
+        with pytest.raises(tk.NotAuthorized, match="Metric not specified"):
+            call_auth(
+                "better_stats_read_metric",
+                context={"user": user["name"]},
+                metric_name="does-not-exist",
+            )
+
+
+@pytest.mark.usefixtures("with_plugins")
 class TestExportMetricAuth:
     @pytest.mark.parametrize(
         ("access_level", "expected"),

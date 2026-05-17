@@ -23,6 +23,19 @@ from ckanext.better_stats.model import UserFavorite
 bp = Blueprint("better_stats", __name__, url_prefix="/better_stats")
 
 
+def _can_read_metric(metric: MetricBase) -> bool:
+    """Return True if the current user passes ``better_stats_read_metric``."""
+    try:
+        tk.check_access(
+            "better_stats_read_metric",
+            {"user": tk.current_user.name},
+            {"metric_name": metric.name},
+        )
+    except tk.NotAuthorized:
+        return False
+    return True
+
+
 class BetterStatsDashboardView(MethodView):
     def get(self) -> str | Response:
         try:
@@ -32,7 +45,7 @@ class BetterStatsDashboardView(MethodView):
 
         metrics = MetricRegistry.get_enabled_metrics()
 
-        accessible_metrics = [metric for metric in metrics if tk.h.check_user_can_access_metric(metric)]
+        accessible_metrics = [metric for metric in metrics if _can_read_metric(metric)]
 
         # Build per-group buckets (preserve insertion order)
         groups_rows: dict[str, list] = {}
@@ -84,7 +97,7 @@ def get_metrics_batch() -> Response:
     for name in names:
         metric = MetricRegistry.get_metric(name)
 
-        if not metric or not tk.h.check_user_can_access_metric(metric):
+        if not metric or not _can_read_metric(metric):
             errors[name] = tk._("Not found or not accessible")
             continue
 
@@ -125,8 +138,11 @@ def get_metric_data(metric_name: str) -> Response:
     """Return visualization data for a single metric."""
     metric = MetricRegistry.get_metric(metric_name)
 
-    if not metric or not tk.h.check_user_can_access_metric(metric):
-        return make_response(jsonify({"error": "Metric not found or not accessible"}), 404)
+    if not metric:
+        return make_response(jsonify({"error": tk._("Metric not found")}), 404)
+
+    if not _can_read_metric(metric):
+        return make_response(jsonify({"error": tk._("Access denied")}), 403)
 
     requested = tk.request.args.get("type", metric.default_visualization.value)
     refresh = tk.asbool(tk.request.args.get("refresh", False))
@@ -176,6 +192,13 @@ def embed_metric(metric_name: str) -> Response:
 
     if not metric:
         tk.abort(404)
+
+    # TODO: We have an extra check in the JS already.
+    # If we will do it here, the 403 page will be shown for a user
+    # Now we show a metric with `Access denied` body, but we expose a few
+    # metric metadata (e.g. title) which can be a security issue for some metrics?
+    # if not _can_read_metric(metric):
+    #     tk.abort(403, tk._("Access denied"))
 
     viz_type = tk.request.args.get("viz", metric.default_visualization.value)
 
@@ -317,8 +340,11 @@ def toggle_favorite(metric_name: str) -> Response:
 
     metric = MetricRegistry.get_metric(metric_name)
 
-    if not metric or not tk.h.check_user_can_access_metric(metric):
-        return make_response(jsonify({"error": tk._("Metric not found or not accessible")}), 404)
+    if not metric:
+        return make_response(jsonify({"error": tk._("Metric not found")}), 404)
+
+    if not _can_read_metric(metric):
+        return make_response(jsonify({"error": tk._("Access denied")}), 403)
 
     UserFavorite.add(user_id, metric_name)
 

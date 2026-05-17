@@ -1,47 +1,8 @@
 from __future__ import annotations
 
-from collections.abc import Callable
-from unittest import mock
-
 import pytest
 
-from ckanext.better_stats import const, helpers
-from ckanext.better_stats.metrics.base import MetricBase
-
-
-class TestUserCheckAccess:
-    def test_check_user_can_access_public_metric(self, metric_factory: Callable[..., MetricBase]) -> None:
-        metric = metric_factory(name="x", access_level=const.AccessLevel.PUBLIC.value)
-        assert helpers.check_user_can_access_metric(metric) is True
-
-    def test_check_user_can_access_authenticated(self, metric_factory: Callable[..., MetricBase]) -> None:
-        metric = metric_factory(name="x", access_level=const.AccessLevel.AUTHENTICATED.value)
-
-        with mock.patch("ckan.plugins.toolkit.current_user") as mock_user:
-            mock_user.is_authenticated = True
-            assert helpers.check_user_can_access_metric(metric) is True
-
-            mock_user.is_authenticated = False
-            assert helpers.check_user_can_access_metric(metric) is False
-
-    def test_check_user_can_access_admin(self, metric_factory: Callable[..., MetricBase]) -> None:
-        metric = metric_factory(name="x", access_level=const.AccessLevel.ADMIN.value)
-
-        with mock.patch("ckan.plugins.toolkit.current_user") as mock_user:
-            mock_user.is_anonymous = False
-            mock_user.sysadmin = True
-            assert helpers.check_user_can_access_metric(metric) is True
-
-            mock_user.sysadmin = False
-            assert helpers.check_user_can_access_metric(metric) is False
-
-            mock_user.is_anonymous = True
-            mock_user.sysadmin = True
-            assert helpers.check_user_can_access_metric(metric) is False
-
-    def test_check_user_cant_access_unknown_level(self, metric_factory: Callable[..., MetricBase]) -> None:
-        metric = metric_factory(name="xxx", access_level="xxx")
-        assert helpers.check_user_can_access_metric(metric) is False
+from ckanext.better_stats import helpers
 
 
 @pytest.mark.parametrize(
