@@ -28,10 +28,10 @@ class MetricConfig(tk.BaseModel):
         sa.Column("access_level", sa.String(20)),
         sa.Column("cache_timeout", sa.Integer, default=3600),
         sa.Column("extras", MutableDict.as_mutable(JSONB), default={}),
-        sa.Column("created", sa.DateTime, default=_current_datetime),
+        sa.Column("created", sa.DateTime(timezone=True), default=_current_datetime),
         sa.Column(
             "modified",
-            sa.DateTime,
+            sa.DateTime(timezone=True),
             default=_current_datetime,
             onupdate=_current_datetime,
         ),
@@ -81,7 +81,7 @@ class UserFavorite(tk.BaseModel):
         sa.Column("id", sa.String, primary_key=True, default=lambda: str(uuid.uuid4())),
         sa.Column("user_id", sa.String, nullable=False),
         sa.Column("metric_name", sa.String, nullable=False),
-        sa.Column("created", sa.DateTime, default=_current_datetime),
+        sa.Column("created", sa.DateTime(timezone=True), default=_current_datetime),
         sa.UniqueConstraint("user_id", "metric_name", name="uq_bstats_user_favorite"),
     )
 
