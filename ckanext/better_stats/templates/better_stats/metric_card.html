@@ -1,4 +1,4 @@
-{% from "better_stats/embed_modal.html" import embed_modal %}
+{% from "better_stats/embed_modal.html" import embed_modal with context %}
 {% set content_id = (content_id_prefix if content_id_prefix is defined else "") + metric.name %}
 {% set is_favorite = is_favorite if is_favorite is defined else false %}
 
