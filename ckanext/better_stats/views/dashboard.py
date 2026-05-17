@@ -75,7 +75,6 @@ class BetterStatsDashboardView(MethodView):
         )
 
 
-@bp.route("/metrics")
 def get_metrics_batch() -> Response:
     """Return visualization data for multiple metrics in one request.
 
@@ -133,7 +132,6 @@ def get_metrics_batch() -> Response:
     return jsonify({"metrics": results, "errors": errors})
 
 
-@bp.route("/metric/<metric_name>")
 def get_metric_data(metric_name: str) -> Response:
     """Return visualization data for a single metric."""
     metric = MetricRegistry.get_metric(metric_name)
@@ -185,7 +183,6 @@ def get_metric_data(metric_name: str) -> Response:
     )
 
 
-@bp.route("/embed/<metric_name>")
 def embed_metric(metric_name: str) -> Response:
     """Return a self-contained HTML page for embedding in an iframe."""
     metric = MetricRegistry.get_metric(metric_name)
@@ -224,7 +221,6 @@ def embed_metric(metric_name: str) -> Response:
     return resp
 
 
-@bp.route("/export/<metric_name>")
 def export_metric(metric_name: str) -> Response:
     """Export metric data."""
     metric = MetricRegistry.get_metric(metric_name)
@@ -324,7 +320,6 @@ class MetricExporter:
         return response
 
 
-@bp.route("/favorites/toggle/<metric_name>", methods=["POST"])
 def toggle_favorite(metric_name: str) -> Response:
     """Toggle a metric in the current user's favorites. Returns JSON."""
     if tk.current_user.is_anonymous:
@@ -366,5 +361,7 @@ def toggle_favorite(metric_name: str) -> Response:
 
 bp.add_url_rule("/dashboard", view_func=BetterStatsDashboardView.as_view("dashboard"))
 bp.add_url_rule("/metrics", view_func=get_metrics_batch)
+bp.add_url_rule("/metric/<metric_name>", view_func=get_metric_data)
 bp.add_url_rule("/embed/<metric_name>", view_func=embed_metric)
 bp.add_url_rule("/export/<metric_name>", view_func=export_metric)
+bp.add_url_rule("/favorites/toggle/<metric_name>", view_func=toggle_favorite, methods=["POST"])
