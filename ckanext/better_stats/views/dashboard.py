@@ -219,7 +219,6 @@ def embed_metric(metric_name: str) -> Response:
 
     # Allow the page to be framed from any origin (operators can restrict
     # this via a reverse-proxy CSP header if needed).
-    resp.headers["X-Frame-Options"] = "ALLOWALL"
     resp.headers["Content-Security-Policy"] = "frame-ancestors *"
 
     return resp

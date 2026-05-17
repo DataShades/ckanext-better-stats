@@ -179,7 +179,7 @@ class TestDashboardEndpoints:
     def test_embed_metric_renders(self, app: Any, public_metric_only: Any) -> None:
         response = app.get("/better_stats/embed/public_metric")
         assert response.status_code == 200
-        assert response.headers["X-Frame-Options"] == "ALLOWALL"
+        assert response.headers["Content-Security-Policy"] == "frame-ancestors *"
 
     def test_toggle_favorite_anonymous(self, app: Any, public_metric_only: Any) -> None:
         response = app.post("/better_stats/favorites/toggle/public_metric", status=401)
