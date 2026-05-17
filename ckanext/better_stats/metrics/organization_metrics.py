@@ -240,7 +240,6 @@ class OrganizationMembershipMetric(MetricBase):
     def get_chart_data(self) -> dict[str, Any]:
         data = self.get_data()
         return {
-            "type": "bar",
             "tooltip": {
                 "trigger": "axis",
                 "axisPointer": {"type": "shadow"},

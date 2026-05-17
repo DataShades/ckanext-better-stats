@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, ClassVar
 
-from sqlalchemy import func, select
+from sqlalchemy import and_, case, func, select
 
 import ckan.plugins.toolkit as tk
 from ckan import model
@@ -96,51 +96,53 @@ class DatasetCompletenessMetric(MetricBase):
         )
 
     def get_data(self) -> dict[str, Any]:
-        base = model.Session.query(model.Package).filter(
-            model.Package.state == model.State.ACTIVE, model.Package.type == "dataset"
-        )
-        total = base.count()
-
-        if total == 0:
-            return {
-                "total": 0,
-                "with_description": 0,
-                "with_tags": 0,
-                "with_resources": 0,
-            }
-
-        with_description = base.filter(
+        has_description = and_(
             model.Package.notes.isnot(None),
             func.length(func.trim(model.Package.notes)) > 0,
-        ).count()
-
-        with_tags = base.filter(
-            model.Package.id.in_(
-                select(
-                    model.Session.query(model.PackageTag.package_id)
-                    .filter(model.PackageTag.state == model.State.ACTIVE)
-                    .distinct()
-                    .subquery()
-                )
+        )
+        has_tags = (
+            select(1)
+            .where(
+                model.PackageTag.package_id == model.Package.id,
+                model.PackageTag.state == model.State.ACTIVE,
             )
-        ).count()
-
-        with_resources = base.filter(
-            model.Package.id.in_(
-                select(
-                    model.Session.query(model.Resource.package_id)
-                    .filter(model.Resource.state == model.State.ACTIVE)
-                    .distinct()
-                    .subquery()
-                )
+            .exists()
+        )
+        has_resources = (
+            select(1)
+            .where(
+                model.Resource.package_id == model.Package.id,
+                model.Resource.state == model.State.ACTIVE,
             )
-        ).count()
+            .exists()
+        )
+
+        row = (
+            model.Session.query(
+                func.count().label("total"),
+                func.coalesce(
+                    func.sum(case((has_description, 1), else_=0)), 0
+                ).label("with_description"),
+                func.coalesce(
+                    func.sum(case((has_tags, 1), else_=0)), 0
+                ).label("with_tags"),
+                func.coalesce(
+                    func.sum(case((has_resources, 1), else_=0)), 0
+                ).label("with_resources"),
+            )
+            .select_from(model.Package)
+            .filter(
+                model.Package.state == model.State.ACTIVE,
+                model.Package.type == "dataset",
+            )
+            .one()
+        )
 
         return {
-            "total": total,
-            "with_description": with_description,
-            "with_tags": with_tags,
-            "with_resources": with_resources,
+            "total": row.total,
+            "with_description": row.with_description,
+            "with_tags": row.with_tags,
+            "with_resources": row.with_resources,
         }
 
     def get_progress_data(self) -> dict[str, Any]:
