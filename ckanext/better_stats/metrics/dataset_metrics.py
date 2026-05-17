@@ -360,6 +360,10 @@ class DatasetsWithoutResourcesMetric(MetricBase):
             )
 
             batch = result["results"]
+
+            if not batch:
+                break
+
             packages.extend(batch)
 
             if start + len(batch) >= result["count"]:
@@ -443,6 +447,10 @@ class StaleDatasetsMetric(MetricBase):
             )
 
             batch = result["results"]
+
+            if not batch:
+                break
+
             packages.extend(batch)
 
             if start + len(batch) >= result["count"]:

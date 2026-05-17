@@ -120,15 +120,9 @@ class DatasetCompletenessMetric(MetricBase):
         row = (
             model.Session.query(
                 func.count().label("total"),
-                func.coalesce(
-                    func.sum(case((has_description, 1), else_=0)), 0
-                ).label("with_description"),
-                func.coalesce(
-                    func.sum(case((has_tags, 1), else_=0)), 0
-                ).label("with_tags"),
-                func.coalesce(
-                    func.sum(case((has_resources, 1), else_=0)), 0
-                ).label("with_resources"),
+                func.coalesce(func.sum(case((has_description, 1), else_=0)), 0).label("with_description"),
+                func.coalesce(func.sum(case((has_tags, 1), else_=0)), 0).label("with_tags"),
+                func.coalesce(func.sum(case((has_resources, 1), else_=0)), 0).label("with_resources"),
             )
             .select_from(model.Package)
             .filter(

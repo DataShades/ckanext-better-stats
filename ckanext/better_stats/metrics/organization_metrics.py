@@ -71,7 +71,7 @@ class OrganizationHierarchyMetric(MetricBase):
                 "triggerOn": "mousemove",
                 "enterable": True,
                 "formatter": (
-                    '{b}<br/>'
+                    "{b}<br/>"
                     '<a href="/organization/{slug}" target="_blank" style="color:inherit;">'
                     f"{tk._('View')} →</a>"
                 ),

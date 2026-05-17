@@ -4,6 +4,7 @@ from typing import Any
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import Mapped
 
@@ -55,18 +56,29 @@ class MetricConfig(tk.BaseModel):
 
     @classmethod
     def upsert(cls, metric_name: str, **kwargs: str | int | bool) -> "MetricConfig":
-        obj = cls.for_metric(metric_name)
+        # Retry once: a concurrent upsert may insert the row between our
+        # SELECT and INSERT, raising IntegrityError on the unique constraint.
+        # On the second pass the row is visible and we fall into UPDATE.
+        for attempt in range(2):
+            obj = cls.for_metric(metric_name)
 
-        if not obj:
-            obj = cls(metric_name=metric_name)
-            model.Session.add(obj)
+            if not obj:
+                obj = cls(metric_name=metric_name)
+                model.Session.add(obj)
 
-        for k, v in kwargs.items():
-            setattr(obj, k, v)
+            for k, v in kwargs.items():
+                setattr(obj, k, v)
 
-        model.Session.commit()
+            try:
+                model.Session.commit()
+            except IntegrityError:
+                model.Session.rollback()
+                if attempt == 0:
+                    continue
+                raise
+            return obj
 
-        return obj
+        raise AssertionError("unreachable")
 
     @classmethod
     def clear_all(cls) -> None:
@@ -103,7 +115,16 @@ class UserFavorite(tk.BaseModel):
     def add(cls, user_id: str, metric_name: str) -> "UserFavorite":
         fav = cls(user_id=user_id, metric_name=metric_name)
         model.Session.add(fav)
-        model.Session.commit()
+        try:
+            model.Session.commit()
+        except IntegrityError:
+            # Concurrent toggle inserted the same (user_id, metric_name) row;
+            # treat add() as idempotent and return what's already there.
+            model.Session.rollback()
+            existing = cls.get(user_id, metric_name)
+            if existing is None:
+                raise
+            return existing
         return fav
 
     def remove(self) -> None:
