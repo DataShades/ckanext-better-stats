@@ -13,8 +13,14 @@ def cache_get(key: str) -> Any | None:
 
 
 def cache_set(key: str, value: Any, ttl: int) -> None:
-    """Serialise *value* and store it under *key* with a TTL of *ttl* seconds."""
-    connect_to_redis().setex(key, ttl, json.dumps(value, default=str))
+    """Serialise *value* and store it under *key* with a TTL of *ttl* seconds.
+
+    *value* must be JSON-serialisable.  Callers are responsible for converting
+    non-JSON types (datetime, Decimal, set, ...) into primitives before
+    caching — otherwise ``json.dumps`` raises ``TypeError``.  This keeps the
+    type round-trip predictable: a value put in comes back out unchanged.
+    """
+    connect_to_redis().setex(key, ttl, json.dumps(value))
 
 
 def cache_delete(key: str) -> None:

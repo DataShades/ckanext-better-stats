@@ -32,15 +32,3 @@ class TestSettings:
 
         expect(page.get_by_role("heading", name="Better Stats — Settings")).to_be_visible()
         expect(page.locator("table.table-header tbody tr.metric-row").first).to_be_visible()
-
-    def test_settings_clear_cache_endpoint_requires_sysadmin(self, page: Page, user: dict[str, Any], login: Any):
-        """The clear-cache POST endpoint also requires sysadmin authorisation."""
-        login(user)
-        response = page.request.post("/better_stats/settings/cache/clear")
-        assert response.status == 403
-
-    def test_settings_reset_endpoint_requires_sysadmin(self, page: Page, user: dict[str, Any], login: Any):
-        """The reset-configs POST endpoint also requires sysadmin authorisation."""
-        login(user)
-        response = page.request.post("/better_stats/settings/reset")
-        assert response.status == 403

@@ -32,10 +32,9 @@ class TestCache:
 
         assert 0 < ttl <= 300
 
-    def test_cache_set_handles_non_json_default(self) -> None:
-        cache.cache_set("bs:test:dt", {"when": datetime(2026, 1, 1)}, ttl=60)
-
-        assert cache.cache_get("bs:test:dt") == {"when": "2026-01-01 00:00:00"}
+    def test_cache_set_rejects_non_json_value(self) -> None:
+        with pytest.raises(TypeError):
+            cache.cache_set("bs:test:dt", {"when": datetime(2026, 1, 1)}, ttl=60)
 
     def test_cache_delete(self) -> None:
         cache.cache_set("bs:test:delete", "x", ttl=60)
