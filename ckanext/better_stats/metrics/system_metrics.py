@@ -93,6 +93,12 @@ class CPUMetric(MetricBase):
     icon: ClassVar[str] = "fa-solid fa-microchip"
     group: ClassVar[const.MetricGroup] = const.OVERVIEW_GROUP
 
+    # Prime psutil at class-definition time (module import) so non-blocking
+    # cpu_percent(interval=None) calls in get_data return a meaningful sample
+    # (since worker start) instead of 0.0 on the very first request.
+    psutil.cpu_percent(interval=None)
+    psutil.cpu_percent(interval=None, percpu=True)
+
     def __init__(self) -> None:
         super().__init__(
             name="cpu",
@@ -106,7 +112,7 @@ class CPUMetric(MetricBase):
 
     def get_data(self) -> dict[str, Any]:
         return {
-            "total": psutil.cpu_percent(interval=0.5),
+            "total": psutil.cpu_percent(interval=None),
             "per_core": psutil.cpu_percent(interval=None, percpu=True),
         }
 
