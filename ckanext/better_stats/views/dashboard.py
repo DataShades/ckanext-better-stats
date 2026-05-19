@@ -243,7 +243,7 @@ def export_metric(metric_name: str) -> Response:
         return make_response(jsonify({"error": tk._("Unsupported format")}), 400)
 
     return MetricExporter(
-        metric, f"{metric_name}_{datetime.now(timezone.utc).isoformat()}", format_type
+        metric, f"{metric_name}_{datetime.now(timezone.utc).strftime('%Y-%m-%d')}", format_type
     ).export_metric()
 
 
