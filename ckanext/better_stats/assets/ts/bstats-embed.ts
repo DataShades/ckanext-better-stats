@@ -5,18 +5,20 @@ ckan.module("bstats-embed", function ($: any) {
         initialize() {
             $.proxyAll(this, /_/);
 
-            this.manager = null;
+            this.manager = (window as any).bstatsManager ?? null;
             const container = this.el[0] as HTMLElement;
 
-            ckan.pubsub.subscribe("bstats:manager-ready", (manager: any) => {
-                this.manager = manager;
-            });
+            if (!this.manager) {
+                ckan.pubsub.subscribe("bstats:manager-ready", (manager: any) => {
+                    this.manager = manager;
+                });
+            }
 
             // Embed modal — stamp the current viz onto the trigger button so the
             // embed module can read it from relatedTarget in show.bs.modal.
             container.addEventListener("click", (e) => {
                 const btn = (e.target as Element).closest(".bstats-embed-btn") as HTMLElement | null;
-                if (btn) {
+                if (btn && this.manager) {
                     const card = btn.closest<HTMLElement>(".metric-container");
                     const contentId = card?.dataset.contentId ?? btn.dataset.metric!;
                     btn.dataset.embedViz = this.manager.currentVizTypes[contentId] || this.manager.defaultViz;

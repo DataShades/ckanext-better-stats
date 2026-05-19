@@ -5,14 +5,16 @@ ckan.module("bstats-expand", function ($: any) {
         initialize() {
             $.proxyAll(this, /_/);
 
-            this.manager = null;
+            this.manager = (window as any).bstatsManager ?? null;
             this._fullscreenChart = null;
             this._pendingFullscreen = null;
             this._pendingFullscreenContentId = null;
 
-            ckan.pubsub.subscribe("bstats:manager-ready", (manager: any) => {
-                this.manager = manager;
-            });
+            if (!this.manager) {
+                ckan.pubsub.subscribe("bstats:manager-ready", (manager: any) => {
+                    this.manager = manager;
+                });
+            }
 
             const fsModal = document.getElementById("bstats-fullscreen-modal");
             fsModal?.addEventListener("show.bs.modal", (e) => {

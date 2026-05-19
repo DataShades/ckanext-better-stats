@@ -8,17 +8,19 @@ ckan.module("bstats-favorite", function ($: any) {
             var csrf_field = $('meta[name=csrf_field_name]').attr('content');
             this._csrf = $('meta[name='+ csrf_field +']').attr('content');
 
-            this.manager = null;
+            this.manager = (window as any).bstatsManager ?? null;
             this.container = this.el[0] as HTMLElement;
 
-            ckan.pubsub.subscribe("bstats:manager-ready", (manager: any) => {
-                this.manager = manager;
-            });
+            if (!this.manager) {
+                ckan.pubsub.subscribe("bstats:manager-ready", (manager: any) => {
+                    this.manager = manager;
+                });
+            }
 
             // Favorite toggle
             this.container.addEventListener("click", (e) => {
                 const btn = (e.target as Element).closest(".favorite-btn") as HTMLElement | null;
-                if (btn) this._toggleFavorite(btn.dataset.metric!, btn);
+                if (btn && this.manager) this._toggleFavorite(btn.dataset.metric!, btn);
             });
         },
 

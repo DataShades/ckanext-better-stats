@@ -36,6 +36,9 @@ class BetterStatsManager {
         this.container.querySelectorAll("[data-bs-toggle='tooltip']").forEach(
             (el) => new bootstrap.Tooltip(el)
         );
+        // Expose the instance so modules that init after us (and thus miss
+        // the pub-sub event) can still pick it up synchronously.
+        (window as any).bstatsManager = this;
         ckan.pubsub.publish("bstats:manager-ready", this);
     }
 
