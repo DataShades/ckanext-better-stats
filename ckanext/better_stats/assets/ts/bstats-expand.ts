@@ -64,7 +64,7 @@ ckan.module("bstats-expand", function ($: any) {
                     this.manager.renderMetric(contentEl, data, vizType);
                 }
             } catch (err) {
-                contentEl.innerHTML = this.manager._errorHTML(metricName, (err as Error).message);
+                contentEl.replaceChildren(this.manager._errorEl(metricName, (err as Error).message));
             }
         },
 

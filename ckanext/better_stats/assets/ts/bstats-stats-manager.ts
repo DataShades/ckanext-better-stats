@@ -126,7 +126,7 @@ class BetterStatsManager {
             this.loadTimes[metricName] = Date.now();
             this._updateCacheAge(metricName);
         } catch (err) {
-            el.innerHTML = this._errorHTML(metricName, (err as Error).message);
+            el.replaceChildren(this._errorEl(metricName, (err as Error).message));
         }
     }
 
@@ -218,20 +218,26 @@ class BetterStatsManager {
         items.forEach((item: any) => {
             const pct = Math.min(100, Math.round((item.value / item.max) * 100));
             const color = pct > 90 ? "danger" : pct > 70 ? "warning" : "success";
-            wrapper.insertAdjacentHTML(
-                "beforeend",
-                `<div class="metric-progress-item">
-                    <div class="d-flex justify-content-between mb-1">
-                        <span>${item.label}</span>
-                        <span class="text-muted">${item.value} / ${item.max} ${item.unit}</span>
-                    </div>
-                    <div class="progress">
-                        <div class="progress-bar bg-${color}" style="width:${pct}%"
-                             role="progressbar" aria-valuenow="${pct}"
-                             aria-valuemin="0" aria-valuemax="100"></div>
-                    </div>
-                </div>`
-            );
+
+            const row = this._el("div", { className: "metric-progress-item" });
+            const header = this._el("div", { className: "d-flex justify-content-between mb-1" });
+            header.appendChild(this._el("span", { textContent: String(item.label ?? "") }));
+            header.appendChild(this._el("span", {
+                className: "text-muted",
+                textContent: `${item.value} / ${item.max} ${item.unit}`,
+            }));
+
+            const bar = this._el("div", { className: "progress" });
+            const fill = this._el("div", { className: `progress-bar bg-${color}` });
+            fill.style.width = `${pct}%`;
+            fill.setAttribute("role", "progressbar");
+            fill.setAttribute("aria-valuenow", String(pct));
+            fill.setAttribute("aria-valuemin", "0");
+            fill.setAttribute("aria-valuemax", "100");
+            bar.appendChild(fill);
+
+            row.append(header, bar);
+            wrapper.appendChild(row);
         });
         container.appendChild(wrapper);
     }
@@ -242,11 +248,15 @@ class BetterStatsManager {
             container.innerHTML = '<div class="alert alert-info">Card view not available</div>';
             return;
         }
-        const div = this._el("div", {
-            className: "metric-card-display",
-            innerHTML: `<div class="metric-card-value">${this.formatNumber(cardData.value)}</div>` +
-                       `<div class="metric-card-label">${cardData.label}</div>`,
-        });
+        const div = this._el("div", { className: "metric-card-display" });
+        div.appendChild(this._el("div", {
+            className: "metric-card-value",
+            textContent: this.formatNumber(cardData.value),
+        }));
+        div.appendChild(this._el("div", {
+            className: "metric-card-label",
+            textContent: String(cardData.label ?? ""),
+        }));
         container.appendChild(div);
     }
 
@@ -322,7 +332,7 @@ class BetterStatsManager {
                     if (!el) continue;
 
                     if (!data) {
-                        el.innerHTML = this._errorHTML(metricName, errorMsg || "Not available");
+                        el.replaceChildren(this._errorEl(metricName, errorMsg || "Not available"));
                         continue;
                     }
 
@@ -435,22 +445,26 @@ class BetterStatsManager {
     }
 
     _emptyEl(): HTMLElement {
-        return this._el("div", {
-            className: "metric-empty",
-            innerHTML:
-                '<i class="fa fa-inbox metric-empty-icon"></i>' +
-                "<p>No data available</p>",
-        });
+        const div = this._el("div", { className: "metric-empty" });
+        div.appendChild(this._el("i", { className: "fa fa-inbox metric-empty-icon" }));
+        div.appendChild(this._el("p", { textContent: "No data available" }));
+        return div;
     }
 
-    _errorHTML(metricName: string, message: string) {
-        return (
-            '<div class="metric-error">' +
-            '  <i class="fa fa-exclamation-triangle metric-error-icon"></i>' +
-            `  <p class="mb-1">${message || "Could not load metric"}</p>` +
-            `  <button class="btn btn-sm btn-outline-secondary retry-btn" data-metric="${metricName}">Retry</button>` +
-            "</div>"
-        );
+    _errorEl(metricName: string, message: string): HTMLElement {
+        const div = this._el("div", { className: "metric-error" });
+        div.appendChild(this._el("i", { className: "fa fa-exclamation-triangle metric-error-icon" }));
+        div.appendChild(this._el("p", {
+            className: "mb-1",
+            textContent: message || "Could not load metric",
+        }));
+        const btn = this._el("button", {
+            className: "btn btn-sm btn-outline-secondary retry-btn",
+            textContent: "Retry",
+        });
+        btn.dataset.metric = metricName;
+        div.appendChild(btn);
+        return div;
     }
 
     _el<K extends keyof HTMLElementTagNameMap>(tag: K, props: Partial<HTMLElementTagNameMap[K]> = {}): HTMLElementTagNameMap[K] {
