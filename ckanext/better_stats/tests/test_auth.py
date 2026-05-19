@@ -160,7 +160,7 @@ class TestUpdateMetricAuth:
         )
 
 
-@pytest.mark.usefixtures("with_plugins")
+@pytest.mark.usefixtures("with_plugins", "clean_db")
 class TestReadMetricAuth:
     @pytest.mark.parametrize(
         ("access_level", "expected"),

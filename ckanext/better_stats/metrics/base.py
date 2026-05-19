@@ -257,6 +257,12 @@ class MetricRegistry:
             register_metrics_signal.send()
 
     @classmethod
+    def has_metric(cls, name: str) -> bool:
+        """Return ``True`` if a metric is registered under *name*."""
+        cls._ensure_loaded()
+        return name in cls.METRICS
+
+    @classmethod
     def register(cls, name: str, metric_factory: Callable[[], MetricBase]) -> None:
         """Register *metric_factory* under *name*.
 
@@ -286,7 +292,8 @@ class MetricRegistry:
             metric.col_span = cfg.col_span
             metric.row_span = cfg.row_span
             metric.cache_timeout = cfg.cache_timeout
-            metric.access_level = cfg.access_level or metric.access_level
+            if cfg.access_level is not None:
+                metric.access_level = cfg.access_level
 
         return metric
 
@@ -294,6 +301,7 @@ class MetricRegistry:
     def get_all_metrics(cls) -> list[MetricBase]:
         """Return fresh instances of all registered metrics, sorted by order."""
         cls._ensure_loaded()
+
         return sorted(
             (factory() for factory in cls.METRICS.values()),
             key=lambda m: m.order,
@@ -328,7 +336,8 @@ class MetricRegistry:
             metric.col_span = cfg.col_span
             metric.row_span = cfg.row_span
             metric.cache_timeout = cfg.cache_timeout
-            metric.access_level = cfg.access_level or metric.access_level
+            if cfg.access_level is not None:
+                metric.access_level = cfg.access_level
 
             results.append(metric)
 

@@ -173,27 +173,19 @@ class DiskUsageMetric(MetricBase):
                     "device": part.device,
                     "mountpoint": part.mountpoint,
                     "fstype": part.fstype,
-                    "total": tk.h.bs_format_bytes(usage.total),
-                    "used": tk.h.bs_format_bytes(usage.used),
-                    "free": tk.h.bs_format_bytes(usage.free),
+                    "total": usage.total,
+                    "used": usage.used,
+                    "free": usage.free,
                     "percent": usage.percent,
                 }
             )
         return result
 
     def get_chart_data(self) -> dict[str, Any]:
-        partitions = []
-        used_values = []
-        free_values = []
-
-        for part in psutil.disk_partitions():
-            try:
-                usage = psutil.disk_usage(part.mountpoint)
-            except PermissionError:
-                continue
-            partitions.append(part.mountpoint)
-            used_values.append(round(usage.used / (1024**3), 2))
-            free_values.append(round(usage.free / (1024**3), 2))
+        data = self.get_data()
+        partitions = [d["mountpoint"] for d in data]
+        used_values = [round(d["used"] / (1024**3), 2) for d in data]
+        free_values = [round(d["free"] / (1024**3), 2) for d in data]
         return {
             "tooltip": {"trigger": "axis", "axisPointer": {"type": "shadow"}},
             "legend": {},
@@ -223,9 +215,9 @@ class DiskUsageMetric(MetricBase):
                     d["device"],
                     d["mountpoint"],
                     d["fstype"],
-                    d["total"],
-                    d["used"],
-                    d["free"],
+                    tk.h.bs_format_bytes(d["total"]),
+                    tk.h.bs_format_bytes(d["used"]),
+                    tk.h.bs_format_bytes(d["free"]),
                     f"{d['percent']}%",
                 ]
                 for d in data
@@ -233,18 +225,14 @@ class DiskUsageMetric(MetricBase):
         }
 
     def get_progress_data(self) -> dict[str, Any]:
-        items = []
-        for part in psutil.disk_partitions():
-            try:
-                usage = psutil.disk_usage(part.mountpoint)
-            except PermissionError:
-                continue
-            items.append(
+        return {
+            "items": [
                 {
-                    "label": part.mountpoint,
-                    "value": round(usage.used / (1024**3), 1),
-                    "max": round(usage.total / (1024**3), 1),
+                    "label": d["mountpoint"],
+                    "value": round(d["used"] / (1024**3), 1),
+                    "max": round(d["total"] / (1024**3), 1),
                     "unit": "GB",
                 }
-            )
-        return {"items": items}
+                for d in self.get_data()
+            ]
+        }

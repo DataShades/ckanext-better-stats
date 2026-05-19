@@ -75,7 +75,6 @@ def update_metric_config(metric_name: str) -> Response:
 
 def batch_update_order() -> Response:
     """AJAX: update order for multiple metrics in one transaction."""
-    MetricRegistry._ensure_loaded()
     payload = tk.request.get_json(silent=True) or []
 
     if not isinstance(payload, list):
@@ -85,7 +84,7 @@ def batch_update_order() -> Response:
     for item in payload:
         name = item.get("metric_name")
         order = item.get("order")
-        if name not in MetricRegistry.METRICS:
+        if not MetricRegistry.has_metric(name):
             errors.append(f"Unknown metric: {name}")
             continue
         if not isinstance(order, int):
