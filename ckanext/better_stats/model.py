@@ -23,7 +23,7 @@ class MetricConfig(tk.BaseModel):
         sa.Column("id", sa.String, primary_key=True, default=lambda: str(uuid.uuid4())),
         sa.Column("metric_name", sa.String, nullable=False, index=True),
         sa.Column("enabled", sa.Boolean, default=True, nullable=False),
-        sa.Column("order", sa.Integer, default=100),
+        sa.Column("display_order", sa.Integer, default=100, key="order"),
         sa.Column("col_span", sa.Integer, default=3),
         sa.Column("row_span", sa.Integer, default=1),
         sa.Column("access_level", sa.String(20)),
