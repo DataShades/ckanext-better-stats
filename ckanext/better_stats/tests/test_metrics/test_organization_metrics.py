@@ -29,7 +29,9 @@ class TestOrganizationMetrics:
         org = organization_factory(users=[user_factory()])
         metric = OrganizationMembershipMetric()
 
-        assert metric.get_data() == [{"organization": org["title"], "members": 2}]
+        assert metric.get_data() == [
+            {"organization": org["title"], "members": 2, "url": f"/organization/{org['name']}"}
+        ]
         assert metric.get_chart_data()["series"][0]["type"] == "bar"
         assert metric.get_table_data()["headers"]
 
@@ -64,7 +66,7 @@ class TestOrganizationMetrics:
         metric = InactiveOrganizationsMetric()
         data = metric.get_data()[0]
 
-        assert data["organization"] == org["title"]
+        assert data["organization"] == {"text": org["title"], "url": f"/organization/{org['name']}"}
         assert data["created"]
         assert metric.get_card_data()["value"] == 1
         assert metric.get_table_data()["headers"]

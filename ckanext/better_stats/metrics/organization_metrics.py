@@ -175,7 +175,7 @@ class OrganizationCountMetric(MetricBase):
 
     def get_table_data(self) -> dict[str, Any]:
         rows = (
-            model.Session.query(model.Group.title, model.Group.created)
+            model.Session.query(model.Group.title, model.Group.name, model.Group.created)
             .filter(
                 model.Group.type == "organization",
                 model.Group.state == model.State.ACTIVE,
@@ -187,7 +187,7 @@ class OrganizationCountMetric(MetricBase):
             "headers": [tk._("Organization"), tk._("Created")],
             "rows": [
                 [
-                    row.title or row[0],
+                    {"text": row.title or row.name, "url": f"/organization/{row.name}"},
                     row.created.strftime("%d %B %Y") if row.created else "—",
                 ]
                 for row in rows
@@ -221,6 +221,7 @@ class OrganizationMembershipMetric(MetricBase):
         rows = (
             model.Session.query(
                 model.Group.title,
+                model.Group.name,
                 func.count(model.Member.id).label("members"),
             )
             .join(model.Member, model.Group.id == model.Member.group_id)
@@ -230,12 +231,19 @@ class OrganizationMembershipMetric(MetricBase):
                 model.Member.table_name == "user",
                 model.Member.state == model.State.ACTIVE,
             )
-            .group_by(model.Group.id, model.Group.title)
+            .group_by(model.Group.id, model.Group.title, model.Group.name)
             .order_by(func.count(model.Member.id).desc())
             .limit(15)
             .all()
         )
-        return [{"organization": row.title, "members": row.members} for row in rows]
+        return [
+            {
+                "organization": row.title,
+                "members": row.members,
+                "url": f"/organization/{row.name}",
+            }
+            for row in rows
+        ]
 
     def get_chart_data(self) -> dict[str, Any]:
         data = self.get_data()
@@ -277,7 +285,7 @@ class OrganizationMembershipMetric(MetricBase):
         data = self.get_data()
         return {
             "headers": [tk._("Organization"), tk._("Members")],
-            "rows": [[item["organization"], item["members"]] for item in data],
+            "rows": [[{"text": item["organization"], "url": item["url"]}, item["members"]] for item in data],
         }
 
 
@@ -435,7 +443,7 @@ class InactiveOrganizationsMetric(MetricBase):
             .subquery()
         )
         rows = (
-            model.Session.query(model.Group.title, model.Group.created)
+            model.Session.query(model.Group.title, model.Group.name, model.Group.created)
             .filter(
                 model.Group.type == "organization",
                 model.Group.state == model.State.ACTIVE,
@@ -447,7 +455,10 @@ class InactiveOrganizationsMetric(MetricBase):
 
         return [
             {
-                "organization": row.title,
+                "organization": {
+                    "text": row.title,
+                    "url": f"/organization/{row.name}",
+                },
                 "created": row.created.strftime("%d %B %Y") if row.created else "—",
             }
             for row in rows

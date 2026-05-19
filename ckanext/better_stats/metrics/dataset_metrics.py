@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 from datetime import datetime, timedelta, timezone
 from typing import Any, ClassVar
+from urllib.parse import quote
 
 import ckan.plugins.toolkit as tk
 
@@ -85,7 +86,14 @@ class DatasetsByOrganizationMetric(MetricBase):
         )
         items = result.get("search_facets", {}).get("organization", {}).get("items", [])
         return sorted(
-            [{"organization": item["display_name"], "count": item["count"]} for item in items],
+            [
+                {
+                    "organization": item["display_name"],
+                    "count": item["count"],
+                    "url": f"/organization/{item['name']}",
+                }
+                for item in items
+            ],
             key=lambda x: x["count"],
             reverse=True,
         )
@@ -108,7 +116,7 @@ class DatasetsByOrganizationMetric(MetricBase):
         data = self.get_data()
         return {
             "headers": [tk._("Organization"), tk._("Dataset Count")],
-            "rows": [[item["organization"], item["count"]] for item in data],
+            "rows": [[{"text": item["organization"], "url": item["url"]}, item["count"]] for item in data],
         }
 
 
@@ -232,11 +240,15 @@ class ResourcesByFormatMetric(MetricBase):
         aggregated: dict[str, int] = {}
 
         for item in items:
-            key = item["name"].upper() if item["name"] else tk._("Unknown")
+            key = item["name"]
             aggregated[key] = aggregated.get(key, 0) + item["count"]
 
         return [
-            {"format": fmt, "count": count}
+            {
+                "format": fmt,
+                "count": count,
+                "url": f"/dataset/?res_format={quote(fmt)}",
+            }
             for fmt, count in sorted(aggregated.items(), key=lambda x: x[1], reverse=True)
         ]
 
@@ -258,7 +270,13 @@ class ResourcesByFormatMetric(MetricBase):
         data = self.get_data()
         return {
             "headers": [tk._("Format"), tk._("Resources")],
-            "rows": [[item["format"], item["count"]] for item in data],
+            "rows": [
+                [
+                    {"text": item["format"], "url": item["url"]},
+                    item["count"],
+                ]
+                for item in data
+            ],
         }
 
 
@@ -292,7 +310,10 @@ class TopTagsMetric(MetricBase):
             },
         )
         items = result.get("search_facets", {}).get("tags", {}).get("items", [])
-        return [{"tag": item["name"], "count": item["count"]} for item in items]
+        return [
+            {"tag": item["name"], "count": item["count"], "url": f"/dataset/?tags={quote(item['name'])}"}
+            for item in items
+        ]
 
     def get_chart_data(self) -> dict[str, Any]:
         data = self.get_data()
@@ -318,7 +339,7 @@ class TopTagsMetric(MetricBase):
         data = self.get_data()
         return {
             "headers": [tk._("Tag"), tk._("Datasets")],
-            "rows": [[item["tag"], item["count"]] for item in data],
+            "rows": [[{"text": item["tag"], "url": item["url"]}, item["count"]] for item in data],
         }
 
 
@@ -352,9 +373,10 @@ class DatasetsWithoutResourcesMetric(MetricBase):
                 {"user": tk.current_user.name},
                 {
                     "fq": "num_resources:0",
-                    "fl": "name,title,dataset_type",
+                    "fl": "name,title,dataset_type,metadata_created",
                     "rows": page_size,
                     "start": start,
+                    "sort": "metadata_created desc",
                     "include_private": True,
                 },
             )
@@ -375,6 +397,7 @@ class DatasetsWithoutResourcesMetric(MetricBase):
             {
                 "name": pkg["name"],
                 "title": pkg["title"] or pkg["name"],
+                "created": datetime.fromisoformat(pkg["metadata_created"]).strftime("%d %B %Y"),
                 "url": f"/{pkg['dataset_type']}/{pkg['name']}",
             }
             for pkg in packages
@@ -389,21 +412,15 @@ class DatasetsWithoutResourcesMetric(MetricBase):
     def get_table_data(self) -> dict[str, Any]:
         data = self.get_data()
         return {
-            "headers": [tk._("Dataset"), tk._("URL")],
-            "rows": [
-                [
-                    item["title"],
-                    {"text": item["title"], "url": item["url"]},
-                ]
-                for item in data
-            ],
+            "headers": [tk._("Dataset"), tk._("Created")],
+            "rows": [[{"text": item["title"], "url": item["url"]}, item["created"]] for item in data],
         }
 
     def get_export_data(self) -> dict[str, Any]:
         data = self.get_data()
         return {
-            "headers": [tk._("Dataset"), tk._("URL")],
-            "rows": [[item["title"], item["url"]] for item in data],
+            "headers": [tk._("Dataset"), tk._("Created"), tk._("URL")],
+            "rows": [[item["title"], item["created"], item["url"]] for item in data],
         }
 
 
