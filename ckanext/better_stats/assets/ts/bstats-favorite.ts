@@ -1,3 +1,5 @@
+declare const bootstrap: any;
+
 ckan.module("bstats-favorite", function ($: any) {
     return {
         initialize() {

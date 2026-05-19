@@ -1,3 +1,5 @@
+import { VIZ } from "./bstats-types";
+
 ckan.module("bstats-embed", function ($: any) {
     return {
         initialize() {
@@ -34,7 +36,7 @@ ckan.module("bstats-embed", function ($: any) {
 
         _onEmbedOpen(btn: HTMLElement) {
             const metricName = btn.dataset.metric!;
-            const vizType = btn.dataset.embedViz || "chart";
+            const vizType = btn.dataset.embedViz || VIZ.CHART;
             const embedUrl = ckan.url(`/better_stats/embed/${metricName}?viz=${encodeURIComponent(vizType)}`);
             const code = `<iframe src="${embedUrl}" width="600" height="400" frameborder="0" style="border:1px solid #e2e8f0;border-radius:8px"></iframe>`;
 

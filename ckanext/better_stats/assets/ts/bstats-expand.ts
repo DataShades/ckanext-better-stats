@@ -1,3 +1,5 @@
+import { VIZ } from "./bstats-types";
+
 ckan.module("bstats-expand", function ($: any) {
     return {
         initialize() {
@@ -54,7 +56,7 @@ ckan.module("bstats-expand", function ($: any) {
                 if (titleEl) titleEl.textContent = data.title;
                 contentEl.innerHTML = "";
 
-                if (vizType === "chart") {
+                if (vizType === VIZ.CHART) {
                     this._fullscreenChart = this.manager._createChart(contentEl, data.data);
                 } else {
                     this.manager.renderMetric(contentEl, data, vizType);

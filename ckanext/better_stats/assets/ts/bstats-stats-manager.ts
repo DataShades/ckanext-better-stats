@@ -1,3 +1,5 @@
+import { VIZ, VizType } from "./bstats-types";
+
 declare const echarts: any;
 declare const bootstrap: any;
 
@@ -14,16 +16,16 @@ ckan.module("bstats-stats-manager", function ($: any) {
 class BetterStatsManager {
     private container: HTMLElement;
     private charts: Record<string, any>;
-    private currentVizTypes: Record<string, string>;
+    private currentVizTypes: Record<string, VizType>;
     private loadTimes: Record<string, number>;
-    private defaultViz: string;
+    private defaultViz: VizType;
 
     constructor(container: HTMLElement) {
         this.container = container;
         this.charts = {};
         this.currentVizTypes = {};
         this.loadTimes = {};
-        this.defaultViz = "chart";
+        this.defaultViz = VIZ.CHART;
         this.init();
     }
 
@@ -77,7 +79,7 @@ class BetterStatsManager {
         const containers = [...this.container.querySelectorAll<HTMLElement>(".metric-container")];
         if (!containers.length) return;
 
-        const vizOverride = new URLSearchParams(window.location.search).get("viz");
+        const vizOverride = this._toVizType(new URLSearchParams(window.location.search).get("viz"));
 
         if (vizOverride) {
             for (const c of containers) {
@@ -86,6 +88,11 @@ class BetterStatsManager {
         } else {
             await this._loadBatch(containers);
         }
+    }
+
+    _toVizType(s: string | null | undefined): VizType | undefined {
+        const values = Object.values(VIZ) as readonly string[];
+        return s && values.includes(s) ? (s as VizType) : undefined;
     }
 
     // Load a single metric into a specific container (or auto-detect the first matching container).
@@ -120,13 +127,13 @@ class BetterStatsManager {
         }
     }
 
-    renderMetric(container: HTMLElement, data: any, vizType: string, contentId?: string) {
+    renderMetric(container: HTMLElement, data: any, vizType: VizType, contentId?: string) {
         const id = contentId ?? data.name;
         switch (vizType) {
-            case "chart": this.renderChart(container, data, id); break;
-            case "table": this.renderTable(container, data); break;
-            case "card": this.renderCard(container, data); break;
-            case "progress": this.renderProgress(container, data); break;
+            case VIZ.CHART: this.renderChart(container, data, id); break;
+            case VIZ.TABLE: this.renderTable(container, data); break;
+            case VIZ.CARD: this.renderCard(container, data); break;
+            case VIZ.PROGRESS: this.renderProgress(container, data); break;
         }
     }
 
@@ -247,7 +254,7 @@ class BetterStatsManager {
             p.classList.remove("active")
         );
         pill.classList.add("active");
-        await this.loadMetric(metricName, vizType, false, card ?? undefined);
+        await this.loadMetric(metricName, this._toVizType(vizType), false, card ?? undefined);
     }
 
     async refreshMetric(metricName: string, container?: HTMLElement) {
@@ -331,7 +338,7 @@ class BetterStatsManager {
             // Batch failed — fall back to individual loads
             for (const [name, cs] of nameToContainers) {
                 for (const c of cs) {
-                    await this.loadMetric(name, c.dataset.defaultViz || this.defaultViz, refresh, c);
+                    await this.loadMetric(name, this._toVizType(c.dataset.defaultViz), refresh, c);
                 }
             }
         }
