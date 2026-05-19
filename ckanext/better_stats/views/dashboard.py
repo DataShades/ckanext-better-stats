@@ -263,6 +263,15 @@ class MetricExporter:
             return self._export_as_xlsx()
         return make_response(jsonify({"error": tk._("Unsupported format")}), 400)
 
+    def _set_attachment(self, response: Response, ext: str) -> None:
+        # Werkzeug's Headers.set() handles RFC 6266 quoting and emits a
+        # filename* fallback for non-ASCII characters automatically.
+        response.headers.set(
+            "Content-Disposition",
+            "attachment",
+            filename=f"{self.filename}.{ext}",
+        )
+
     def _export_as_csv(self) -> Response:
         output = io.StringIO()
         writer = csv.writer(output, quoting=csv.QUOTE_ALL)
@@ -274,7 +283,7 @@ class MetricExporter:
 
         response = make_response(output.getvalue())
         response.headers["Content-Type"] = "text/csv"
-        response.headers["Content-Disposition"] = f"attachment; filename={self.filename}.csv"
+        self._set_attachment(response, "csv")
 
         return response
 
@@ -288,7 +297,7 @@ class MetricExporter:
         }
         response = make_response(json.dumps(envelope, indent=2))
         response.headers["Content-Type"] = "application/json"
-        response.headers["Content-Disposition"] = f"attachment; filename={self.filename}.json"
+        self._set_attachment(response, "json")
 
         return response
 
@@ -315,7 +324,7 @@ class MetricExporter:
 
         response = make_response(output.read())
         response.headers["Content-Type"] = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        response.headers["Content-Disposition"] = f"attachment; filename={self.filename}.xlsx"
+        self._set_attachment(response, "xlsx")
 
         return response
 
