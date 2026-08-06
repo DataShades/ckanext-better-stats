@@ -5,4 +5,7 @@ export const VIZ = {
     PROGRESS: "progress",
 } as const;
 
-export type VizType = (typeof VIZ)[keyof typeof VIZ];
+// Visualization ids are open-ended: the four built-ins plus any type an
+// extension registers a renderer for. Hence a plain string rather than a union
+// of the built-ins.
+export type VizType = string;

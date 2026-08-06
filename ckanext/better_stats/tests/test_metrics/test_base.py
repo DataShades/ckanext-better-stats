@@ -38,10 +38,10 @@ class TestMetricRegistry:
         assert MetricRegistry.get_metric("dummy") is None
 
     def test_get_enabled_metrics(self, metric_factory: Any, fresh_registry) -> None:
-        assert len(MetricRegistry.get_enabled_metrics()) == 17
+        assert len(MetricRegistry.get_enabled_metrics()) == 21
 
         metric_factory(name="another")
-        assert len(MetricRegistry.get_enabled_metrics()) == 18
+        assert len(MetricRegistry.get_enabled_metrics()) == 22
 
     def test_get_enabled_metrics_excludes_disabled(self, metric_factory: Any) -> None:
         metric = metric_factory(name="dummy")
@@ -180,7 +180,8 @@ class TestMetricBase:
         metric = metric_factory()
         with mock.patch("ckanext.better_stats.metrics.base.cache") as mock_cache:
             metric.refresh_cache()
-            assert mock_cache.cache_delete.call_count == len(const.VisualizationType)
+            # Global metrics clear one cache key per supported visualization.
+            assert mock_cache.cache_delete.call_count == len(metric.supported_visualizations)
 
     def test_refresh_cache_user_scoped(self, metric_factory: Any) -> None:
         metric = metric_factory(class_attrs={"scope": const.MetricScope.USER})
@@ -196,3 +197,55 @@ class TestMetricBase:
             mock_cache.cache_get.return_value = None
             metric.get_cached_data(const.VisualizationType.CHART, refresh=True)
             mock_cache.cache_delete.assert_called_once()
+
+
+class _CustomVizMetric(MetricBase):
+    """Metric exercising a custom, extension-style visualization id."""
+
+    supported_visualizations = ["user_map", const.VisualizationType.TABLE]
+    default_visualization = "user_map"
+
+    def __init__(self) -> None:
+        super().__init__(name="custom_viz_metric", title="Custom")
+
+    def get_data(self) -> int:
+        return 1
+
+    def get_user_map_data(self) -> dict[str, Any]:
+        return {"points": [{"lat": 0, "lng": 0, "count": 1}]}
+
+    def get_table_data(self) -> dict[str, Any]:
+        return {"headers": ["x"], "rows": [[1]]}
+
+
+class TestCustomVisualization:
+    def test_compute_viz_data_dispatches_by_convention(self) -> None:
+        metric = _CustomVizMetric()
+        assert metric._compute_viz_data("user_map") == {"points": [{"lat": 0, "lng": 0, "count": 1}]}
+
+    def test_default_visualization_id_for_string(self) -> None:
+        assert _CustomVizMetric().default_visualization_id == "user_map"
+
+    def test_supports_visualization_accepts_string_and_enum(self) -> None:
+        metric = _CustomVizMetric()
+        assert metric.supports_visualization("user_map") is True
+        assert metric.supports_visualization(const.VisualizationType.TABLE) is True
+        assert metric.supports_visualization("card") is False
+
+    def test_get_viz_data_for_custom_type(self) -> None:
+        metric = _CustomVizMetric()
+        with mock.patch("ckanext.better_stats.metrics.base.cache") as mock_cache:
+            mock_cache.cache_get.return_value = None
+            data = metric.get_viz_data("user_map")
+            assert data == {"points": [{"lat": 0, "lng": 0, "count": 1}]}
+            # Cache key is suffixed with the custom viz id.
+            key = mock_cache.cache_set.call_args.args[0]
+            assert key.endswith(":user_map")
+
+    def test_to_dict_serialises_custom_viz_descriptor(self) -> None:
+        data = _CustomVizMetric().to_dict()
+        names = [v["name"] for v in data["supported_visualizations"]]
+        assert names == ["user_map", "table"]
+        # Each entry carries the resolved label/icon (fallback for unregistered).
+        assert all({"name", "label", "icon"} <= v.keys() for v in data["supported_visualizations"])
+        assert data["default_visualization"] == "user_map"

@@ -9,6 +9,15 @@ import ckan.plugins.toolkit as tk
 
 from ckanext.better_stats import cache, const
 from ckanext.better_stats.model import MetricConfig
+from ckanext.better_stats.visualization import (
+    Visualization,
+    VisualizationRegistry,
+    viz_id,
+)
+
+# A metric may declare its supported/default visualizations as built-in enum
+# members or as plain string ids registered by an extension.
+VizRef = const.VisualizationType | str
 
 log = logging.getLogger(__name__)
 
@@ -39,8 +48,8 @@ class MetricBase(ABC):
       allowed to see.
     """
 
-    supported_visualizations: ClassVar[list[const.VisualizationType]] = [const.VisualizationType.CHART]
-    default_visualization: ClassVar[const.VisualizationType] = const.VisualizationType.CHART
+    supported_visualizations: ClassVar[list[VizRef]] = [const.VisualizationType.CHART]
+    default_visualization: ClassVar[VizRef] = const.VisualizationType.CHART
     icon: ClassVar[str] = "fa-solid fa-chart-bar"
     supported_export_formats: ClassVar[list[str]] = ["csv", "json", "xlsx", "image"]
     scope: ClassVar[const.MetricScope] = const.MetricScope.GLOBAL
@@ -55,12 +64,16 @@ class MetricBase(ABC):
                 f"{cls.__name__}: supported_visualizations must not be empty",
             )
 
-        if cls.default_visualization not in cls.supported_visualizations:
+        # Compare by normalised id so enum members and string ids mix freely.
+        # We deliberately do *not* check against the VisualizationRegistry here:
+        # metric classes are defined at import time, before extensions get a
+        # chance to register their custom visualization types via the signal.
+        supported_ids = [viz_id(v) for v in cls.supported_visualizations]
+        if viz_id(cls.default_visualization) not in supported_ids:
             raise ValueError(
                 f"{cls.__name__}: default_visualization "
-                f"{cls.default_visualization.value!r} is not listed in "
-                f"supported_visualizations "
-                f"{[v.value for v in cls.supported_visualizations]}",
+                f"{viz_id(cls.default_visualization)!r} is not listed in "
+                f"supported_visualizations {supported_ids}",
             )
 
     def __init__(  # noqa: PLR0913
@@ -140,27 +153,26 @@ class MetricBase(ABC):
         """
         return None
 
-    def _compute_viz_data(self, viz_type: const.VisualizationType) -> dict[str, Any] | None:
+    def _compute_viz_data(self, viz_type: VizRef) -> dict[str, Any] | None:
         """Dispatch to the appropriate visualization method without caching.
 
-        Returns ``None`` for unknown or unsupported visualization types.
+        Resolution is by convention: visualization ``foo`` is served by a
+        ``get_foo_data`` method on the metric.  This is what lets an extension
+        add a brand-new visualization type (e.g. ``user_map`` ->
+        ``get_user_map_data``) without any change to this class.  The four
+        built-ins (``chart``/``table``/``card``/``progress``) follow the same
+        convention.  Returns ``None`` for unknown or unsupported types.
         """
-        dispatch: dict[const.VisualizationType, Callable[[], dict[str, Any] | None]] = {
-            const.VisualizationType.CHART: self.get_chart_data,
-            const.VisualizationType.TABLE: self.get_table_data,
-            const.VisualizationType.CARD: self.get_card_data,
-            const.VisualizationType.PROGRESS: self.get_progress_data,
-        }
-        handler = dispatch.get(viz_type)
-        return handler() if handler else None
+        handler: Callable[[], dict[str, Any] | None] | None = getattr(self, f"get_{viz_id(viz_type)}_data", None)
+        return handler() if callable(handler) else None
 
-    def get_viz_data(self, viz_type: const.VisualizationType) -> dict[str, Any] | None:
+    def get_viz_data(self, viz_type: VizRef) -> dict[str, Any] | None:
         """Return visualization data for *viz_type*, reading from cache when available.
 
         On a cache miss the result of :meth:`_compute_viz_data` is stored
         before being returned.  Returns ``None`` for unsupported types.
         """
-        key = f"{self.cache_key}:{viz_type.value}"
+        key = f"{self.cache_key}:{viz_id(viz_type)}"
 
         cached = cache.cache_get(key)
         if cached is not None:
@@ -172,11 +184,12 @@ class MetricBase(ABC):
 
         return data
 
-    def supports_visualization(self, viz_type: const.VisualizationType) -> bool:
+    def supports_visualization(self, viz_type: VizRef) -> bool:
         """Return ``True`` if this metric supports *viz_type*."""
-        return viz_type in self.supported_visualizations
+        target = viz_id(viz_type)
+        return any(viz_id(v) == target for v in self.supported_visualizations)
 
-    def get_cached_data(self, viz_type: const.VisualizationType, refresh: bool = False) -> dict[str, Any] | None:
+    def get_cached_data(self, viz_type: VizRef, refresh: bool = False) -> dict[str, Any] | None:
         """Return visualization data for *viz_type*, with optional forced refresh.
 
         When *refresh* is ``True`` the cached entry for *viz_type* is deleted
@@ -185,14 +198,16 @@ class MetricBase(ABC):
         :meth:`refresh_cache`.
         """
         if refresh:
-            cache.cache_delete(f"{self.cache_key}:{viz_type.value}")
+            cache.cache_delete(f"{self.cache_key}:{viz_id(viz_type)}")
 
         return self.get_viz_data(viz_type)
 
     def refresh_cache(self) -> None:
         """Invalidate all cached visualization entries for this metric.
 
-        For **global** metrics the four per-viz-type keys are deleted directly.
+        For **global** metrics one key per *supported* visualization is deleted
+        directly (covering custom visualization types registered by extensions,
+        not just the built-in four).
 
         For **user-scoped** metrics a Redis ``SCAN`` is used to delete every
         entry matching ``better_stats:user:*:metric:<name>:*``, covering all
@@ -203,8 +218,23 @@ class MetricBase(ABC):
         if self.scope is const.MetricScope.USER:
             cache.cache_delete_pattern(f"better_stats:user:*:metric:{self.name}:*")
         else:
-            for viz in const.VisualizationType:
-                cache.cache_delete(f"{self.cache_key}:{viz.value}")
+            for viz in self.supported_visualizations:
+                cache.cache_delete(f"{self.cache_key}:{viz_id(viz)}")
+
+    @property
+    def default_visualization_id(self) -> str:
+        """Return the id of the default visualization as a plain string."""
+        return viz_id(self.default_visualization)
+
+    def get_visualizations(self) -> list[Visualization]:
+        """Return resolved :class:`Visualization` descriptors for this metric.
+
+        Each supported visualization (enum member or string id) is resolved
+        through the :class:`VisualizationRegistry` so templates and the JSON API
+        have a uniform ``{name, label, icon}`` shape, with a graceful fallback
+        for ids nothing registered.
+        """
+        return [VisualizationRegistry.resolve(v) for v in self.supported_visualizations]
 
     @classmethod
     def can_export(cls) -> bool:
@@ -230,8 +260,10 @@ class MetricBase(ABC):
             "col_span": self.col_span,
             "row_span": self.row_span,
             "order": self.order,
-            "supported_visualizations": [v.value for v in self.supported_visualizations],
-            "default_visualization": self.default_visualization.value,
+            "supported_visualizations": [
+                {"name": v.name, "label": v.label, "icon": v.icon} for v in self.get_visualizations()
+            ],
+            "default_visualization": self.default_visualization_id,
             "supported_export_formats": list(self.supported_export_formats),
             "access_level": self.access_level,
         }

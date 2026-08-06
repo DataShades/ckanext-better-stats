@@ -100,7 +100,7 @@ def get_metrics_batch() -> Response:
             errors[name] = tk._("Not found or not accessible")
             continue
 
-        viz_type = metric.default_visualization
+        viz_type = metric.default_visualization_id
 
         if refresh:
             metric.refresh_cache()
@@ -112,7 +112,7 @@ def get_metrics_batch() -> Response:
             continue
 
         for _, result in before_metric_render_signal.send(
-            None, context={"metric": metric, "viz_type": viz_type.value, "data": data}
+            None, context={"metric": metric, "viz_type": viz_type, "data": data}
         ):
             if result is not None:
                 data = result
@@ -123,9 +123,9 @@ def get_metrics_batch() -> Response:
             "title": metric.title,
             "description": metric.description,
             "data": data,
-            "type": viz_type.value,
-            "supported_visualizations": [v.value for v in metric.supported_visualizations],
-            "default_visualization": metric.default_visualization.value,
+            "type": viz_type,
+            "supported_visualizations": [v.name for v in metric.get_visualizations()],
+            "default_visualization": metric.default_visualization_id,
             "supported_export_formats": list(metric.supported_export_formats),
         }
 
@@ -142,17 +142,13 @@ def get_metric_data(metric_name: str) -> Response:
     if not _can_read_metric(metric):
         return make_response(jsonify({"error": tk._("Access denied")}), 403)
 
-    requested = tk.request.args.get("type", metric.default_visualization.value)
+    requested = tk.request.args.get("type", metric.default_visualization_id)
     refresh = tk.asbool(tk.request.args.get("refresh", False))
 
-    try:
-        viz_type = const.VisualizationType(requested)
-    except ValueError:
-        viz_type = metric.default_visualization
-
-    # Fall back to the metric's default when the requested type is unsupported.
-    if not metric.supports_visualization(viz_type):
-        viz_type = metric.default_visualization
+    # Fall back to the metric's default when the requested type is unknown or
+    # unsupported.  Visualization ids are plain strings now (built-in or
+    # extension-registered), so no strict enum parsing is needed.
+    viz_type = requested if metric.supports_visualization(requested) else metric.default_visualization_id
 
     if refresh:
         metric.refresh_cache()
@@ -163,7 +159,7 @@ def get_metric_data(metric_name: str) -> Response:
         return make_response(jsonify({"error": str(e)}), 500)
 
     for _, result in before_metric_render_signal.send(
-        None, context={"metric": metric, "viz_type": viz_type.value, "data": data}
+        None, context={"metric": metric, "viz_type": viz_type, "data": data}
     ):
         if result is not None:
             data = result
@@ -175,9 +171,9 @@ def get_metric_data(metric_name: str) -> Response:
             "title": metric.title,
             "description": metric.description,
             "data": data,
-            "type": viz_type.value,
-            "supported_visualizations": [v.value for v in metric.supported_visualizations],
-            "default_visualization": metric.default_visualization.value,
+            "type": viz_type,
+            "supported_visualizations": [v.name for v in metric.get_visualizations()],
+            "default_visualization": metric.default_visualization_id,
             "supported_export_formats": list(metric.supported_export_formats),
         }
     )
@@ -197,7 +193,7 @@ def embed_metric(metric_name: str) -> Response:
     # if not _can_read_metric(metric):
     #     tk.abort(403, tk._("Access denied"))
 
-    viz_type = tk.request.args.get("viz", metric.default_visualization.value)
+    viz_type = tk.request.args.get("viz", metric.default_visualization_id)
 
     resp = make_response(
         tk.render(

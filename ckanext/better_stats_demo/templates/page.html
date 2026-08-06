@@ -1,0 +1,19 @@
+{% ckan_extends %}
+
+{# DEMO: load the custom renderers bundle so it registers itself on the global
+   `ckan.bstats` renderer registry.
+
+   Done from page.html rather than overriding the dashboard
+   template, so it works regardless of plugin load order.
+#}
+{%- block scripts %}
+    {{ super() }}
+
+    {% asset 'better_stats_demo/better_stats_demo-js' %}
+{% endblock %}
+
+{%- block styles %}
+    {{ super() }}
+
+    {% asset 'better_stats_demo/better_stats_demo-css' %}
+{% endblock %}

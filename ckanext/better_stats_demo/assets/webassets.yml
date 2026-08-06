@@ -1,0 +1,16 @@
+better_stats_demo-js:
+  filter: rjsmin
+  output: ckanext-better_stats_demo/%(version)s-better_stats_demo.js
+  contents:
+    - js/vendor/leaflet.js
+    - js/vendor/leaflet-heat.js
+    - js/bstats-demo.min.js
+  extra:
+    preload:
+      - base/main
+
+better_stats_demo-css:
+  output: ckanext-better_stats_demo/%(version)s-better_stats_demo.css
+  contents:
+    - css/vendor/leaflet.css
+    - css/styles.css
