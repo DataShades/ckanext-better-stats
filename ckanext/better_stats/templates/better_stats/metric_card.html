@@ -6,7 +6,7 @@
      data-metric="{{ metric.name }}"
      data-content-id="{{ content_id }}"
      data-order="{{ metric.order }}"
-     data-default-viz="{{ metric.default_visualization.value }}"
+     data-default-viz="{{ metric.default_visualization_id }}"
      data-description="{{ metric.description }}"
      style="--col-span:{{ metric.col_span }};--row-span:{{ metric.row_span }}">
 
@@ -84,13 +84,14 @@
         </div>
 
         {# ── Pill-style viz switcher (only when >1 option) ── #}
-        {% if metric.supported_visualizations | length > 1 %}
+        {% set visualizations = metric.get_visualizations() %}
+        {% if visualizations | length > 1 %}
             <div class="metric-viz-switcher">
-                {% for viz in metric.supported_visualizations %}
-                <button class="viz-pill{% if viz.value == metric.default_visualization.value %} active{% endif %}"
-                        data-type="{{ viz.value }}" data-metric="{{ metric.name }}">
-                    <i class="{{ h.bs_get_viz_icon(viz.value) }}"></i>
-                    {{ h.bs_get_viz_label(viz.value) }}
+                {% for viz in visualizations %}
+                <button class="viz-pill{% if viz.name == metric.default_visualization_id %} active{% endif %}"
+                        data-type="{{ viz.name }}" data-metric="{{ metric.name }}">
+                    <i class="{{ viz.icon }}"></i>
+                    {{ viz.label }}
                 </button>
                 {% endfor %}
             </div>

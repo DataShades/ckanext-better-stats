@@ -1,4 +1,5 @@
 import { VIZ, VizType } from "./bstats-types";
+import { getRenderer } from "./bstats-viz";
 
 declare const echarts: any;
 declare const bootstrap: any;
@@ -95,8 +96,11 @@ class BetterStatsManager {
     }
 
     _toVizType(s: string | null | undefined): VizType | undefined {
-        const values = Object.values(VIZ) as readonly string[];
-        return s && values.includes(s) ? (s as VizType) : undefined;
+        if (!s) return undefined;
+        const builtins = Object.values(VIZ) as readonly string[];
+        // Accept a built-in id, or any type an extension has registered a
+        // renderer for.
+        return builtins.includes(s) || getRenderer(s) ? (s as VizType) : undefined;
     }
 
     // Load a single metric into a specific container (or auto-detect the first matching container).
@@ -134,10 +138,23 @@ class BetterStatsManager {
     renderMetric(container: HTMLElement, data: any, vizType: VizType, contentId?: string) {
         const id = contentId ?? data.name;
         switch (vizType) {
-            case VIZ.CHART: this.renderChart(container, data, id); break;
-            case VIZ.TABLE: this.renderTable(container, data, id); break;
-            case VIZ.CARD: this.renderCard(container, data); break;
-            case VIZ.PROGRESS: this.renderProgress(container, data); break;
+            case VIZ.CHART: this.renderChart(container, data, id); return;
+            case VIZ.TABLE: this.renderTable(container, data); return;
+            case VIZ.CARD: this.renderCard(container, data); return;
+            case VIZ.PROGRESS: this.renderProgress(container, data); return;
+        }
+
+        // Custom visualization registered by an extension via
+        // ckan.bstats.registerRenderer(type, fn).
+        const renderer = getRenderer(vizType);
+        if (renderer) {
+            renderer(container, data, {
+                contentId: id,
+                theme: this._isDark() ? "dark" : "default",
+                manager: this,
+            });
+        } else {
+            container.appendChild(this._unknownVizEl(vizType));
         }
     }
 
@@ -452,6 +469,13 @@ class BetterStatsManager {
         const div = this._el("div", { className: "metric-empty" });
         div.appendChild(this._el("i", { className: "fa fa-inbox metric-empty-icon" }));
         div.appendChild(this._el("p", { textContent: "No data available" }));
+        return div;
+    }
+
+    _unknownVizEl(vizType: string): HTMLElement {
+        const div = this._el("div", { className: "metric-empty" });
+        div.appendChild(this._el("i", { className: "fa fa-question-circle metric-empty-icon" }));
+        div.appendChild(this._el("p", { textContent: `No renderer registered for "${vizType}"` }));
         return div;
     }
 

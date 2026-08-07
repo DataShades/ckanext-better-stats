@@ -5,35 +5,6 @@ import pytest
 from ckanext.better_stats import helpers
 
 
-@pytest.mark.parametrize(
-    ("viz_type", "expected"),
-    [
-        ("chart", "fa fa-line-chart"),
-        ("table", "fa fa-table"),
-        ("card", "fa fa-calculator"),
-        ("progress", "fa fa-tasks"),
-        ("unknown", "fa fa-question"),
-        (None, "fa fa-question"),
-    ],
-)
-def test_bs_get_viz_icon(viz_type: str, expected: str) -> None:
-    assert helpers.bs_get_viz_icon(viz_type) == expected
-
-
-@pytest.mark.parametrize(
-    ("viz_type", "expected"),
-    [
-        ("chart", "Chart"),
-        ("table", "Table"),
-        ("card", "Card"),
-        ("progress", "Progress"),
-        ("custom", "custom"),
-    ],
-)
-def test_bs_get_viz_label(viz_type: str, expected: str) -> None:
-    assert helpers.bs_get_viz_label(viz_type) == expected
-
-
 @pytest.mark.usefixtures("with_request_context")
 def test_bs_get_embed_code_contains_url() -> None:
     snippet = helpers.bs_get_embed_code("dataset_count", width="800", height="600")

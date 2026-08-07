@@ -1,0 +1,32 @@
+.bstats-tag-cloud {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 4px 14px;
+    padding: 16px;
+    line-height: 1.1;
+    height: 100%;
+}
+
+.bstats-tag-cloud .bstats-tag {
+    text-decoration: none;
+    transition: transform .12s ease, opacity .12s ease;
+}
+
+.bstats-tag-cloud span.bstats-tag {
+    cursor: default;
+}
+
+.bstats-tag-cloud a.bstats-tag {
+    cursor: pointer;
+}
+
+.bstats-tag-cloud .bstats-tag:hover {
+    transform: scale(1.12);
+    opacity: 1;
+}
+
+.bstats-tag-cloud a.bstats-tag:hover {
+    text-decoration: underline;
+}

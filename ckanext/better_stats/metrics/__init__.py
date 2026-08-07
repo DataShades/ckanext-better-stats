@@ -22,7 +22,10 @@ from .organization_metrics import (
     OrganizationOverviewMetric,
     OrganizationSizesMetric,
 )
-from .portal_metrics import DatasetCompletenessMetric, UserCountMetric
+from .portal_metrics import (
+    DatasetCompletenessMetric,
+    UserCountMetric,
+)
 from .system_metrics import CPUMetric, DiskUsageMetric, MemoryMetric
 
 __all__ = [
@@ -45,7 +48,19 @@ __all__ = [
     "MemoryMetric",
     "CPUMetric",
     "DiskUsageMetric",
+    "register_visualizations",
 ]
+
+
+def register_visualizations():
+    """Register custom visualization types shipped with better_stats core.
+
+    Built-in viz types (chart/table/card/progress) are pre-registered at import
+    time in :mod:`ckanext.better_stats.visualization`, so core currently adds
+    none here. The hook is kept as the extension point fired by the
+    ``better_stats:register_visualizations`` signal (see the ``better_stats_demo``
+    plugin's ``user_map`` type for an example).
+    """
 
 
 def register_metrics():

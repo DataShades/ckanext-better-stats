@@ -20,6 +20,7 @@
         "dev": "DEBUG=1 gulp watch",
         "build": "gulp build",
         "ts-build": "tsc && esbuild ckanext/better_stats/assets/ts/bstats-entry.ts --bundle --minify --outfile=ckanext/better_stats/assets/js/bstats.min.js && rm ckanext/better_stats/assets/js/bstats-*.js",
-        "ts-watch": "tsc -w"
+        "ts-watch": "tsc -w",
+        "ts-build-demo": "tsc && esbuild ckanext/better_stats_demo/assets/ts/bstats-demo.ts --bundle --minify --outfile=ckanext/better_stats_demo/assets/js/bstats-demo.min.js"
     }
 }

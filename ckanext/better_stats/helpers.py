@@ -3,24 +3,6 @@ import ckan.plugins.toolkit as tk
 BYTE_MULTIPLIER = 1024.0
 
 
-def bs_get_viz_icon(viz_type: str) -> str:
-    return {
-        "chart": "fa fa-line-chart",
-        "table": "fa fa-table",
-        "card": "fa fa-calculator",
-        "progress": "fa fa-tasks",
-    }.get(viz_type, "fa fa-question")
-
-
-def bs_get_viz_label(viz_type: str) -> str:
-    return {
-        "chart": tk._("Chart"),
-        "table": tk._("Table"),
-        "card": tk._("Card"),
-        "progress": tk._("Progress"),
-    }.get(viz_type, viz_type)
-
-
 def bs_get_embed_url(metric_name: str) -> str:
     """Return the absolute URL for the embed page for *metric_name*."""
     return tk.url_for("better_stats.embed_metric", metric_name=metric_name, _external=True)

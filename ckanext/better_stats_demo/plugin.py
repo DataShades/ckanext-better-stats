@@ -3,14 +3,10 @@ from ckan import types
 from ckan.common import CKANConfig
 from ckan.plugins import toolkit as tk
 
-from ckanext.better_stats.metrics import register_metrics, register_visualizations
+from ckanext.better_stats_demo.metrics import register_metrics, register_visualizations
 
 
-@tk.blanket.blueprints
-@tk.blanket.helpers
-@tk.blanket.auth_functions
-@tk.blanket.actions
-class BetterStatsPlugin(p.SingletonPlugin):
+class BetterStatsDemoPlugin(p.SingletonPlugin):
     p.implements(p.IConfigurer)
     p.implements(p.ISignal)
 
@@ -18,8 +14,7 @@ class BetterStatsPlugin(p.SingletonPlugin):
 
     def update_config(self, config_: CKANConfig) -> None:
         tk.add_template_directory(config_, "templates")
-        tk.add_public_directory(config_, "public")
-        tk.add_resource("assets", "better_stats")
+        tk.add_resource("assets", "better_stats_demo")
 
     # ISignal
 
