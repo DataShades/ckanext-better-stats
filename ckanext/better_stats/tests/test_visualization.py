@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from ckanext.better_stats import const
 from ckanext.better_stats.visualization import (
-    DEFAULT_ICON,
     Visualization,
     VisualizationRegistry,
     viz_id,
@@ -45,7 +44,7 @@ class TestVisualizationRegistry:
         resolved = VisualizationRegistry.resolve("ghost_viz")
         assert resolved.name == "ghost_viz"
         assert resolved.label == "ghost_viz"
-        assert resolved.icon == DEFAULT_ICON
+        assert resolved.icon == "fa fa-question"
 
     def test_resolve_known(self) -> None:
         resolved = VisualizationRegistry.resolve(const.VisualizationType.TABLE)
