@@ -16,6 +16,9 @@ ckan.module("bstats-stats-manager", function ($: any) {
 
 
 class BetterStatsManager {
+    // Below this row count a search box adds clutter without adding value.
+    private static readonly TABLE_SEARCH_MIN_ROWS = 8;
+
     private container: HTMLElement;
     private charts: Record<string, any>;
     private currentVizTypes: Record<string, VizType>;
@@ -139,7 +142,7 @@ class BetterStatsManager {
         const id = contentId ?? data.name;
         switch (vizType) {
             case VIZ.CHART: this.renderChart(container, data, id); return;
-            case VIZ.TABLE: this.renderTable(container, data); return;
+            case VIZ.TABLE: this.renderTable(container, data, id); return;
             case VIZ.CARD: this.renderCard(container, data); return;
             case VIZ.PROGRESS: this.renderProgress(container, data); return;
         }
@@ -222,11 +225,57 @@ class BetterStatsManager {
         });
 
         table.appendChild(tbody);
+
+        // Row search — only worth showing once a table has enough rows to
+        // make scanning by eye impractical. Purely client-side: it hides
+        // already-rendered <tr> elements, it does not refetch or recompute
+        // the metric, so it plays nicely with Tablesort re-ordering rows
+        // (hidden rows just carry their inline display:none along when moved).
+        let noResults: HTMLElement | undefined;
+        if (tableData.rows.length > BetterStatsManager.TABLE_SEARCH_MIN_ROWS) {
+            noResults = this._el("div", {
+                className: "metric-table-no-results",
+                textContent: "No matching rows",
+            });
+            noResults.style.display = "none";
+            wrapper.appendChild(this._createTableSearchBar(table, noResults));
+        }
+
         wrapper.appendChild(table);
+        if (noResults) wrapper.appendChild(noResults);
         container.appendChild(wrapper);
 
         // Sortable table
         new Tablesort(table);
+    }
+
+    _createTableSearchBar(table: HTMLTableElement, noResults: HTMLElement): HTMLElement {
+        const bar = this._el("div", { className: "metric-table-search" });
+        bar.appendChild(this._el("i", { className: "fa fa-search metric-table-search-icon" }));
+
+        const input = this._el("input", {
+            type: "text",
+            className: "metric-table-search-input",
+            placeholder: "Search table…",
+        }) as HTMLInputElement;
+        input.addEventListener("input", () => this._filterTableRows(table, noResults, input.value));
+
+        bar.appendChild(input);
+        return bar;
+    }
+
+    _filterTableRows(table: HTMLTableElement, noResults: HTMLElement, query: string) {
+        const q = query.trim().toLowerCase();
+        const rows = [...(table.tBodies[0]?.rows ?? [])];
+        let visible = 0;
+
+        rows.forEach((row) => {
+            const match = !q || (row.textContent || "").toLowerCase().includes(q);
+            row.style.display = match ? "" : "none";
+            if (match) visible++;
+        });
+
+        noResults.style.display = q && visible === 0 ? "block" : "none";
     }
 
     renderProgress(container: HTMLElement, data: any) {

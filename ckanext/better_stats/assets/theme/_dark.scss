@@ -84,8 +84,22 @@
     }
   }
 
+  .metric-table-search {
+    .metric-table-search-icon { color: #94a3b8; }
+
+    .metric-table-search-input {
+      background: #1e293b;
+      border-color: #334155;
+      color: #e2e8f0;
+
+      &::placeholder { color: #94a3b8; }
+      &:focus { border-color: #475569; box-shadow: 0 0 0 3px rgba(255,255,255,.06); }
+    }
+  }
+
   .metric-error,
   .metric-empty,
+  .metric-table-no-results,
   .bstats-no-results,
   .metric-progress-item span {
     color: #94a3b8;

@@ -86,6 +86,44 @@
   }
 }
 
+// Per-table row search — only rendered for tables past a row-count threshold
+.metric-table-search {
+  position: relative;
+  width: 100%;
+  margin-bottom: 0.6rem;
+
+  .metric-table-search-icon {
+    position: absolute;
+    left: 0.6rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    font-size: 0.75rem;
+    pointer-events: none;
+  }
+
+  .metric-table-search-input {
+    width: 100%;
+    padding: 0.35rem 0.6rem 0.35rem 1.85rem;
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+    font-size: 0.8rem;
+    line-height: 1.2;
+    outline: none;
+
+    &::placeholder { color: #94a3b8; }
+    &:focus { border-color: #adb5bd; }
+  }
+}
+
+.metric-table-no-results {
+  display: none;
+  padding: 0.75rem 1rem;
+  text-align: center;
+  font-size: 0.8rem;
+  color: #94a3b8;
+}
+
 // Card (single-number) viz
 .metric-card-display {
   text-align: center;
