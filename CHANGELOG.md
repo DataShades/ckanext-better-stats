@@ -26,6 +26,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documentation for overriding a built-in metric by subclassing and
   re-registering.
 
+### Fixed
+
+- `solr_search` now scopes every query to the current site's `site_id`, like
+  all CKAN core searches. Previously `DatasetCreationHistoryMetric` could count
+  datasets belonging to another CKAN instance sharing the same SOLR core.
+
 ## [1.1.0] - 2026-08-31
 
 Released as git tag `v1.1.0`.

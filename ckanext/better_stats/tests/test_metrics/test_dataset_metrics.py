@@ -59,7 +59,15 @@ class TestDatasetMetricsBranches:
 
     def test_dataset_creation_history_returns_empty_when_no_data(self) -> None:
         metric = DatasetCreationHistoryMetric()
-        with mock.patch("ckan.plugins.toolkit.current_user") as mock_user:
+        no_docs = mock.Mock(docs=[])
+        with (
+            mock.patch("ckan.plugins.toolkit.current_user") as mock_user,
+            mock.patch("ckanext.better_stats.metrics.dataset_metrics.make_connection"),
+            mock.patch(
+                "ckanext.better_stats.metrics.dataset_metrics.solr_search",
+                return_value=no_docs,
+            ),
+        ):
             mock_user.name = "sysadmin"
             assert metric.get_data() == []
             assert metric.get_chart_data()["series"][0]["type"] == "line"
