@@ -13,11 +13,7 @@ from openpyxl.worksheet.worksheet import Worksheet
 import ckan.plugins.toolkit as tk
 
 from ckanext.better_stats import const
-from ckanext.better_stats.metrics.base import (
-    MetricBase,
-    MetricRegistry,
-    before_metric_render_signal,
-)
+from ckanext.better_stats.metrics.base import MetricBase, MetricRegistry
 from ckanext.better_stats.model import UserFavorite
 
 bp = Blueprint("better_stats", __name__, url_prefix="/better_stats")
@@ -111,13 +107,6 @@ def get_metrics_batch() -> Response:
             errors[name] = str(exc)
             continue
 
-        for _, result in before_metric_render_signal.send(
-            None, context={"metric": metric, "viz_type": viz_type, "data": data}
-        ):
-            if result is not None:
-                data = result
-                break
-
         results[name] = {
             "name": metric.name,
             "title": metric.title,
@@ -157,13 +146,6 @@ def get_metric_data(metric_name: str) -> Response:
         data = metric.get_viz_data(viz_type)
     except ValueError as e:
         return make_response(jsonify({"error": str(e)}), 500)
-
-    for _, result in before_metric_render_signal.send(
-        None, context={"metric": metric, "viz_type": viz_type, "data": data}
-    ):
-        if result is not None:
-            data = result
-            break
 
     return jsonify(
         {

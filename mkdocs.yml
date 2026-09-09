@@ -47,7 +47,7 @@ nav:
     - System Metrics: metrics/system.md
   - Signals:
     - Register Metrics: signals/register_metrics.md
-    - Alter Render Data: signals/before_metric_render.md
+    - Register Visualizations: signals/register_visualizations.md
 
 markdown_extensions:
     - pymdownx.snippets

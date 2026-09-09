@@ -30,6 +30,8 @@ You can copy the embed code from the modal and paste it into your own page.
 
 Metrics are rendered in a variety of formats, including `CHART`, `TABLE`, `CARD`, and `PROGRESS`. Each visualization type is declared by the metric class along with a default visualization. The framework automatically renders the appropriate visualization for each metric.
 
+Extensions can also register brand-new visualization types (maps, word clouds, and so on) — see [Register Visualizations](./../signals/register_visualizations.md).
+
 ### Caching
 
 Metrics are cached with Redis, with a configurable TTL (time-to-live) value. You can refresh the cache at any time by clicking `Refresh` on a metric card or `Refresh All` in the dashboard toolbar.
